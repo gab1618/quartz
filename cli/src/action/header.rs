@@ -1,4 +1,6 @@
-use crate::{cli::HeaderCmd as Cmd, Ctx, PairMap, QuartzResult};
+use crate::{cli::HeaderCmd as Cmd};
+use quartz_core::{PairMap, QuartzResult, Ctx};
+
 use std::process::ExitCode;
 
 pub fn cmd(ctx: &mut Ctx, command: Cmd) -> QuartzResult {

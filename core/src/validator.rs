@@ -9,7 +9,7 @@ use crate::QuartzResult;
 /// # Examples
 ///
 /// ```
-/// use quartz_cli::validator;
+/// use quartz_core::validator;
 ///
 /// // Totally broken JSON input
 /// let input = r#"
@@ -30,7 +30,7 @@ pub fn infallible(_input: &str) -> QuartzResult {
 /// # Examples
 ///
 /// ```
-/// use quartz_cli::validator;
+/// use quartz_core::validator;
 ///
 /// let input = r#"
 /// {
@@ -61,7 +61,7 @@ pub fn json(input: &str) -> QuartzResult {
 /// # Examples
 ///
 /// ```
-/// use quartz_cli::validator;
+/// use quartz_core::validator;
 ///
 /// let input = r#"
 ///     title = 'TOML Example'
@@ -82,7 +82,7 @@ pub fn toml(input: &str) -> QuartzResult {
 ///
 /// ```
 /// use serde::Deserialize;
-/// use quartz_cli::validator;
+/// use quartz_core::validator;
 ///
 /// #[derive(Deserialize)]
 /// struct Config {

@@ -1,4 +1,5 @@
-use crate::{action, cli::ShowCmd as Cmd, Ctx, QuartzResult, StateField};
+use crate::{action, cli::ShowCmd as Cmd};
+use quartz_core::{Ctx, QuartzResult, state::StateField};
 
 pub fn cmd(ctx: &Ctx, command: Cmd) -> QuartzResult {
     match command {

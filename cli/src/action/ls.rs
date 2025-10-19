@@ -1,7 +1,10 @@
 use std::vec::Vec;
 
-use crate::{endpoint, Ctx, EndpointHandle};
 use colored::Colorize;
+use quartz_core::{
+    Ctx,
+    endpoint::{self, EndpointHandle},
+};
 
 #[derive(Default)]
 enum UsageState {

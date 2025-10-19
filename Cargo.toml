@@ -1,5 +1,8 @@
 [workspace]
-members = ["cli"]
+members = ["cli", "core"]
+
+[workspace.dependencies]
+quartz-core = {path = "./core"}
 
 [profile.release]
 opt-level = 'z'

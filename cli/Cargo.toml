@@ -11,6 +11,7 @@ keywords = ["cli", "api", "http-client", "curl"]
 categories = ["command-line-utilities"]
 
 [dependencies]
+quartz-core = {workspace = true}
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
 clap = { version = "4.2.7", features = ["derive"] }

@@ -1,11 +1,13 @@
 use std::collections::VecDeque;
 use std::process::ExitCode;
 
-use crate::{
-    endpoint::{Endpoint, EndpointHandle, EndpointPatch},
-    validator, Ctx, QuartzResult, StateField,
-};
 use colored::Colorize;
+use quartz_core::{
+    Ctx, QuartzResult,
+    endpoint::{Endpoint, EndpointHandle, EndpointPatch},
+    state::StateField,
+    validator,
+};
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {

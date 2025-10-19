@@ -1,4 +1,4 @@
-use crate::{cookie::Cookie, Ctx};
+use quartz_core::{cookie::Cookie, Ctx};
 
 #[derive(clap::Args, Debug)]
 pub struct PrintArgs {

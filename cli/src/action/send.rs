@@ -1,4 +1,4 @@
-use crate::{
+use quartz_core::{
     cookie::CookieJar,
     endpoint::EndpointPatch,
     history::{self, History},

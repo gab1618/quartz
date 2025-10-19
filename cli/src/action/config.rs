@@ -1,4 +1,5 @@
-use crate::{cli::ConfigCmd as Cmd, validator, Config, Ctx, QuartzResult};
+use crate::{cli::ConfigCmd as Cmd};
+use quartz_core::{validator, config::Config, QuartzResult, Ctx};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {

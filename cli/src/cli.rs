@@ -1,5 +1,6 @@
 use crate::action;
 use clap::{Parser, Subcommand};
+use quartz_core::snippet::Curl;
 
 #[derive(Debug, Parser)]
 #[command(name = "quartz")]
@@ -180,7 +181,7 @@ pub enum ShowCmd {
 
 #[derive(Debug, Subcommand)]
 pub enum SnippetCmd {
-    Curl(crate::snippet::Curl),
+    Curl(Curl),
     Http,
 }
 

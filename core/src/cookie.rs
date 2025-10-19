@@ -61,7 +61,7 @@ impl Domain {
     /// # Examples
     ///
     /// ```
-    /// use quartz_cli::cookie::Domain;
+    /// use quartz_core::cookie::Domain;
     ///
     /// assert_eq!(Domain::canonicalize("www.example.com"), "www.example.com");
     /// assert_eq!(Domain::canonicalize("www.EXAMPLE.com"), "www.example.com");
@@ -96,7 +96,7 @@ impl Domain {
     /// # Examples
     ///
     /// ```
-    /// use quartz_cli::cookie::Domain;
+    /// use quartz_core::cookie::Domain;
     ///
     /// assert!(Domain::new(".example.com").matches("www.example.com"));
     /// assert!(Domain::new(".example.com").matches("example.com"));
@@ -139,7 +139,7 @@ impl Domain {
     /// # Examples
     ///
     /// ```
-    /// use quartz_cli::cookie::Domain;
+    /// use quartz_core::cookie::Domain;
     ///
     /// let domain = Domain::new("www.example.com");
     ///
@@ -265,7 +265,7 @@ impl ToString for Cookie {
     ///# Examples
     ///
     /// ```
-    /// use quartz_cli::cookie::Cookie;
+    /// use quartz_core::cookie::Cookie;
     ///
     /// let mut cookie = Cookie::builder();
     /// cookie
@@ -307,7 +307,7 @@ impl FromStr for Cookie {
     ///
     /// ```
     /// use std::str::FromStr;
-    /// use quartz_cli::cookie::Cookie;
+    /// use quartz_core::cookie::Cookie;
     ///
     /// let s = "httpbin.org\tFALSE\t/somepath\tTRUE\t0\tmycookie\tsecret";
     /// let cookie = Cookie::from_str(s).unwrap();
@@ -566,7 +566,7 @@ impl From<&str> for PathAttr {
     /// # Examples
     ///
     /// ```
-    /// use quartz_cli::cookie::PathAttr;
+    /// use quartz_core::cookie::PathAttr;
     /// use std::str::FromStr;
     ///
     /// assert_eq!(PathAttr::from_str("/").unwrap().len(), 0);
@@ -612,7 +612,7 @@ impl ToString for PathAttr {
     /// # Examples
     ///
     /// ```
-    /// use quartz_cli::cookie::PathAttr;
+    /// use quartz_core::cookie::PathAttr;
     ///
     /// ```
     fn to_string(&self) -> String {
@@ -632,7 +632,7 @@ impl PathAttr {
     /// # Examples
     ///
     /// ```
-    /// use quartz_cli::cookie::PathAttr;
+    /// use quartz_core::cookie::PathAttr;
     ///
     /// assert!(PathAttr::from("/").matches("/"));
     /// assert!(PathAttr::from("/").matches("/some/nested/path"));

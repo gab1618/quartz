@@ -1,4 +1,5 @@
-use crate::{cli::VarCmd as Cmd, env::Variables, Ctx, PairMap, QuartzResult};
+use crate::{cli::VarCmd as Cmd};
+use quartz_core::{env::Variables, Ctx, PairMap, QuartzResult};
 use std::process::ExitCode;
 
 #[derive(clap::Args, Debug)]

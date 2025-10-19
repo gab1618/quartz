@@ -1,13 +1,13 @@
+mod action;
+mod cli;
+
 use std::process::ExitCode;
 
 use clap::Parser;
 use colored::Colorize;
 
-use quartz_cli::{
-    action,
-    cli::{Cli, Cmd},
-    Ctx, CtxArgs, QuartzResult,
-};
+use crate::cli::{Cli, Cmd};
+use quartz_core::{Ctx, CtxArgs, QuartzResult};
 
 #[tokio::main]
 async fn main() -> QuartzResult<ExitCode> {

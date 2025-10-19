@@ -3,9 +3,9 @@ use std::convert::Infallible;
 use crate::{
     cli::LastCmd as Cmd,
     cli::LastResCmd as ResCmd,
-    history::{self, History},
     Ctx, QuartzResult,
 };
+use quartz_core::{history::{self, History}};
 
 pub fn cmd(ctx: &Ctx, maybe_command: Option<Cmd>) -> QuartzResult<(), Infallible> {
     let entry = History::last(ctx).expect("no history found");
