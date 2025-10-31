@@ -2,7 +2,7 @@ use std::vec::Vec;
 
 use colored::Colorize;
 use quartz_core::{
-    Ctx,
+    ctx::Ctx,
     endpoint::{self, EndpointHandle},
 };
 

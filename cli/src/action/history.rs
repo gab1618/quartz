@@ -1,4 +1,4 @@
-use quartz_core::{history::History, Ctx, QuartzResult};
+use quartz_core::{history::History, ctx::Ctx, QuartzResult};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {

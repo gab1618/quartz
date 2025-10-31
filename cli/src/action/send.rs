@@ -2,7 +2,7 @@ use quartz_core::{
     cookie::CookieJar,
     endpoint::EndpointPatch,
     history::{self, History},
-    Ctx, PairMap, QuartzResult,
+    ctx::Ctx, PairMap, QuartzResult,
 };
 use chrono::Utc;
 use hyper::{

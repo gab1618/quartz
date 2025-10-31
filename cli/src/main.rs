@@ -7,7 +7,7 @@ use clap::Parser;
 use colored::Colorize;
 
 use crate::cli::{Cli, Cmd};
-use quartz_core::{Ctx, CtxArgs, QuartzResult};
+use quartz_core::{ctx::{Ctx, CtxArgs}, QuartzResult};
 
 #[tokio::main]
 async fn main() -> QuartzResult<ExitCode> {

@@ -1,5 +1,5 @@
 use crate::cli::BodyCmd as Cmd;
-use quartz_core::{Ctx, QuartzResult, validator};
+use quartz_core::{ctx::Ctx, QuartzResult, validator};
 use std::io::Write;
 
 const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];

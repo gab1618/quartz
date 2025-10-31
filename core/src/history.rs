@@ -1,4 +1,4 @@
-use crate::{snippet, Ctx, QuartzError, QuartzResult};
+use crate::{snippet, ctx::Ctx, QuartzError, QuartzResult};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::{Path, PathBuf};

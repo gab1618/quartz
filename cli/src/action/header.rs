@@ -1,5 +1,5 @@
 use crate::{cli::HeaderCmd as Cmd};
-use quartz_core::{PairMap, QuartzResult, Ctx};
+use quartz_core::{PairMap, QuartzResult, ctx::Ctx};
 
 use std::process::ExitCode;
 

@@ -3,7 +3,7 @@ use std::process::ExitCode;
 
 use colored::Colorize;
 use quartz_core::{
-    Ctx, QuartzResult,
+    ctx::Ctx, QuartzResult,
     endpoint::{Endpoint, EndpointHandle, EndpointPatch},
     state::StateField,
     validator,

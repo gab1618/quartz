@@ -1,6 +1,6 @@
 use crate::cli::QueryCmd as Cmd;
 use colored::Colorize;
-use quartz_core::{Ctx, PairMap, QuartzResult};
+use quartz_core::{ctx::Ctx, PairMap, QuartzResult};
 use std::process::ExitCode;
 
 #[derive(clap::Args, Debug)]
