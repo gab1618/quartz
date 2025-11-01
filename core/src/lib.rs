@@ -22,6 +22,8 @@ use std::str::FromStr;
 
 use endpoint::Endpoint;
 
+use crate::ctx::{Ctx, CtxArgs};
+
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;
 
 #[derive(Debug)]
@@ -74,10 +76,12 @@ where
     }
 }
 
-pub struct Quartz {}
+pub struct Quartz {
+    ctx: Ctx,
+}
 
 impl Quartz {
-    pub fn init(path: &PathBuf) -> Result<(), QuartzError> {
+    pub fn init(path: &PathBuf) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
 
         // TODO: properly propagate these errors for better diagnostics context
@@ -114,6 +118,11 @@ impl Quartz {
             }
         }
 
-        Ok(())
+        let curr_ctx = Ctx::new(CtxArgs {
+            from_handle: None,
+            early_apply_environment: false,
+        })?;
+
+        Ok(Self { ctx: curr_ctx })
     }
 }
