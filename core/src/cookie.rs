@@ -1,4 +1,4 @@
-use crate::QuartzResult;
+use crate::{QuartzError, QuartzResult};
 use chrono::prelude::*;
 use hyper::http::uri::Scheme;
 use std::{
@@ -216,7 +216,7 @@ impl CookieBuilder {
     ///
     /// This function will return an error if builder has any invalid cookie component, such as
     /// missing `domain`, `name`, or `value`.
-    pub fn build(self) -> QuartzResult<Cookie, CookieError> {
+    pub fn build(self) -> Result<Cookie, CookieError> {
         let domain = Domain::new(self.domain.ok_or(CookieError)?);
         let name = self.name.ok_or(CookieError)?;
         let value = self.value.ok_or(CookieError)?;
@@ -505,7 +505,7 @@ impl CookieJar {
     /// This function will return an error if the file does not exist.
     pub fn read(path: &Path) -> QuartzResult<Self> {
         let mut cookies = Self::default();
-        let file = std::fs::read_to_string(path)?;
+        let file = std::fs::read_to_string(path).map_err(|_| QuartzError::Internal)?;
         let lines = file.lines();
 
         for line in lines {

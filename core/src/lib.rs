@@ -9,6 +9,9 @@ pub mod state;
 pub mod tree;
 pub mod validator;
 
+#[cfg(test)]
+mod tests;
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
@@ -19,9 +22,7 @@ use std::str::FromStr;
 
 use endpoint::Endpoint;
 
-use crate::ctx::Ctx;
-
-pub type QuartzResult<T = (), E = Box<dyn std::error::Error>> = Result<T, E>;
+pub type QuartzResult<T = ()> = Result<T, QuartzError>;
 
 #[derive(Debug)]
 pub enum QuartzError {
@@ -73,9 +74,7 @@ where
     }
 }
 
-pub struct Quartz {
-    ctx: Ctx,
-}
+pub struct Quartz {}
 
 impl Quartz {
     pub fn init(path: &PathBuf) -> Result<(), QuartzError> {

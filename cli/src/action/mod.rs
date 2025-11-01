@@ -1,6 +1,8 @@
-use crate::action;
+use quartz_core::QuartzError;
+
 use crate::QuartzResult;
-use crate::{cli::Cmd, Ctx};
+use crate::action;
+use crate::{Ctx, cli::Cmd};
 
 pub mod body;
 pub mod config;
@@ -35,7 +37,9 @@ pub async fn cmd(ctx: &mut Ctx, command: Cmd) -> QuartzResult {
         Cmd::Header { command } => action::header::cmd(ctx, command)?,
         Cmd::Body(args) => action::body::cmd(ctx, args)?,
         Cmd::History(args) => action::history::cmd(ctx, args)?,
-        Cmd::Last { command } => action::last::cmd(ctx, command)?,
+        Cmd::Last { command } => {
+            action::last::cmd(ctx, command).map_err(|_| QuartzError::Internal)?
+        }
         Cmd::Var { command } => action::var::cmd(ctx, command)?,
         Cmd::Env { command } => action::env::cmd(ctx, command)?,
         Cmd::Config { command } => action::config::cmd(ctx, command)?,

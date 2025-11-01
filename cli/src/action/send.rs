@@ -1,18 +1,19 @@
-use quartz_core::{
-    cookie::CookieJar,
-    endpoint::EndpointPatch,
-    history::{self, History},
-    ctx::Ctx, PairMap, QuartzResult,
-};
 use chrono::Utc;
 use hyper::{
+    Body, Client, Uri,
     body::{Bytes, HttpBody},
     header::{HeaderName, HeaderValue},
-    Body, Client, Uri,
+};
+use quartz_core::{
+    PairMap, QuartzError, QuartzResult,
+    cookie::CookieJar,
+    ctx::Ctx,
+    endpoint::EndpointPatch,
+    history::{self, History},
 };
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
-use tokio::io::{stdout, AsyncWriteExt as _};
+use tokio::io::{AsyncWriteExt as _, stdout};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -101,8 +102,10 @@ pub async fn cmd(ctx: &Ctx, mut args: Args) -> QuartzResult {
             .unwrap_or_else(|_| panic!("malformed request"));
         for (key, val) in env.headers.iter() {
             if !endpoint.headers.contains_key(key) {
-                req.headers_mut()
-                    .insert(HeaderName::from_str(key)?, HeaderValue::from_str(val)?);
+                req.headers_mut().insert(
+                    HeaderName::from_str(key).map_err(|_| QuartzError::Internal)?,
+                    HeaderValue::from_str(val).map_err(|_| QuartzError::Internal)?,
+                );
             }
         }
 
@@ -116,14 +119,20 @@ pub async fn cmd(ctx: &Ctx, mut args: Args) -> QuartzResult {
             Client::builder().build(https)
         };
 
-        res = client.request(req).await?;
+        res = client
+            .request(req)
+            .await
+            .map_err(|_| QuartzError::Internal)?;
 
         entry.message(&res);
 
         if let Some(cookie_header) = res.headers().get("Set-Cookie") {
-            let url = endpoint.full_url()?;
+            let url = endpoint.full_url().map_err(|_| QuartzError::Internal)?;
 
-            cookie_jar.set(url.host().unwrap(), cookie_header.to_str()?);
+            cookie_jar.set(
+                url.host().unwrap(),
+                cookie_header.to_str().map_err(|_| QuartzError::Internal)?,
+            );
         }
 
         if args.no_follow || !res.status().is_redirection() {
@@ -131,16 +140,17 @@ pub async fn cmd(ctx: &Ctx, mut args: Args) -> QuartzResult {
         }
 
         if let Some(location) = res.headers().get("Location") {
-            let location = location.to_str()?;
+            let location = location.to_str().map_err(|_| QuartzError::Internal)?;
 
             if location.starts_with('/') {
-                let url = endpoint.full_url()?;
+                let url = endpoint.full_url().map_err(|_| QuartzError::Internal)?;
                 // This is awful
                 endpoint.url = Uri::builder()
                     .authority(url.authority().unwrap().as_str())
                     .scheme(url.scheme().unwrap().as_str())
                     .path_and_query(location)
-                    .build()?
+                    .build()
+                    .map_err(|_| QuartzError::Internal)?
                     .to_string();
             } else if Uri::from_str(location).is_ok() {
                 endpoint.url = location.to_string();
@@ -149,8 +159,10 @@ pub async fn cmd(ctx: &Ctx, mut args: Args) -> QuartzResult {
     }
 
     match args.cookie_jar {
-        Some(path) => cookie_jar.write_at(&path)?,
-        None => cookie_jar.write()?,
+        Some(path) => cookie_jar
+            .write_at(&path)
+            .map_err(|_| QuartzError::Internal)?,
+        None => cookie_jar.write().map_err(|_| QuartzError::Internal)?,
     };
 
     let mut bytes = Bytes::new();
@@ -161,7 +173,7 @@ pub async fn cmd(ctx: &Ctx, mut args: Args) -> QuartzResult {
         }
     }
 
-    entry.message_raw(String::from_utf8(bytes.to_vec())?);
+    entry.message_raw(String::from_utf8(bytes.to_vec()).map_err(|_| QuartzError::Internal)?);
 
     let _ = stdout().write_all(&bytes).await;
     History::write(ctx, entry.build()?)?;

@@ -9,7 +9,7 @@ use crate::config::Config;
 use crate::endpoint::{Endpoint, EndpointHandle};
 use crate::env::Env;
 use crate::state::{State, StateField};
-use crate::QuartzResult;
+use crate::{QuartzError, QuartzResult};
 
 pub struct CtxArgs {
     pub from_handle: Option<String>,
@@ -34,7 +34,7 @@ impl Ctx {
             previous_handle: None,
         };
 
-        let mut path = std::env::current_dir()?;
+        let mut path = std::env::current_dir().map_err(|_| QuartzError::Internal)?;
         loop {
             if path.join(".quartz").exists() {
                 break;
@@ -172,10 +172,10 @@ impl Ctx {
         }
 
         if !path.exists() {
-            std::fs::File::create(path)?;
+            std::fs::File::create(path).map_err(|_| QuartzError::Internal)?;
         }
 
-        std::fs::copy(path, &temp_path)?;
+        std::fs::copy(path, &temp_path).map_err(|_| QuartzError::Internal)?;
 
         let editor = self.config.preferences.editor();
         let _ = std::process::Command::new(&editor)
@@ -185,14 +185,14 @@ impl Ctx {
                 panic!("failed to open editor: {}\n\n{}", editor, err);
             });
 
-        let content = std::fs::read_to_string(&temp_path)?;
+        let content = std::fs::read_to_string(&temp_path).map_err(|_| QuartzError::Internal)?;
 
         if let Err(err) = validate(&content) {
-            std::fs::remove_file(&temp_path)?;
+            std::fs::remove_file(&temp_path).map_err(|_| QuartzError::Internal)?;
             panic!("{}", err);
         }
 
-        std::fs::rename(&temp_path, path)?;
+        std::fs::rename(&temp_path, path).map_err(|_| QuartzError::Internal)?;
         Ok(())
     }
 
@@ -207,8 +207,13 @@ impl Ctx {
                 panic!("failed to open pager: {}\n\n{}", pager, err);
             });
 
-        child.stdin.as_mut().unwrap().write_all(input)?;
-        child.wait()?;
+        child
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(input)
+            .map_err(|_| QuartzError::Internal)?;
+        child.wait().map_err(|_| QuartzError::Internal)?;
 
         Ok(())
     }

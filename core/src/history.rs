@@ -1,4 +1,4 @@
-use crate::{snippet, ctx::Ctx, QuartzError, QuartzResult};
+use crate::{QuartzError, QuartzResult, ctx::Ctx, snippet};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -28,15 +28,17 @@ pub struct History {
 
 impl History {
     pub fn new(ctx: &Ctx) -> QuartzResult<Self> {
-        let paths = std::fs::read_dir(Self::dir(ctx))?;
+        let paths = std::fs::read_dir(Self::dir(ctx)).map_err(|_| QuartzError::Internal)?;
         let mut timestemps: Vec<i64> = Vec::new();
 
         for path in paths {
-            let timestemp = path?
+            let timestemp = path
+                .map_err(|_| QuartzError::Internal)?
                 .file_name()
                 .to_str()
                 .ok_or(QuartzError::Internal)?
-                .parse::<i64>()?;
+                .parse::<i64>()
+                .map_err(|_| QuartzError::Internal)?;
 
             timestemps.push(timestemp);
         }
@@ -71,13 +73,15 @@ impl History {
     }
 
     pub fn write(ctx: &Ctx, entry: Entry) -> QuartzResult {
-        let content = toml::to_string(&entry)?;
+        let content = toml::to_string(&entry).map_err(|_| QuartzError::Internal)?;
 
         std::fs::OpenOptions::new()
             .create(true)
             .write(true)
-            .open(History::dir(ctx).join(entry.timestemp.to_string()))?
-            .write_all(content.as_bytes())?;
+            .open(History::dir(ctx).join(entry.timestemp.to_string()))
+            .map_err(|_| QuartzError::Internal)?
+            .write_all(content.as_bytes())
+            .map_err(|_| QuartzError::Internal)?;
 
         Ok(())
     }
@@ -111,7 +115,7 @@ impl EntryBuilder {
         self
     }
 
-    pub fn build(self) -> QuartzResult<Entry, QuartzError> {
+    pub fn build(self) -> QuartzResult<Entry> {
         let handle = self.handle.ok_or(QuartzError::Internal)?;
 
         if self.timestemp == 0 || self.messages.is_empty() {
@@ -140,9 +144,9 @@ impl Entry {
     }
 
     pub fn read(path: &Path) -> QuartzResult<Self> {
-        let content = std::fs::read_to_string(path)?;
+        let content = std::fs::read_to_string(path).map_err(|_| QuartzError::Internal)?;
 
-        Ok(toml::from_str(&content)?)
+        Ok(toml::from_str(&content).map_err(|_| QuartzError::Internal)?)
     }
 }
 

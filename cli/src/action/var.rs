@@ -1,5 +1,5 @@
 use crate::{cli::VarCmd as Cmd};
-use quartz_core::{env::Variables, ctx::Ctx, PairMap, QuartzResult};
+use quartz_core::{ctx::Ctx, env::Variables, PairMap, QuartzError, QuartzResult};
 use std::process::ExitCode;
 
 #[derive(clap::Args, Debug)]
@@ -47,7 +47,7 @@ pub fn set(ctx: &Ctx, args: SetArgs) -> QuartzResult {
         env.variables.set(&input);
     }
 
-    env.update(ctx)?;
+    env.update(ctx).map_err(|_| QuartzError::Internal)?;
     Ok(())
 }
 
@@ -77,6 +77,6 @@ pub fn rm(ctx: &mut Ctx, args: RmArgs) -> QuartzResult {
         });
     }
 
-    env.update(ctx)?;
+    env.update(ctx).map_err(|_| QuartzError::Internal)?;
     Ok(())
 }

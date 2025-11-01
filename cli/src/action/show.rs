@@ -1,5 +1,5 @@
 use crate::{action, cli::ShowCmd as Cmd};
-use quartz_core::{ctx::Ctx, QuartzResult, state::StateField};
+use quartz_core::{ctx::Ctx, state::StateField, QuartzError, QuartzResult};
 
 pub fn cmd(ctx: &Ctx, command: Cmd) -> QuartzResult {
     match command {
@@ -49,6 +49,6 @@ pub fn handle(ctx: &Ctx) {
 pub fn endpoint(ctx: &Ctx) -> QuartzResult {
     let (_, endpoint) = ctx.require_endpoint();
 
-    println!("{}", endpoint.to_toml()?);
+    println!("{}", endpoint.to_toml().map_err(|_| QuartzError::Internal)?);
     Ok(())
 }

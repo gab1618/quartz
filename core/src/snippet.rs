@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::{Endpoint, QuartzResult};
+use crate::{Endpoint, QuartzError, QuartzResult};
 use hyper::{Body, Request, Response};
 
 enum CurlOption {
@@ -159,7 +159,7 @@ impl From<&Request<Body>> for Http {
 
 impl Http {
     pub fn print(endpoint: &mut Endpoint) -> QuartzResult {
-        let url = endpoint.full_url()?;
+        let url = endpoint.full_url().map_err(|_| QuartzError::Internal)?;
         let path = url.path_and_query().unwrap();
 
         println!("{} {} HTTP/1.1", endpoint.method, path.as_str());

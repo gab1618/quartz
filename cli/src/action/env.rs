@@ -6,7 +6,7 @@ use crate::{
     cli::{EnvCmd as Cmd, HeaderCmd},
 };
 use colored::Colorize;
-use quartz_core::{PairMap, QuartzResult, env::Env, state::StateField};
+use quartz_core::{PairMap, QuartzError, QuartzResult, env::Env, state::StateField};
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {
@@ -70,9 +70,9 @@ pub fn cp(ctx: &Ctx, args: CpArgs) -> QuartzResult {
     }
 
     if dest.exists(ctx) {
-        dest.update(ctx)?;
+        dest.update(ctx).map_err(|_| QuartzError::Internal)?;
     } else {
-        dest.write(ctx)?;
+        dest.write(ctx).map_err(|_| QuartzError::Internal)?;
     }
 
     Ok(())
@@ -152,7 +152,7 @@ pub fn header_set(ctx: &Ctx, args: Vec<String>) -> QuartzResult {
     for header in args {
         env.headers.set(&header);
     }
-    env.update(ctx)?;
+    env.update(ctx).map_err(|_| QuartzError::Internal)?;
     Ok(())
 }
 pub fn header_ls(ctx: &Ctx) -> QuartzResult {
@@ -164,7 +164,7 @@ pub fn header_rm(ctx: &Ctx, keys: Vec<String>) -> QuartzResult {
     for key in keys {
         let mut env = ctx.require_env();
         env.headers.remove(&key);
-        env.update(ctx)?;
+        env.update(ctx).map_err(|_| QuartzError::Internal)?;
     }
     Ok(())
 }

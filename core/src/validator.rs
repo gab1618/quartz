@@ -1,7 +1,7 @@
 use serde_json;
 use toml::Value as TomlValue;
 
-use crate::QuartzResult;
+use crate::{QuartzError, QuartzResult};
 
 /// Validator for files that don't have to do any checks. It is
 /// garanteed to return [`Ok`].
@@ -49,7 +49,7 @@ pub fn infallible(_input: &str) -> QuartzResult {
 /// assert!(validator::json(input).is_err());
 /// ```
 pub fn json(input: &str) -> QuartzResult {
-    serde_json::from_str::<serde_json::Value>(input)?;
+    serde_json::from_str::<serde_json::Value>(input).map_err(|_| QuartzError::Internal)?;
 
     Ok(())
 }
@@ -116,7 +116,7 @@ pub fn toml_as<T>(input: &str) -> QuartzResult
 where
     T: serde::de::DeserializeOwned,
 {
-    toml::from_str::<T>(input)?;
+    toml::from_str::<T>(input).map_err(|_| QuartzError::Internal)?;
 
     Ok(())
 }
