@@ -13,20 +13,32 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 use std::hash::Hash;
+use std::io::Write;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use endpoint::Endpoint;
+
+use crate::ctx::Ctx;
 
 pub type QuartzResult<T = (), E = Box<dyn std::error::Error>> = Result<T, E>;
 
 #[derive(Debug)]
 pub enum QuartzError {
     Internal,
+    Init,
+    AlreadyInitialized,
+    Setup,
 }
 
 impl Display for QuartzError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use QuartzError::*;
         match self {
-            QuartzError::Internal => writeln!(f, "internal failure"),
+            Internal => writeln!(f, "internal failure"),
+            Init => writeln!(f, "Failed to initialize quartz"),
+            AlreadyInitialized => writeln!(f, "Quartz already initialized"),
+            Setup => writeln!(f, "Failed to setup"),
         }
     }
 }
@@ -58,5 +70,51 @@ where
             .unwrap_or_else(|| panic!("malformed {}. Expected {}", Self::NAME, Self::EXPECTED));
 
         self.map().insert(key, value);
+    }
+}
+
+pub struct Quartz {
+    ctx: Ctx,
+}
+
+impl Quartz {
+    pub fn init(path: &PathBuf) -> Result<(), QuartzError> {
+        let quartz_dir = path.join(".quartz");
+
+        // TODO: properly propagate these errors for better diagnostics context
+        if quartz_dir.exists() {
+            return Err(QuartzError::AlreadyInitialized);
+        }
+
+        std::fs::create_dir(&quartz_dir).map_err(|_| QuartzError::Init)?;
+
+        let ensure_dirs = vec![
+            "endpoints",
+            "user",
+            "user/history",
+            "user/state",
+            "env",
+            "env/default",
+        ];
+
+        for dir in ensure_dirs {
+            std::fs::create_dir(
+                quartz_dir.join(PathBuf::from_str(dir).map_err(|_| QuartzError::Setup)?),
+            )
+            .map_err(|_| QuartzError::Setup)?;
+        }
+
+        if path.join(".git").exists() {
+            if let Ok(mut gitignore) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path.join(".gitignore"))
+            {
+                let _ =
+                    gitignore.write("\n# Quartz\n.quartz/user\n.quartz/env/**/cookies".as_bytes());
+            }
+        }
+
+        Ok(())
     }
 }
