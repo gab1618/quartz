@@ -1,5 +1,5 @@
 use crate::{action, cli::ShowCmd as Cmd};
-use quartz_core::{ctx::Ctx, state::StateField, QuartzError, QuartzResult};
+use quartz_core::{QuartzError, QuartzResult, ctx::Ctx, state::StateField};
 
 pub fn cmd(ctx: &Ctx, command: Cmd) -> QuartzResult {
     match command {
@@ -21,7 +21,10 @@ pub fn cmd(ctx: &Ctx, command: Cmd) -> QuartzResult {
         Cmd::Method => method(ctx),
         Cmd::Body => action::body::print(ctx),
         Cmd::Handle => handle(ctx),
-        Cmd::Env => todo!(),
+        Cmd::Env => {
+            let curr_env = ctx.require_env();
+            println!("{}", curr_env.name);
+        }
         Cmd::Cookies(args) => action::cookie::print(ctx, args),
         Cmd::Endpoint => endpoint(ctx)?,
         Cmd::Snippet(args) => action::snippet::cmd(ctx, args)?,
