@@ -140,7 +140,7 @@ pub enum HeaderCmd {
     Get { key: String },
 
     /// Add new or existent header. Expects "key: value" format
-    Set { header: Vec<String> },
+    Set { header: String },
 
     /// Remove a header
     #[command(name = "rm", alias = "remove")]

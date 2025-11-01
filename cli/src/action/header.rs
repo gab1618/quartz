@@ -1,4 +1,4 @@
-use crate::{cli::HeaderCmd as Cmd};
+use crate::cli::HeaderCmd as Cmd;
 use quartz_core::{PairMap, QuartzResult, ctx::Ctx};
 
 use std::process::ExitCode;
@@ -23,13 +23,9 @@ pub fn get(ctx: &Ctx, key: String) -> QuartzResult {
     Ok(())
 }
 
-pub fn set(ctx: &Ctx, headers: Vec<String>) -> QuartzResult {
+pub fn set(ctx: &Ctx, header: String) -> QuartzResult {
     let (_, mut endpoint) = ctx.require_endpoint();
-
-    for input in headers {
-        endpoint.headers.set(&input);
-    }
-
+    endpoint.headers.set(&header)?;
     endpoint.write();
     Ok(())
 }

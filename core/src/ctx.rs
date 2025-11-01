@@ -27,20 +27,19 @@ pub struct Ctx {
 impl Ctx {
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-    pub fn new(args: CtxArgs) -> QuartzResult<Self> {
+    pub fn new(mut dir: PathBuf, args: CtxArgs) -> QuartzResult<Self> {
         let config = Config::parse();
         let state = State {
             handle: args.from_handle.clone(),
             previous_handle: None,
         };
 
-        let mut path = std::env::current_dir().map_err(|_| QuartzError::Internal)?;
         loop {
-            if path.join(".quartz").exists() {
+            if dir.join(".quartz").exists() {
                 break;
             }
 
-            if !path.pop() {
+            if !dir.pop() {
                 panic!("could not find a quartz project");
             }
         }
@@ -49,7 +48,7 @@ impl Ctx {
             args,
             config,
             state,
-            path: path.join(".quartz"),
+            path: dir.join(".quartz"),
             code: ExitCode::default(),
         })
     }

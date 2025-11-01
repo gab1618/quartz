@@ -14,38 +14,6 @@ fn it_adds_new_header() -> TestResult {
 }
 
 #[test]
-fn it_adds_multiple_new_header() -> TestResult {
-    let quartz = Quartz::preset_using_sample_endpoint()?;
-
-    let sample_headers = vec![
-        "Content-type: application/json",
-        "Accept: application/json",
-        "X-API-key: myexample",
-    ];
-
-    let headers_add_output = quartz.cmd(&[
-        "header",
-        "set",
-        sample_headers[0],
-        sample_headers[1],
-        sample_headers[2],
-    ])?;
-    let output = quartz.cmd(&["header", "ls"])?;
-
-    assert!(
-        headers_add_output.status.success(),
-        "{}",
-        headers_add_output.stdout
-    );
-
-    for header in sample_headers {
-        assert!(output.stdout.contains(header));
-    }
-
-    Ok(())
-}
-
-#[test]
 fn it_overwrites_existing_headers() -> TestResult {
     let quartz = Quartz::preset_using_sample_endpoint()?;
 
@@ -77,12 +45,9 @@ fn it_overwrites_existing_headers() -> TestResult {
 fn it_removes_header_by_key() -> TestResult {
     let quartz = Quartz::preset_using_sample_endpoint()?;
 
-    quartz.cmd(&[
-        "header",
-        "set",
-        "Content-type: application/json",
-        "Accept: form",
-    ])?;
+    quartz.cmd(&["header", "set", "Content-type: application/json"])?;
+
+    quartz.cmd(&["header", "set", "Accept: form"])?;
 
     let remove_output = quartz.cmd(&["header", "rm", "Content-type"])?;
     assert!(remove_output.status.success(), "{}", remove_output.stderr);

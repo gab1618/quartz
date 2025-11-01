@@ -21,7 +21,7 @@ pub fn cmd(ctx: &Ctx, command: Cmd) -> QuartzResult {
         Cmd::Method => method(ctx),
         Cmd::Body => action::body::print(ctx),
         Cmd::Handle => handle(ctx),
-        Cmd::Env => action::env::print(ctx),
+        Cmd::Env => todo!(),
         Cmd::Cookies(args) => action::cookie::print(ctx, args),
         Cmd::Endpoint => endpoint(ctx)?,
         Cmd::Snippet(args) => action::snippet::cmd(ctx, args)?,

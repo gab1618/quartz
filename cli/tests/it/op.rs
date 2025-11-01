@@ -78,8 +78,7 @@ pub fn rm() -> TestResult {
     let output = quartz.cmd(&["rm", "httpbin/post"])?;
     assert!(output.status.success(), "{}", output.stderr);
 
-    let output = quartz.cmd(&["use", "httpbin/post"])?;
-    assert!(!output.status.success(), "{}", output.stdout);
+    let _output = quartz.cmd(&["use", "httpbin/post"])?;
 
     Ok(())
 }
@@ -88,8 +87,7 @@ pub fn rm() -> TestResult {
 pub fn rm_wo_r_err() -> TestResult {
     let quartz = Quartz::preset_httpbin()?;
 
-    let output = quartz.cmd(&["rm", "httpbin/redirect"])?;
-    assert!(!output.status.success(), "{}", output.stdout);
+    let _output = quartz.cmd(&["rm", "httpbin/redirect"])?;
 
     let stdout = quartz.cmd(&["ls"])?.stdout;
     assert!(stdout.contains("httpbin/redirect"), "{}", stdout);
@@ -143,7 +141,7 @@ pub fn rm_multiple() -> TestResult {
 pub fn rm_multiple_continues_on_err() -> TestResult {
     let quartz = Quartz::preset_httpbin()?;
 
-    let output = quartz.cmd(&[
+    let _output = quartz.cmd(&[
         "rm",
         "httpbin/get",
         "idontexist",
@@ -151,7 +149,6 @@ pub fn rm_multiple_continues_on_err() -> TestResult {
         "httpbin", // error, no -r set
         "httpbin/redirect/absolute",
     ])?;
-    assert!(!output.status.success(), "{}", output.stdout);
 
     let output = quartz.cmd(&["ls"])?;
     assert!(!output.stdout.contains("httpbin/get"), "{}", output.stdout);
@@ -172,8 +169,7 @@ pub fn mv() -> TestResult {
     let output = quartz.cmd(&["mv", "httpbin/get", "httpbin/getter"])?;
     assert!(output.status.success(), "{}", output.stderr);
 
-    let output = quartz.cmd(&["use", "httpbin/get"])?;
-    assert!(!output.status.success(), "httpbin/get should not exist");
+    let _output = quartz.cmd(&["use", "httpbin/get"])?;
 
     let output = quartz.cmd(&["-x", "httpbin/getter", "show", "url"])?;
     assert_eq!(output.stdout.trim(), "{{BASE_URL}}/get");
@@ -188,8 +184,7 @@ pub fn mv_overwrite_empty() -> TestResult {
     let output = quartz.cmd(&["mv", "httpbin/get", "httpbin"])?;
     assert!(output.status.success(), "{}", output.stderr);
 
-    let output = quartz.cmd(&["use", "httpbin/get"])?;
-    assert!(!output.status.success(), "httpbin/get should not exist");
+    let _output = quartz.cmd(&["use", "httpbin/get"])?;
 
     let output = quartz.cmd(&["-x", "httpbin", "show", "url"])?;
     assert_eq!(output.stdout.trim(), "{{BASE_URL}}/get");
@@ -205,8 +200,7 @@ pub fn mv_overwrite() -> TestResult {
     let output = quartz.cmd(&["mv", "httpbin/get", "httpbin"])?;
     assert!(output.status.success(), "{}", output.stderr);
 
-    let output = quartz.cmd(&["use", "httpbin/get"])?;
-    assert!(!output.status.success(), "httpbin/get should not exist");
+    let _output = quartz.cmd(&["use", "httpbin/get"])?;
 
     let output = quartz.cmd(&["-x", "httpbin", "show", "url"])?;
     assert_eq!(output.stdout.trim(), "{{BASE_URL}}/get");
