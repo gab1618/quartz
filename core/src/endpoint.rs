@@ -55,7 +55,7 @@ impl Headers {
     pub fn parse(file_content: &str) -> Self {
         let mut headers = Headers::default();
         for header in file_content.lines().filter(|line| !line.is_empty()) {
-            headers.set(header);
+            headers.set(header).unwrap();
         }
         headers
     }
@@ -361,15 +361,15 @@ impl Endpoint {
         }
 
         for input in &src.query {
-            self.query.set(input);
+            self.query.set(input).unwrap();
         }
 
         for input in &src.headers {
-            self.headers.set(input);
+            self.headers.set(input).unwrap();
         }
 
         for input in &src.query {
-            self.query.set(input);
+            self.query.set(input).unwrap();
         }
 
         if let Some(data) = &src.data {

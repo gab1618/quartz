@@ -41,7 +41,7 @@ pub async fn cmd(ctx: &Ctx, mut args: Args) -> QuartzResult {
     let (handle, mut endpoint) = ctx.require_endpoint();
     let mut env = ctx.require_env();
     for var in args.variables {
-        env.variables.set(&var);
+        env.variables.set(&var)?;
     }
 
     if !endpoint.headers.contains_key("user-agent") {

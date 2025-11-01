@@ -44,7 +44,7 @@ pub fn get(ctx: &Ctx, args: GetArgs) {
 pub fn set(ctx: &Ctx, args: SetArgs) -> QuartzResult {
     let mut env = ctx.require_env();
     for input in args.variables {
-        env.variables.set(&input);
+        env.variables.set(&input)?;
     }
 
     env.update(ctx).map_err(|_| QuartzError::Internal)?;

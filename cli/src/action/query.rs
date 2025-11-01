@@ -46,7 +46,7 @@ pub fn set(ctx: &Ctx, queries: Vec<String>) {
     let (_, mut endpoint) = ctx.require_endpoint();
 
     for input in queries {
-        endpoint.query.set(&input);
+        endpoint.query.set(&input).unwrap();
     }
 
     endpoint.write();

@@ -19,7 +19,7 @@ pub fn cmd(ctx: &Ctx, mut args: Args) -> QuartzResult {
     let mut env = ctx.require_env();
 
     for var in args.variables {
-        env.variables.set(&var);
+        env.variables.set(&var)?;
     }
 
     endpoint.update(&mut args.patch);

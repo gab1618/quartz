@@ -50,7 +50,7 @@ impl Variables {
         let mut variables = Variables::default();
 
         for var in file_content.split('\n').filter(|line| !line.is_empty()) {
-            variables.set(var);
+            variables.set(var).unwrap();
         }
 
         variables
