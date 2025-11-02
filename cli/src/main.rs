@@ -32,8 +32,11 @@ async fn main() -> QuartzResult {
         return Ok(());
     }
 
+    let home_dir = std::env::home_dir().unwrap();
+
     let ctx = Ctx::new(
         std::env::current_dir().unwrap(),
+        home_dir,
         CtxArgs {
             from_handle: args.from_handle,
             early_apply_environment: args.apply_environment,
@@ -41,7 +44,7 @@ async fn main() -> QuartzResult {
     )?;
 
     // When true, ensures pagers and/or grep keeps the output colored
-    colored::control::set_override(ctx.config.ui.colors());
+    colored::control::set_override(ctx.config.parse().ui.colors());
 
     action::cmd(ctx, args.command).await?;
 

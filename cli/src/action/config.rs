@@ -12,7 +12,7 @@ pub struct SetArgs {
     value: String,
 }
 
-pub fn cmd(mut quartz: Quartz, command: Cmd) -> QuartzResult {
+pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Get(args) => {
             let config = quartz.config_get(&args.key)?;

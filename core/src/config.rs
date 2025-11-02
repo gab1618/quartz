@@ -1,6 +1,26 @@
 use serde::{Deserialize, Serialize};
 use std::{fs::OpenOptions, io::Write, path::PathBuf};
 
+use crate::{QuartzError, QuartzResult};
+
+pub struct ConfigManager {
+    mount_path: PathBuf,
+}
+
+impl ConfigManager {
+    pub fn new(mount_path: PathBuf) -> Self {
+        Self { mount_path }
+    }
+    pub fn parse(&self) -> Config {
+        let parsed = Config::parse(self.mount_path.clone());
+        parsed
+    }
+    pub fn save(&self, mut conf: Config) {
+        let save_filepath = Config::filepath(self.mount_path.clone());
+        conf.write(save_filepath).unwrap();
+    }
+}
+
 #[derive(Default, Serialize, Deserialize)]
 pub struct Config {
     pub preferences: Preferences,
@@ -12,18 +32,12 @@ impl Config {
         ".quartz.toml".to_string()
     }
 
-    pub fn filepath() -> PathBuf {
-        let home = std::env::var("HOME").unwrap();
-        let mut path = PathBuf::new();
-
-        path.push(home);
-        path.push(Config::filename());
-
-        path
+    pub fn filepath(mount_path: PathBuf) -> PathBuf {
+        mount_path.join(Self::filename())
     }
 
-    pub fn parse() -> Self {
-        let filepath = Config::filepath();
+    pub fn parse(mount_path: PathBuf) -> Self {
+        let filepath = Config::filepath(mount_path);
 
         if let Ok(config_toml) = std::fs::read_to_string(filepath) {
             return toml::from_str::<Config>(&config_toml).unwrap_or_default();
@@ -32,16 +46,23 @@ impl Config {
         Config::default()
     }
 
-    pub fn write(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let content = toml::to_string(self)?;
+    pub fn write(&mut self, file_path: PathBuf) -> QuartzResult {
+        let content = toml::to_string(self).map_err(|_| QuartzError::Internal)?;
+
+        if !file_path.exists() {
+            let parent_path = file_path.parent().ok_or(QuartzError::Internal)?;
+            std::fs::create_dir_all(parent_path).map_err(|_| QuartzError::Internal)?;
+        }
 
         let mut file = OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(Self::filepath())?;
+            .open(file_path)
+            .map_err(|_| QuartzError::Internal)?;
 
-        file.write_all(content.as_bytes())?;
+        file.write_all(content.as_bytes())
+            .map_err(|_| QuartzError::Internal)?;
 
         Ok(())
     }

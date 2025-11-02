@@ -89,7 +89,7 @@ impl Quartz {
     pub fn from_ctx(ctx: Ctx) -> Self {
         Self { ctx }
     }
-    pub fn init(path: &PathBuf) -> QuartzResult<Self> {
+    pub fn init(path: &PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
 
         // TODO: properly propagate these errors for better diagnostics context
@@ -128,6 +128,7 @@ impl Quartz {
 
         let curr_ctx = Ctx::new(
             path.clone(),
+            config_path,
             CtxArgs {
                 from_handle: None,
                 early_apply_environment: false,
@@ -267,25 +268,26 @@ impl Quartz {
         env.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
         Ok(())
     }
-    pub fn config_set(&mut self, key: &str, value: &str) -> QuartzResult {
+    pub fn config_set(&self, key: &str, value: &str) -> QuartzResult {
+        let mut curr_config = self.ctx.config.parse();
         match key {
-            "preferences.editor" => self.ctx.config.preferences.set_editor(value),
-            "preferences.pager" => self.ctx.config.preferences.set_pager(value),
-            "ui.colors" => self.ctx.config.ui.set_colors(matches!(value, "true")),
+            "preferences.editor" => curr_config.preferences.set_editor(value),
+            "preferences.pager" => curr_config.preferences.set_pager(value),
+            "ui.colors" => curr_config.ui.set_colors(matches!(value, "true")),
             _ => {
                 return Err(QuartzError::Internal);
             }
         };
 
-        self.ctx.config.write().map_err(|_| QuartzError::Internal)?;
+        self.ctx.config.save(curr_config);
 
         Ok(())
     }
     pub fn config_get(&self, key: &str) -> QuartzResult<String> {
         let value = match key {
-            "preferences.editor" => Some(self.ctx.config.preferences.editor()),
-            "preferences.pager" => Some(self.ctx.config.preferences.pager()),
-            "ui.colors" => Some(self.ctx.config.ui.colors().to_string()),
+            "preferences.editor" => Some(self.ctx.config.parse().preferences.editor()),
+            "preferences.pager" => Some(self.ctx.config.parse().preferences.pager()),
+            "ui.colors" => Some(self.ctx.config.parse().ui.colors().to_string()),
             _ => None,
         }
         .ok_or(QuartzError::Internal)?;
@@ -293,7 +295,7 @@ impl Quartz {
         Ok(value)
     }
     pub fn config_ls(&self) -> QuartzResult<String> {
-        let content = toml::to_string(&self.ctx.config).map_err(|_| QuartzError::Internal)?;
+        let content = toml::to_string(&self.ctx.config.parse()).map_err(|_| QuartzError::Internal)?;
 
         Ok(content)
     }

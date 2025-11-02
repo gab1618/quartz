@@ -5,7 +5,7 @@ use std::process::{ExitCode, Stdio};
 
 use colored::Colorize;
 
-use crate::config::Config;
+use crate::config::ConfigManager;
 use crate::endpoint::{Endpoint, EndpointHandle};
 use crate::env::Env;
 use crate::state::{State, StateField};
@@ -18,7 +18,7 @@ pub struct CtxArgs {
 
 pub struct Ctx {
     pub args: CtxArgs,
-    pub config: Config,
+    pub config: ConfigManager,
     pub state: State,
     path: PathBuf,
     code: ExitCode,
@@ -27,8 +27,8 @@ pub struct Ctx {
 impl Ctx {
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-    pub fn new(mut dir: PathBuf, args: CtxArgs) -> QuartzResult<Self> {
-        let config = Config::parse();
+    pub fn new(mut dir: PathBuf, config_path: PathBuf, args: CtxArgs) -> QuartzResult<Self> {
+        let config = ConfigManager::new(config_path);
         let state = State {
             handle: args.from_handle.clone(),
             previous_handle: None,
@@ -176,7 +176,7 @@ impl Ctx {
 
         std::fs::copy(path, &temp_path).map_err(|_| QuartzError::Internal)?;
 
-        let editor = self.config.preferences.editor();
+        let editor = self.config.parse().preferences.editor();
         let _ = std::process::Command::new(&editor)
             .arg(&temp_path)
             .status()
@@ -197,7 +197,7 @@ impl Ctx {
 
     /// Open user's preferred pager with content.
     pub fn paginate(&self, input: &[u8]) -> QuartzResult {
-        let pager = self.config.preferences.pager();
+        let pager = self.config.parse().preferences.pager();
 
         let mut child = std::process::Command::new(&pager)
             .stdin(Stdio::piped())
