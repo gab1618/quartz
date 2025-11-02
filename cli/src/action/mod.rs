@@ -30,7 +30,10 @@ pub async fn cmd(mut ctx: Ctx, command: Cmd) -> QuartzResult {
             let quartz = Quartz::from_ctx(ctx);
             quartz.handle_create(&args.handle, args.patch, args.switch)?;
         }
-        Cmd::Use(args) => action::handle::switch(&mut ctx, args),
+        Cmd::Use(args) => {
+            let quartz = Quartz::from_ctx(ctx);
+            quartz.handle_switch(args.handle, args.patch, args.empty)?;
+        },
         Cmd::Ls(args) => action::ls::cmd(&mut ctx, args),
         Cmd::Show { command } => action::show::cmd(&mut ctx, command)?,
         Cmd::Edit => action::handle::edit(&mut ctx)?,

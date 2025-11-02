@@ -24,7 +24,7 @@ use endpoint::Endpoint;
 
 use crate::{
     ctx::{Ctx, CtxArgs},
-    endpoint::{EndpointHandle},
+    endpoint::{EndpointHandle, EndpointPatch},
     env::{Env, Variables},
     state::StateField,
 };
@@ -84,6 +84,12 @@ where
 
 pub struct Quartz {
     pub ctx: Ctx,
+}
+
+pub struct SwitchArgs {
+    pub handle: Option<String>,
+    pub patch: EndpointPatch,
+    pub empty: bool,
 }
 
 impl Quartz {
@@ -332,16 +338,58 @@ impl Quartz {
         Ok(())
     }
 
-    pub fn switch_handle(&self, handle: &str) -> QuartzResult {
-        let current_handle = StateField::Endpoint.get(&self.ctx)?;
-        if handle == "-" {
-            let prev_handle = StateField::PreviousEndpoint.get(&self.ctx)?;
-            StateField::Endpoint.set(&self.ctx, &prev_handle)?;
+    pub fn handle_switch(
+        &self,
+        handle: Option<String>,
+        mut patch: EndpointPatch,
+        empty: bool,
+    ) -> QuartzResult {
+        let handle = if let Some(mut handle) = handle {
+            if handle == "-" {
+                if let Ok(previous_handle) = StateField::PreviousEndpoint.get(&self.ctx) {
+                    handle = previous_handle;
+                } else {
+                    return Err(QuartzError::Internal);
+                }
+            }
+
+            let handle = EndpointHandle::from(handle);
+
+            if !handle.exists(&self.ctx) {
+                return Err(QuartzError::Internal);
+            }
+
+            let previous = StateField::Endpoint.get(&self.ctx);
+            if StateField::Endpoint
+                .set(&self.ctx, &handle.path.join("/"))
+                .is_ok()
+            {
+                if let Ok(prev) = previous {
+                    let _ = StateField::PreviousEndpoint.set(&self.ctx, &prev);
+                }
+            } else {
+                return Err(QuartzError::Internal);
+            }
+
+            handle
         } else {
-            StateField::Endpoint.set(&self.ctx, handle)?;
+            self.ctx.require_handle()
+        };
+
+        if empty {
+            handle.make_empty(&self.ctx);
         }
 
-        StateField::PreviousEndpoint.set(&self.ctx, &current_handle)?;
+        if !patch.has_changes() {
+            return Ok(());
+        }
+
+        let mut endpoint = handle
+            .endpoint(&self.ctx)
+            .unwrap_or(Endpoint::new(handle.dir(&self.ctx)));
+
+        endpoint.update(&mut patch);
+        endpoint.write();
 
         Ok(())
     }

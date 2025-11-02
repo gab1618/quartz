@@ -1,12 +1,10 @@
 use std::collections::VecDeque;
 use std::process::ExitCode;
 
-use colored::Colorize;
 use quartz_core::{
     QuartzResult,
     ctx::Ctx,
     endpoint::{Endpoint, EndpointHandle, EndpointPatch},
-    state::StateField,
     validator,
 };
 
@@ -58,97 +56,6 @@ pub struct RmArgs {
     /// Handles to be removed
     #[arg(name = "HANDLE", required = true)]
     handles: Vec<String>,
-}
-
-pub fn create(ctx: &Ctx, mut args: CreateArgs) {
-    if args.handle.is_empty() {
-        panic!("missing endpoint handle");
-    }
-
-    let handle = EndpointHandle::from(args.handle);
-
-    if handle.exists(ctx) {
-        panic!("endpoint already exists");
-    }
-
-    let mut endpoint = Endpoint::from(&mut args.patch);
-    endpoint.set_handle(ctx, &handle);
-
-    if args.switch {
-        if let Ok(()) = StateField::Endpoint.set(ctx, &handle.path.join("/")) {
-            println!("Switched to {} endpoint", handle.handle().green());
-        } else {
-            panic!("failed to switch to {} endpoint", handle.handle().red());
-        }
-    }
-
-    handle.write(ctx);
-    endpoint.write();
-}
-
-pub fn switch(ctx: &mut Ctx, mut args: SwitchArgs) {
-    let handle = if let Some(mut handle) = args.handle {
-        if handle == "-" {
-            if let Ok(previous_handle) = StateField::PreviousEndpoint.get(ctx) {
-                handle = previous_handle;
-            } else {
-                panic!("no previous handle");
-            }
-        }
-
-        let handle = EndpointHandle::from(handle);
-
-        if !handle.exists(ctx) {
-            eprintln!("Handle {} doesn't exist", handle.handle().red(),);
-
-            if ctx.confirm("Do you wish to create it?") {
-                return create(
-                    ctx,
-                    CreateArgs {
-                        handle: handle.handle(),
-                        patch: args.patch,
-                        switch: true,
-                    },
-                );
-            } else {
-                ctx.code(ExitCode::FAILURE);
-                return;
-            }
-        }
-
-        let previous = StateField::Endpoint.get(ctx);
-        if StateField::Endpoint
-            .set(ctx, &handle.path.join("/"))
-            .is_ok()
-        {
-            if let Ok(prev) = previous {
-                let _ = StateField::PreviousEndpoint.set(ctx, &prev);
-            }
-
-            println!("Switched to {} endpoint", handle.handle().green());
-        } else {
-            panic!("failed to switch to {} endpoint", handle.handle().red());
-        }
-
-        handle
-    } else {
-        ctx.require_handle()
-    };
-
-    if args.empty {
-        handle.make_empty(ctx);
-    }
-
-    if !args.patch.has_changes() {
-        return;
-    }
-
-    let mut endpoint = handle
-        .endpoint(ctx)
-        .unwrap_or(Endpoint::new(handle.dir(ctx)));
-
-    endpoint.update(&mut args.patch);
-    endpoint.write();
 }
 
 pub fn cp(ctx: &Ctx, args: CpArgs) -> QuartzResult {
