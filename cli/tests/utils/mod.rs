@@ -125,14 +125,6 @@ impl Quartz {
         Ok(quartz)
     }
 
-    pub fn preset_using_default_env() -> Result<Self, std::io::Error> {
-        let quartz = Quartz::preset_empty_project()?;
-
-        quartz.cmd(&["env", "use", "default"])?;
-
-        Ok(quartz)
-    }
-
     pub fn cmd<S>(&self, args: &[S]) -> Result<QuartzOutput, std::io::Error>
     where
         S: AsRef<OsStr>,
