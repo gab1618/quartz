@@ -1,5 +1,5 @@
-use crate::{cli::ConfigCmd as Cmd};
-use quartz_core::{validator, config::Config, QuartzResult, ctx::Ctx};
+use crate::cli::ConfigCmd as Cmd;
+use quartz_core::{Quartz, QuartzResult};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
@@ -12,53 +12,21 @@ pub struct SetArgs {
     value: String,
 }
 
-pub fn cmd(ctx: &mut Ctx, command: Cmd) -> QuartzResult {
+pub fn cmd(mut quartz: Quartz, command: Cmd) -> QuartzResult {
     match command {
-        Cmd::Get(args) => get(ctx, args),
-        Cmd::Edit => edit(ctx)?,
-        Cmd::Set(args) => set(ctx, args),
-        Cmd::Ls => ls(ctx),
+        Cmd::Get(args) => {
+            let config = quartz.config_get(&args.key)?;
+            println!("{config}");
+        }
+        Cmd::Edit => todo!(),
+        Cmd::Set(args) => {
+            quartz.config_set(&args.key, &args.value)?;
+        }
+        Cmd::Ls => {
+            let configs = quartz.config_ls()?;
+            println!("{configs}");
+        }
     };
 
     Ok(())
-}
-
-pub fn get(ctx: &Ctx, args: GetArgs) {
-    let value = match args.key.as_str() {
-        "preferences.editor" => ctx.config.preferences.editor(),
-        "preferences.pager" => ctx.config.preferences.pager(),
-        "ui.colors" => ctx.config.ui.colors().to_string(),
-        _ => panic!("invalid key"),
-    };
-
-    println!("{value}");
-}
-
-pub fn edit(ctx: &Ctx) -> QuartzResult {
-    ctx.edit(&Config::filepath(), validator::toml_as::<Config>)?;
-
-    Ok(())
-}
-
-pub fn set(ctx: &mut Ctx, args: SetArgs) {
-    match args.key.as_str() {
-        "preferences.editor" => ctx.config.preferences.set_editor(args.value),
-        "preferences.pager" => ctx.config.preferences.set_pager(args.value),
-        "ui.colors" => ctx
-            .config
-            .ui
-            .set_colors(matches!(args.value.as_str(), "true")),
-        _ => panic!("invalid key"),
-    };
-
-    if ctx.config.write().is_err() {
-        panic!("failed to save config change");
-    }
-}
-
-pub fn ls(ctx: &Ctx) {
-    let content = toml::to_string(&ctx.config)
-        .unwrap_or_else(|_| panic!("could not parse configuration file"));
-
-    println!("{content}");
 }

@@ -44,12 +44,15 @@ pub async fn cmd(mut ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Var { command } => {
             let quartz = Quartz::from_ctx(ctx);
             action::var::cmd(quartz, command)?
-        },
+        }
         Cmd::Env { command } => {
             let quartz = Quartz::from_ctx(ctx);
             action::env::cmd(quartz, command)?
-        },
-        Cmd::Config { command } => action::config::cmd(&mut ctx, command)?,
+        }
+        Cmd::Config { command } => {
+            let quartz = Quartz::from_ctx(ctx);
+            action::config::cmd(quartz, command)?
+        }
     };
 
     Ok(())

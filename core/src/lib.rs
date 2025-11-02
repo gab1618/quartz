@@ -267,4 +267,34 @@ impl Quartz {
         env.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
         Ok(())
     }
+    pub fn config_set(&mut self, key: &str, value: &str) -> QuartzResult {
+        match key {
+            "preferences.editor" => self.ctx.config.preferences.set_editor(value),
+            "preferences.pager" => self.ctx.config.preferences.set_pager(value),
+            "ui.colors" => self.ctx.config.ui.set_colors(matches!(value, "true")),
+            _ => {
+                return Err(QuartzError::Internal);
+            }
+        };
+
+        self.ctx.config.write().map_err(|_| QuartzError::Internal)?;
+
+        Ok(())
+    }
+    pub fn config_get(&self, key: &str) -> QuartzResult<String> {
+        let value = match key {
+            "preferences.editor" => Some(self.ctx.config.preferences.editor()),
+            "preferences.pager" => Some(self.ctx.config.preferences.pager()),
+            "ui.colors" => Some(self.ctx.config.ui.colors().to_string()),
+            _ => None,
+        }
+        .ok_or(QuartzError::Internal)?;
+
+        Ok(value)
+    }
+    pub fn config_ls(&self) -> QuartzResult<String> {
+        let content = toml::to_string(&self.ctx.config).map_err(|_| QuartzError::Internal)?;
+
+        Ok(content)
+    }
 }
