@@ -24,7 +24,7 @@ use endpoint::Endpoint;
 
 use crate::{
     ctx::{Ctx, CtxArgs},
-    env::Env,
+    env::{Env, Variables},
     state::StateField,
 };
 
@@ -82,7 +82,7 @@ where
 }
 
 pub struct Quartz {
-    ctx: Ctx,
+    pub ctx: Ctx,
 }
 
 impl Quartz {
@@ -231,5 +231,40 @@ impl Quartz {
             .ok_or(QuartzError::Internal)?
             .to_owned();
         Ok(value)
+    }
+    pub fn var_set(&self, var: &str) -> QuartzResult {
+        let mut curr_env = self.current_env();
+
+        curr_env.variables.set(var)?;
+        curr_env.update(&self.ctx)?;
+
+        Ok(())
+    }
+    pub fn var_get(&self, name: &str) -> Option<String> {
+        let curr_env = self.current_env();
+
+        let v = curr_env
+            .variables
+            .get(name)
+            .map(|inner| inner.to_owned())
+            .to_owned();
+
+        v
+    }
+    pub fn vars_get(&self) -> Variables {
+        let curr_env = self.current_env();
+        let vars = curr_env.variables;
+
+        vars
+    }
+    pub fn var_rm(&self, keys: Vec<String>) -> QuartzResult {
+        let mut env = self.current_env();
+
+        for key in keys {
+            env.variables.remove(&key).ok_or(QuartzError::Internal)?;
+        }
+
+        env.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
+        Ok(())
     }
 }

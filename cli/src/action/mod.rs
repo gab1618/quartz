@@ -41,7 +41,10 @@ pub async fn cmd(mut ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Last { command } => {
             action::last::cmd(&mut ctx, command).map_err(|_| QuartzError::Internal)?
         }
-        Cmd::Var { command } => action::var::cmd(&mut ctx, command)?,
+        Cmd::Var { command } => {
+            let quartz = Quartz::from_ctx(ctx);
+            action::var::cmd(quartz, command)?
+        },
         Cmd::Env { command } => {
             let quartz = Quartz::from_ctx(ctx);
             action::env::cmd(quartz, command)?

@@ -4,4 +4,3 @@ pub mod endpoint;
 pub mod header;
 pub mod op;
 pub mod query;
-pub mod var;

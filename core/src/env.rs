@@ -96,23 +96,29 @@ impl Env {
         Ok(())
     }
 
-    pub fn update(&self, ctx: &Ctx) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn update(&self, ctx: &Ctx) -> QuartzResult {
         let mut var_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(self.dir(ctx).join("variables"))?;
+            .open(self.dir(ctx).join("variables"))
+            .map_err(|_| QuartzError::Internal)?;
         let mut headers_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(self.dir(ctx).join("headers"))?;
+            .open(self.dir(ctx).join("headers"))
+            .map_err(|_| QuartzError::Internal)?;
 
         if !self.variables.is_empty() {
-            var_file.write_all(format!("{}", self.variables).as_bytes())?;
+            var_file
+                .write_all(format!("{}", self.variables).as_bytes())
+                .map_err(|_| QuartzError::Internal)?;
         }
         if !self.headers.0.is_empty() {
-            headers_file.write_all(format!("{}", self.headers).as_bytes())?;
+            headers_file
+                .write_all(format!("{}", self.headers).as_bytes())
+                .map_err(|_| QuartzError::Internal)?;
         }
 
         Ok(())
