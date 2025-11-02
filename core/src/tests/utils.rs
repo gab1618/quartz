@@ -6,6 +6,7 @@ use crate::Quartz;
 
 pub struct TestQuartz {
     pub inner: Quartz,
+    #[allow(unused)]
     dir: TempDir,
 }
 
