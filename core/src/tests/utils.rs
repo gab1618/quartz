@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use tempfile::{TempDir, tempdir};
 
 use crate::Quartz;
@@ -15,5 +17,13 @@ impl TestQuartz {
         let qz = Quartz::init(&dir_buf_path).unwrap();
 
         Self { inner: qz, dir }
+    }
+}
+
+impl Deref for TestQuartz {
+    type Target = Quartz;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
