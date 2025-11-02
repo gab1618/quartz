@@ -24,6 +24,7 @@ use endpoint::Endpoint;
 
 use crate::{
     ctx::{Ctx, CtxArgs},
+    endpoint::{EndpointHandle},
     env::{Env, Variables},
     state::StateField,
 };
@@ -295,8 +296,53 @@ impl Quartz {
         Ok(value)
     }
     pub fn config_ls(&self) -> QuartzResult<String> {
-        let content = toml::to_string(&self.ctx.config.parse()).map_err(|_| QuartzError::Internal)?;
+        let content =
+            toml::to_string(&self.ctx.config.parse()).map_err(|_| QuartzError::Internal)?;
 
         Ok(content)
+    }
+    pub fn handle_create(
+        &self,
+        handle: &str,
+        mut patch: endpoint::EndpointPatch,
+        switch: bool,
+    ) -> QuartzResult {
+        if handle.is_empty() {
+            return Err(QuartzError::Internal);
+        }
+
+        let handle = EndpointHandle::from(handle);
+
+        if handle.exists(&self.ctx) {
+            return Err(QuartzError::Internal);
+        }
+
+        let mut endpoint = Endpoint::from(&mut patch);
+        endpoint.set_handle(&self.ctx, &handle);
+
+        if switch {
+            StateField::Endpoint
+                .set(&self.ctx, &handle.path.join("/"))
+                .map_err(|_| QuartzError::Internal)?;
+        }
+
+        handle.write(&self.ctx);
+        endpoint.write();
+
+        Ok(())
+    }
+
+    pub fn switch_handle(&self, handle: &str) -> QuartzResult {
+        let current_handle = StateField::Endpoint.get(&self.ctx)?;
+        if handle == "-" {
+            let prev_handle = StateField::PreviousEndpoint.get(&self.ctx)?;
+            StateField::Endpoint.set(&self.ctx, &prev_handle)?;
+        } else {
+            StateField::Endpoint.set(&self.ctx, handle)?;
+        }
+
+        StateField::PreviousEndpoint.set(&self.ctx, &current_handle)?;
+
+        Ok(())
     }
 }

@@ -26,7 +26,10 @@ pub async fn cmd(mut ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Init(_) => (), // Init is only run on main, before ctx is resolved
 
         Cmd::Send(args) => action::send::cmd(&mut ctx, args).await?,
-        Cmd::Create(args) => action::handle::create(&mut ctx, args),
+        Cmd::Create(args) => {
+            let quartz = Quartz::from_ctx(ctx);
+            quartz.handle_create(&args.handle, args.patch, args.switch)?;
+        }
         Cmd::Use(args) => action::handle::switch(&mut ctx, args),
         Cmd::Ls(args) => action::ls::cmd(&mut ctx, args),
         Cmd::Show { command } => action::show::cmd(&mut ctx, command)?,

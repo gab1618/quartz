@@ -3,7 +3,8 @@ use std::process::ExitCode;
 
 use colored::Colorize;
 use quartz_core::{
-    ctx::Ctx, QuartzResult,
+    QuartzResult,
+    ctx::Ctx,
     endpoint::{Endpoint, EndpointHandle, EndpointPatch},
     state::StateField,
     validator,
@@ -11,27 +12,27 @@ use quartz_core::{
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {
-    handle: String,
+    pub handle: String,
 
     #[command(flatten)]
-    patch: EndpointPatch,
+    pub patch: EndpointPatch,
 
     /// Immediatly switches to this handle after creating it
     #[arg(name = "use", long)]
-    switch: bool,
+    pub switch: bool,
 }
 
 #[derive(clap::Args, Debug)]
 pub struct SwitchArgs {
-    handle: Option<String>,
+    pub handle: Option<String>,
 
     #[command(flatten)]
-    patch: EndpointPatch,
+    pub patch: EndpointPatch,
 
     /// Make handle empty. Using it with other editing options will write a new endpoint in
     /// place of the old one
     #[arg(long)]
-    empty: bool,
+    pub empty: bool,
 }
 
 #[derive(clap::Args, Debug)]
