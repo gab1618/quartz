@@ -8,7 +8,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{cookie::CookieJar, endpoint::Headers, ctx::Ctx, PairMap};
+use crate::{PairMap, QuartzError, QuartzResult, cookie::CookieJar, ctx::Ctx, endpoint::Headers};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Variables(pub HashMap<String, String>);
@@ -86,12 +86,12 @@ impl Env {
         ctx.path().join("env").join(&self.name)
     }
 
-    pub fn write(&self, ctx: &Ctx) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn write(&self, ctx: &Ctx) -> QuartzResult {
         let dir = self.dir(ctx);
 
-        std::fs::create_dir(dir)?;
+        std::fs::create_dir(dir).map_err(|_| QuartzError::Internal)?;
 
-        self.update(ctx)?;
+        self.update(ctx).map_err(|_| QuartzError::Internal)?;
 
         Ok(())
     }
