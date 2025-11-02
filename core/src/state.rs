@@ -1,4 +1,4 @@
-use crate::ctx::Ctx;
+use crate::{QuartzError, QuartzResult, ctx::Ctx};
 use std::{io::Write, path::PathBuf};
 
 pub enum StateField {
@@ -23,25 +23,27 @@ impl StateField {
         })
     }
 
-    pub fn get(&self, ctx: &Ctx) -> Result<String, Box<dyn std::error::Error>> {
-        let bytes = std::fs::read(self.file_path(ctx))?;
+    pub fn get(&self, ctx: &Ctx) -> QuartzResult<String> {
+        let bytes = std::fs::read(self.file_path(ctx)).map_err(|_| QuartzError::Internal)?;
 
-        Ok(String::from_utf8(bytes)?)
+        Ok(String::from_utf8(bytes).map_err(|_| QuartzError::Internal)?)
     }
 
-    pub fn set(&self, ctx: &Ctx, value: &str) -> Result<(), std::io::Error> {
-        let file = std::fs::OpenOptions::new()
+    pub fn set(&self, ctx: &Ctx, value: &str) -> QuartzResult {
+        let mut file = std::fs::OpenOptions::new()
             .truncate(true)
             .create(true)
             .write(true)
-            .open(self.file_path(ctx));
+            .open(self.file_path(ctx))
+            .map_err(|_| QuartzError::Internal)?;
 
-        file?.write_all(value.as_bytes())
+        file.write_all(value.as_bytes())
+            .map_err(|_| QuartzError::Internal)
     }
 }
 
 impl State {
-    pub fn get(&self, ctx: &Ctx, field: StateField) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn get(&self, ctx: &Ctx, field: StateField) -> QuartzResult<String> {
         let overwrite = match field {
             StateField::Endpoint => self.handle.clone(),
             _ => None,
