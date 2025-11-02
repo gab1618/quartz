@@ -33,13 +33,22 @@ pub async fn cmd(mut ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Use(args) => {
             let quartz = Quartz::from_ctx(ctx);
             quartz.handle_switch(args.handle, args.patch, args.empty)?;
-        },
+        }
         Cmd::Ls(args) => action::ls::cmd(&mut ctx, args),
         Cmd::Show { command } => action::show::cmd(&mut ctx, command)?,
         Cmd::Edit => action::handle::edit(&mut ctx)?,
-        Cmd::Cp(args) => action::handle::cp(&mut ctx, args)?,
-        Cmd::Mv(args) => action::handle::mv(&mut ctx, args)?,
-        Cmd::Rm(args) => action::handle::rm(&mut ctx, args)?,
+        Cmd::Cp(args) => {
+            let quartz = Quartz::from_ctx(ctx);
+            quartz.handle_cp(args.recursive, args.src, args.dest)?;
+        }
+        Cmd::Mv(args) => {
+            let quartz = Quartz::from_ctx(ctx);
+            quartz.handle_mv(args.handles)?;
+        }
+        Cmd::Rm(args) => {
+            let quartz = Quartz::from_ctx(ctx);
+            quartz.handle_rm(args.recursive, args.handles)?;
+        }
         Cmd::Query { command } => action::query::cmd(&mut ctx, command)?,
         Cmd::Header { command } => action::header::cmd(&mut ctx, command)?,
         Cmd::Body(args) => action::body::cmd(&mut ctx, args)?,

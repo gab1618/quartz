@@ -12,7 +12,7 @@ pub mod validator;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::error::Error;
 use std::fmt::Display;
 use std::hash::Hash;
@@ -390,6 +390,115 @@ impl Quartz {
 
         endpoint.update(&mut patch);
         endpoint.write();
+
+        Ok(())
+    }
+
+    pub fn handle_cp(&self, recursive: bool, src: String, dest: String) -> QuartzResult {
+        let src_handle = self.ctx.require_input_handle(&src);
+        if !src_handle.exists(&self.ctx) {
+            panic!("no such handle: {}", src_handle.handle());
+        }
+
+        let mut queue = VecDeque::<EndpointHandle>::new();
+        queue.push_back(src_handle);
+
+        while let Some(mut src_handle) = queue.pop_front() {
+            let endpoint = src_handle.endpoint(&self.ctx);
+
+            if recursive {
+                for child in src_handle.children(&self.ctx) {
+                    queue.push_back(child.clone());
+                }
+            }
+
+            src_handle.replace(&src, &dest);
+            src_handle.write(&self.ctx);
+
+            if let Some(mut endpoint) = endpoint {
+                endpoint.set_handle(&self.ctx, &src_handle);
+                endpoint.write();
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn handle_rm(&self, recursive: bool, handles: Vec<String>) -> QuartzResult {
+        for name in handles {
+            let handle = EndpointHandle::from(&name);
+
+            if !handle.exists(&self.ctx) {
+                eprintln!("no such handle: {name}");
+                continue;
+            }
+
+            if !handle.children(&self.ctx).is_empty() && !recursive {
+                eprintln!(
+                    "{} has child handles. Use -r option to confirm",
+                    handle.handle(),
+                );
+                continue;
+            }
+
+            if std::fs::remove_dir_all(handle.dir(&self.ctx)).is_ok() {
+                println!("Deleted endpoint {}", handle.handle());
+            } else {
+                eprintln!("failed to delete endpoint {}", handle.handle());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn handle_mv(&self, mut handles: Vec<String>) -> QuartzResult {
+        if handles.is_empty() {
+            panic!("no handles specified");
+        }
+
+        if handles.len() == 1 {
+            panic!("missing target handle");
+        }
+
+        let dest = EndpointHandle::from(handles.pop().unwrap());
+        let mut original_handles = Vec::<EndpointHandle>::new();
+        let mut queue = VecDeque::<(&str, EndpointHandle)>::new();
+
+        for arg in &handles {
+            let handle = EndpointHandle::from(arg);
+            if !handle.exists(&self.ctx) {
+                eprintln!("no such handle: {arg}");
+                continue;
+            }
+
+            original_handles.push(handle);
+            queue.push_back((arg, EndpointHandle::from(arg)));
+        }
+
+        while let Some((src, mut handle)) = queue.pop_front() {
+            let mut dest = EndpointHandle::from(dest.handle()); // copy
+            for child in handle.children(&self.ctx) {
+                queue.push_back((src, child));
+            }
+
+            let maybe_endpoint = handle.endpoint(&self.ctx);
+
+            if handles.len() >= 2 {
+                dest.path.push(handle.path.last().unwrap().to_string());
+            }
+
+            handle.replace(src, &dest.handle());
+            handle.write(&self.ctx);
+
+            if let Some(mut endpoint) = maybe_endpoint {
+                endpoint.set_handle(&self.ctx, &handle);
+                endpoint.write();
+            }
+        }
+
+        for handle in original_handles {
+            let _ = std::fs::remove_dir_all(handle.dir(&self.ctx));
+        }
 
         Ok(())
     }
