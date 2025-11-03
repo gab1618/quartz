@@ -1,5 +1,6 @@
 mod action;
 mod cli;
+mod editor;
 
 use clap::Parser;
 use colored::Colorize;

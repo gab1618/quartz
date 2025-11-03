@@ -1,9 +1,4 @@
-use quartz_core::{
-    QuartzResult,
-    ctx::Ctx,
-    endpoint::{Endpoint, EndpointPatch},
-    validator,
-};
+use quartz_core::endpoint::EndpointPatch;
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {
@@ -53,15 +48,4 @@ pub struct RmArgs {
     /// Handles to be removed
     #[arg(name = "HANDLE", required = true)]
     pub handles: Vec<String>,
-}
-
-pub fn edit(ctx: &mut Ctx) -> QuartzResult {
-    let handle = ctx.require_handle();
-
-    ctx.edit(
-        &handle.dir(ctx).join("endpoint.toml"),
-        validator::toml_as::<Endpoint>,
-    )?;
-
-    Ok(())
 }

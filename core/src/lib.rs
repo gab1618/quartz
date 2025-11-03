@@ -1,6 +1,7 @@
 pub mod config;
 pub mod cookie;
 pub mod ctx;
+pub mod editor;
 pub mod endpoint;
 pub mod env;
 pub mod history;
@@ -14,15 +15,17 @@ mod tests;
 
 use std::collections::{HashMap, VecDeque};
 use std::error::Error;
+use std::ffi::OsString;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use colored::Colorize;
 use endpoint::Endpoint;
 
+use crate::editor::Editor;
 use crate::{
     ctx::{Ctx, CtxArgs},
     endpoint::{EndpointHandle, EndpointPatch},
@@ -83,8 +86,9 @@ where
     }
 }
 
-pub struct Quartz {
+pub struct Quartz<E: Editor> {
     pub ctx: Ctx,
+    editor: E,
 }
 
 pub struct SwitchArgs {
@@ -158,11 +162,11 @@ impl OutputBuilder {
     }
 }
 
-impl Quartz {
-    pub fn from_ctx(ctx: Ctx) -> Self {
-        Self { ctx }
+impl<E: Editor> Quartz<E> {
+    pub fn from_ctx(ctx: Ctx, editor: E) -> Self {
+        Self { ctx, editor }
     }
-    pub fn init(path: &PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
+    pub fn init(path: &PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
 
         // TODO: properly propagate these errors for better diagnostics context
@@ -208,7 +212,10 @@ impl Quartz {
             },
         )?;
 
-        Ok(Self { ctx: curr_ctx })
+        Ok(Self {
+            ctx: curr_ctx,
+            editor,
+        })
     }
     pub fn current_env(&self) -> Env {
         self.ctx.require_env()
@@ -627,6 +634,66 @@ impl Quartz {
             }
         }
         print_outputs(output_list);
+    }
+
+    pub fn edit_with_extension<F>(
+        &self,
+        path: &Path,
+        extension: Option<&str>,
+        validate: F,
+    ) -> QuartzResult
+    where
+        F: FnOnce(&str) -> QuartzResult,
+    {
+        let mut temp_path = self.ctx.path().join("user").join("EDIT");
+
+        let extension: Option<OsString> = {
+            if let Some(extension) = extension {
+                Some(OsString::from(extension))
+            } else {
+                path.extension().map(|extension| extension.to_os_string())
+            }
+        };
+
+        if let Some(extension) = extension {
+            temp_path.set_extension(extension);
+        }
+
+        if !path.exists() {
+            std::fs::File::create(path).map_err(|_| QuartzError::Internal)?;
+        }
+
+        std::fs::copy(path, &temp_path).map_err(|_| QuartzError::Internal)?;
+
+        self.editor.edit(&temp_path)?;
+
+        let content = std::fs::read_to_string(&temp_path).map_err(|_| QuartzError::Internal)?;
+
+        if let Err(err) = validate(&content) {
+            std::fs::remove_file(&temp_path).map_err(|_| QuartzError::Internal)?;
+            panic!("{}", err);
+        }
+
+        std::fs::rename(&temp_path, path).map_err(|_| QuartzError::Internal)?;
+        Ok(())
+    }
+
+    pub fn edit<F>(&self, path: &Path, validate: F) -> QuartzResult
+    where
+        F: FnOnce(&str) -> QuartzResult,
+    {
+        self.edit_with_extension::<F>(path, None, validate)
+    }
+
+    pub fn handle_edit(&self) -> QuartzResult {
+        let handle = self.ctx.require_handle();
+
+        self.edit(
+            &handle.dir(&self.ctx).join("endpoint.toml"),
+            validator::toml_as::<Endpoint>,
+        )?;
+
+        Ok(())
     }
 }
 
