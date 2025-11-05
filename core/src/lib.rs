@@ -669,9 +669,8 @@ impl<E: Editor> Quartz<E> {
 
         let content = std::fs::read_to_string(&temp_path).map_err(|_| QuartzError::Internal)?;
 
-        if let Err(err) = validate(&content) {
+        if let Err(_err) = validate(&content) {
             std::fs::remove_file(&temp_path).map_err(|_| QuartzError::Internal)?;
-            panic!("{}", err);
         }
 
         std::fs::rename(&temp_path, path).map_err(|_| QuartzError::Internal)?;
