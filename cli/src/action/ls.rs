@@ -1,7 +1,8 @@
 use quartz_core::{
-    Quartz, QuartzResult, ctx::Ctx, editor::Editor, endpoint::EndpointHandle, state::StateField,
-    tree::Node,
+    Quartz, QuartzResult, ctx::Ctx, endpoint::EndpointHandle, state::StateField, tree::Node,
 };
+
+use crate::editor::FileEditor;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -13,7 +14,7 @@ pub struct Args {
     pub depth: Option<usize>,
 }
 
-pub fn cmd<E: Editor>(args: Args, quartz: Quartz<E>) -> QuartzResult {
+pub fn cmd(args: Args, quartz: Quartz<FileEditor>) -> QuartzResult {
     let tree_root = quartz.handle_tree(args.handle);
     let current_handle = StateField::Endpoint.get(&quartz.ctx).ok();
     output_tree(&quartz.ctx, tree_root.root, current_handle, 0);
