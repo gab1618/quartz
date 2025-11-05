@@ -2,7 +2,7 @@ use crate::tests::utils::TestQuartz;
 
 #[test]
 fn get_default_env() {
-    let test_quartz = TestQuartz::empty();
+    let test_quartz = TestQuartz::empty().unwrap();
     let curr_env = test_quartz.inner.current_env();
 
     assert_eq!(curr_env.name, "default".to_string());
@@ -10,7 +10,7 @@ fn get_default_env() {
 
 #[test]
 fn create_env() {
-    let test_quartz = TestQuartz::empty();
+    let test_quartz = TestQuartz::empty().unwrap();
     test_quartz.inner.create_env("dev").unwrap();
     let envs = test_quartz.inner.get_envs().unwrap();
     let has_new_env = envs.into_iter().any(|entry| entry == "dev".to_string());
@@ -21,7 +21,7 @@ fn create_env() {
 
 #[test]
 fn switch_env() {
-    let test_quartz = TestQuartz::empty();
+    let test_quartz = TestQuartz::empty().unwrap();
     test_quartz.inner.create_env("dev").unwrap();
     test_quartz.inner.switch_env("dev").unwrap();
     test_quartz.inner.switch_env("default").unwrap();
@@ -34,7 +34,7 @@ fn switch_env() {
 
 #[test]
 fn remove_env() {
-    let test_quartz = TestQuartz::empty();
+    let test_quartz = TestQuartz::empty().unwrap();
     test_quartz.inner.create_env("dev").unwrap();
 
     test_quartz.inner.remove_env("dev").unwrap();
@@ -46,7 +46,7 @@ fn remove_env() {
 
 #[test]
 fn add_header_to_env() {
-    let test_quartz = TestQuartz::empty();
+    let test_quartz = TestQuartz::empty().unwrap();
     test_quartz.inner.header_set("Header1: value1").unwrap();
     test_quartz.inner.header_set("Header2: value2").unwrap();
 
@@ -64,7 +64,7 @@ fn add_header_to_env() {
 
 #[test]
 fn copy_env() {
-    let test_quartz = TestQuartz::empty();
+    let test_quartz = TestQuartz::empty().unwrap();
     test_quartz.inner.create_env("dev").unwrap();
     test_quartz.inner.switch_env("dev").unwrap();
 

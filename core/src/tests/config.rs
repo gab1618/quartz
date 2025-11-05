@@ -2,7 +2,7 @@ use crate::tests::utils::TestQuartz;
 
 #[test]
 fn save_and_retrieve_config() {
-    let quartz = TestQuartz::empty();
+    let quartz = TestQuartz::empty().unwrap();
 
     quartz.config_set("preferences.editor", "nvim").unwrap();
     quartz
