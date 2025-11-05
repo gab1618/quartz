@@ -27,6 +27,7 @@ use endpoint::Endpoint;
 
 use crate::editor::Editor;
 use crate::pairmap::PairMap;
+use crate::tree::Tree;
 use crate::{
     ctx::{Ctx, CtxArgs},
     endpoint::{EndpointHandle, EndpointPatch},
@@ -547,65 +548,14 @@ impl<E: Editor> Quartz<E> {
 
         Ok(())
     }
-    pub fn handle_ls(&self, handle: Option<String>, depth: Option<usize>) {
-        let max_depth = depth.unwrap_or(usize::MAX).max(1);
-        let active_handle = EndpointHandle::from_state(&self.ctx);
-        let mut output_list: Vec<Output> = vec![];
-
-        let tree = if let Some(name) = handle {
-            let handle = EndpointHandle::from(&name);
-
-            if !handle.exists(&self.ctx) {
-                panic!("no such handle: {name}");
-            }
-
-            handle.tree(&self.ctx)
-        } else {
-            EndpointHandle::QUARTZ.tree(&self.ctx)
-        };
-
-        let mut queue = vec![&tree.root];
-
-        while let Some(node) = queue.pop() {
-            let mut builder = Output::builder();
-
-            builder.handle(node.value.handle());
-
-            if let Some(endpoint) = node.value.endpoint(&self.ctx) {
-                builder.method(endpoint.method);
-            } else {
-                builder.method("---".into());
-            }
-
-            if let Some(active_handle) = &active_handle {
-                if node.value.handle() == active_handle.handle() {
-                    builder.usage(UsageState::Using);
-                }
-            }
-
-            if node.value.depth() > max_depth {
-                if node.children.is_empty() {
-                    builder.has_more(true);
-
-                    if let Some(active_handle) = &active_handle {
-                        if active_handle.handle().starts_with(&node.value.handle()) {
-                            builder.usage(UsageState::UsingHiddenChild);
-                        }
-                    }
-                }
-
-                continue;
-            }
-
-            if let Ok(output) = builder.build() {
-                output_list.push(output);
-            }
-
-            for child in node.children.iter() {
-                queue.push(&child);
-            }
-        }
-        print_outputs(output_list);
+    pub fn handle_tree(&self, handle: Option<String>) -> Tree<EndpointHandle> {
+        let tree_base = handle
+            .map(|name| {
+                let handle = EndpointHandle::from(name);
+                handle.tree(&self.ctx)
+            })
+            .unwrap_or(EndpointHandle::QUARTZ.tree(&self.ctx));
+        tree_base
     }
 
     pub fn edit_with_extension<F>(
@@ -665,41 +615,5 @@ impl<E: Editor> Quartz<E> {
         )?;
 
         Ok(())
-    }
-}
-
-fn print_outputs(list: Vec<Output>) {
-    let padding = list
-        .iter()
-        .map(|e| e.method.as_ref().unwrap_or(&"---".to_string()).len())
-        .fold(0, |l, e| l.max(e));
-
-    for output in list {
-        let (usage_mark, name) = match output.usage {
-            UsageState::NotUsing => (" ", output.handle.normal()),
-            UsageState::Using => ("*", output.handle.green()),
-            UsageState::UsingHiddenChild => ("*", output.handle.normal()),
-        };
-
-        let more_info = if output.has_more {
-            " +".dimmed()
-        } else {
-            "".normal()
-        };
-
-        let method = if let Some(method) = output.method {
-            endpoint::colored_method(&method).bold()
-        } else {
-            "---".dimmed()
-        };
-
-        println!(
-            "{} {:<padding$} {}{}",
-            usage_mark,
-            method,
-            name,
-            more_info,
-            padding = padding
-        );
     }
 }

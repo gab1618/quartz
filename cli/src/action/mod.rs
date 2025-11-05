@@ -37,7 +37,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
             quartz.handle_switch(args.handle, args.patch, args.empty)?;
         }
         Cmd::Ls(args) => {
-            quartz.handle_ls(args.handle, args.depth);
+            action::ls::cmd(args, quartz)?;
         }
         Cmd::Show { command } => action::show::cmd(&mut quartz.ctx, command)?,
         Cmd::Edit => {
