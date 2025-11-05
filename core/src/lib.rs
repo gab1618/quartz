@@ -5,6 +5,7 @@ pub mod editor;
 pub mod endpoint;
 pub mod env;
 pub mod history;
+pub mod pairmap;
 pub mod snippet;
 pub mod state;
 pub mod tree;
@@ -13,11 +14,10 @@ pub mod validator;
 #[cfg(test)]
 mod tests;
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::error::Error;
 use std::ffi::OsString;
 use std::fmt::Display;
-use std::hash::Hash;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -26,6 +26,7 @@ use colored::Colorize;
 use endpoint::Endpoint;
 
 use crate::editor::Editor;
+use crate::pairmap::PairMap;
 use crate::{
     ctx::{Ctx, CtxArgs},
     endpoint::{EndpointHandle, EndpointPatch},
@@ -56,35 +57,6 @@ impl Display for QuartzError {
 }
 
 impl Error for QuartzError {}
-
-pub trait PairMap<'a, K = String, V = String>
-where
-    K: Eq + PartialEq + Hash + From<&'a str>,
-    V: From<&'a str>,
-{
-    const NAME: &'static str = "key-value pair";
-    const EXPECTED: &'static str = "<key>=<value>";
-
-    /// Returns HashMap in the implementation struct.
-    fn map(&mut self) -> &mut HashMap<K, V>;
-
-    /// Breaks string into (key, value) tuple.
-    fn pair(input: &'a str) -> Option<(K, V)> {
-        let (key, value) = input.split_once('=')?;
-        let value = value.trim_matches('\'').trim_matches('\"');
-
-        Some((key.into(), value.into()))
-    }
-
-    /// Inserts key-value pair into map.
-    fn set(&mut self, input: &'a str) -> QuartzResult {
-        let (key, value) = Self::pair(input).ok_or(QuartzError::Internal)?;
-
-        self.map().insert(key, value);
-
-        Ok(())
-    }
-}
 
 pub struct Quartz<E: Editor> {
     pub ctx: Ctx,

@@ -5,7 +5,7 @@ use hyper::{
     header::{HeaderName, HeaderValue},
 };
 use quartz_core::{
-    PairMap, QuartzError, QuartzResult,
+    pairmap::PairMap, QuartzError, QuartzResult,
     cookie::CookieJar,
     ctx::Ctx,
     endpoint::EndpointPatch,

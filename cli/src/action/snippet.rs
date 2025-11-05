@@ -1,5 +1,5 @@
-use crate::{cli::SnippetCmd as Cmd};
-use quartz_core::{endpoint::EndpointPatch, snippet, ctx::Ctx, PairMap, QuartzResult};
+use crate::cli::SnippetCmd as Cmd;
+use quartz_core::{QuartzResult, ctx::Ctx, endpoint::EndpointPatch, pairmap::PairMap, snippet};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {

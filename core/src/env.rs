@@ -8,7 +8,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{PairMap, QuartzError, QuartzResult, cookie::CookieJar, ctx::Ctx, endpoint::Headers};
+use crate::{pairmap::PairMap, QuartzError, QuartzResult, cookie::CookieJar, ctx::Ctx, endpoint::Headers};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Variables(pub HashMap<String, String>);
