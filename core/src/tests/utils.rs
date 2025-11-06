@@ -12,7 +12,7 @@ pub struct MockEditor {
     edit_calls_count: Cell<u8>,
 }
 impl Editor for MockEditor {
-    fn edit(&self, _file_path: &std::path::PathBuf) -> QuartzResult {
+    fn edit<E: Editor>(&self, _quartz: &Quartz<E>, _file_path: &std::path::PathBuf) -> QuartzResult {
         let curr_call_count = self.edit_calls_count.take();
         self.edit_calls_count.set(curr_call_count + 1);
 

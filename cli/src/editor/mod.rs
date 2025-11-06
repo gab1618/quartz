@@ -1,19 +1,12 @@
-use quartz_core::{QuartzError, QuartzResult, editor::Editor};
+use quartz_core::{Quartz, QuartzError, QuartzResult, editor::Editor};
 
 #[derive(Default)]
-pub struct FileEditor {
-    editor: String,
-}
-
-impl FileEditor {
-    pub fn new(editor: String) -> Self {
-        Self { editor }
-    }
-}
+pub struct FileEditor {}
 
 impl Editor for FileEditor {
-    fn edit(&self, file_path: &std::path::PathBuf) -> QuartzResult {
-        let _ = std::process::Command::new(&self.editor)
+    fn edit<E: Editor>(&self, quartz: &Quartz<E>, file_path: &std::path::PathBuf) -> QuartzResult {
+        let editor = quartz.config_get("preferences.editor")?;
+        let _ = std::process::Command::new(editor)
             .arg(file_path)
             .status()
             .map_err(|_| QuartzError::Internal);

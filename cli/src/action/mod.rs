@@ -23,8 +23,7 @@ pub mod snippet;
 pub mod var;
 
 pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
-    let config_editor = ctx.config.parse().preferences.editor();
-    let mut quartz = Quartz::from_ctx(ctx, FileEditor::new(config_editor));
+    let mut quartz = Quartz::from_ctx(ctx, FileEditor::default());
 
     match command {
         Cmd::Init(_) => (), // Init is only run on main, before ctx is resolved

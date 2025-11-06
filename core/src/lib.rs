@@ -521,7 +521,7 @@ impl<E: Editor> Quartz<E> {
 
         std::fs::copy(path, &temp_path).map_err(|_| QuartzError::Internal)?;
 
-        self.editor.edit(&temp_path)?;
+        self.editor.edit(&self, &temp_path)?;
 
         let content = std::fs::read_to_string(&temp_path).map_err(|_| QuartzError::Internal)?;
 
