@@ -10,7 +10,7 @@ pub struct PrintArgs {
 }
 
 pub fn print(ctx: &Ctx, args: PrintArgs) {
-    let jar = ctx.require_env().cookie_jar(ctx);
+    let jar = ctx.require_env().cookie_jar();
 
     let iter = jar.iter().filter(|c| {
         if let Some(domain) = &args.domain {

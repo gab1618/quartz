@@ -61,6 +61,7 @@ impl Error for QuartzError {}
 pub struct Quartz<E: Editor> {
     pub ctx: Ctx,
     editor: E,
+    path: PathBuf,
 }
 
 pub struct SwitchArgs {
@@ -71,9 +72,13 @@ pub struct SwitchArgs {
 
 impl<E: Editor> Quartz<E> {
     pub fn from_ctx(ctx: Ctx, editor: E) -> Self {
-        Self { ctx, editor }
+        Self {
+            path: ctx.path().to_path_buf(),
+            ctx,
+            editor,
+        }
     }
-    pub fn init(path: &PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
+    pub fn init(path: PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
 
         // TODO: properly propagate these errors for better diagnostics context
@@ -122,20 +127,20 @@ impl<E: Editor> Quartz<E> {
         Ok(Self {
             ctx: curr_ctx,
             editor,
+            path,
         })
     }
     pub fn current_env(&self) -> Env {
         self.ctx.require_env()
     }
+    pub fn get_env(&self, name: &str) {}
     pub fn create_env(&self, name: &str) -> QuartzResult {
-        let new_env = Env::new(name);
+        let new_env = Env::new(name, self.ctx.path().to_path_buf());
 
-        if new_env.exists(&self.ctx) {
+        if new_env.exists() {
             return Err(QuartzError::Internal);
         }
-        new_env
-            .write(&self.ctx)
-            .map_err(|_| QuartzError::Internal)?;
+        new_env.write().map_err(|_| QuartzError::Internal)?;
 
         Ok(())
     }
@@ -154,8 +159,8 @@ impl<E: Editor> Quartz<E> {
         Ok(env_names)
     }
     pub fn switch_env(&self, name: &str) -> QuartzResult {
-        let requested_env = Env::new(name);
-        if !requested_env.exists(&self.ctx) {
+        let requested_env = Env::new(name, self.ctx.path().to_path_buf());
+        if !requested_env.exists() {
             return Err(QuartzError::Internal);
         }
         StateField::Env
@@ -163,9 +168,9 @@ impl<E: Editor> Quartz<E> {
             .map_err(|_| QuartzError::Internal)
     }
     pub fn remove_env(&self, name: &str) -> QuartzResult {
-        let env = Env::new(name);
+        let env = Env::new(name, self.ctx.path().to_path_buf());
 
-        if !env.exists(&self.ctx) {
+        if !env.exists() {
             return Err(QuartzError::Internal);
         }
         let curr_env = self.current_env();
@@ -173,14 +178,16 @@ impl<E: Editor> Quartz<E> {
             return Err(QuartzError::Internal);
         }
 
-        std::fs::remove_dir_all(env.dir(&self.ctx)).map_err(|_| QuartzError::Internal)?;
+        std::fs::remove_dir_all(env.dir()).map_err(|_| QuartzError::Internal)?;
 
         Ok(())
     }
 
     pub fn cp_env(&self, from: &str, to: &str) -> QuartzResult {
-        let src = Env::parse(&self.ctx, from).map_err(|_| QuartzError::Internal)?;
-        let mut dest = Env::parse(&self.ctx, to).unwrap_or(Env::new(to));
+        let src =
+            Env::parse(self.ctx.path().to_path_buf(), from).map_err(|_| QuartzError::Internal)?;
+        let mut dest = Env::parse(self.ctx.path().to_path_buf(), to)
+            .unwrap_or(Env::new(to, self.ctx.path().to_path_buf()));
 
         for (key, value) in src.variables.iter() {
             dest.variables.insert(key.to_string(), value.to_string());
@@ -190,10 +197,10 @@ impl<E: Editor> Quartz<E> {
             dest.headers.insert(key.to_string(), value.to_string());
         }
 
-        if dest.exists(&self.ctx) {
-            dest.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
+        if dest.exists() {
+            dest.update().map_err(|_| QuartzError::Internal)?;
         } else {
-            dest.write(&self.ctx).map_err(|_| QuartzError::Internal)?;
+            dest.write().map_err(|_| QuartzError::Internal)?;
         }
 
         Ok(())
@@ -202,13 +209,13 @@ impl<E: Editor> Quartz<E> {
     pub fn env_header_set(&self, header: &str) -> QuartzResult {
         let mut env = self.current_env();
         env.headers.set(header)?;
-        env.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
+        env.update().map_err(|_| QuartzError::Internal)?;
         Ok(())
     }
     pub fn env_header_rm(&self, header: &str) -> QuartzResult {
         let mut env = self.current_env();
         env.headers.remove(header);
-        env.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
+        env.update().map_err(|_| QuartzError::Internal)?;
         Ok(())
     }
     pub fn env_header_get(&self, key: &str) -> QuartzResult<String> {
@@ -224,7 +231,7 @@ impl<E: Editor> Quartz<E> {
         let mut curr_env = self.current_env();
 
         curr_env.variables.set(var)?;
-        curr_env.update(&self.ctx)?;
+        curr_env.update()?;
 
         Ok(())
     }
@@ -252,7 +259,7 @@ impl<E: Editor> Quartz<E> {
             env.variables.remove(&key).ok_or(QuartzError::Internal)?;
         }
 
-        env.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
+        env.update().map_err(|_| QuartzError::Internal)?;
         Ok(())
     }
     pub fn config_set(&self, key: &str, value: &str) -> QuartzResult {

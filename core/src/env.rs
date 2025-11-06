@@ -8,7 +8,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{pairmap::PairMap, QuartzError, QuartzResult, cookie::CookieJar, ctx::Ctx, endpoint::Headers};
+use crate::{cookie::CookieJar, endpoint::Headers, pairmap::PairMap, QuartzError, QuartzResult};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Variables(pub HashMap<String, String>);
@@ -59,55 +59,54 @@ impl Variables {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Env {
+    mount_path: PathBuf,
     pub name: String,
     pub variables: Variables,
     pub headers: Headers,
 }
 
-impl Default for Env {
-    fn default() -> Self {
+impl Env {
+    pub fn new(name: &str, mount_path: PathBuf) -> Self {
         Self {
+            name: name.to_string(),
+            ..Self::default(mount_path)
+        }
+    }
+    fn default(mount_path: PathBuf) -> Self {
+        Self {
+            mount_path,
             name: String::from("default"),
             variables: Variables::default(),
             headers: Headers::default(),
         }
     }
-}
 
-impl Env {
-    pub fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            ..Default::default()
-        }
+    pub fn dir(&self) -> PathBuf {
+        self.mount_path.join("env").join(&self.name)
     }
 
-    pub fn dir(&self, ctx: &Ctx) -> PathBuf {
-        ctx.path().join("env").join(&self.name)
-    }
-
-    pub fn write(&self, ctx: &Ctx) -> QuartzResult {
-        let dir = self.dir(ctx);
+    pub fn write(&self) -> QuartzResult {
+        let dir = self.dir();
 
         std::fs::create_dir(dir).map_err(|_| QuartzError::Internal)?;
 
-        self.update(ctx).map_err(|_| QuartzError::Internal)?;
+        self.update().map_err(|_| QuartzError::Internal)?;
 
         Ok(())
     }
 
-    pub fn update(&self, ctx: &Ctx) -> QuartzResult {
+    pub fn update(&self) -> QuartzResult {
         let mut var_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(self.dir(ctx).join("variables"))
+            .open(self.dir().join("variables"))
             .map_err(|_| QuartzError::Internal)?;
         let mut headers_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(self.dir(ctx).join("headers"))
+            .open(self.dir().join("headers"))
             .map_err(|_| QuartzError::Internal)?;
 
         if !self.variables.is_empty() {
@@ -125,25 +124,26 @@ impl Env {
     }
 
     /// Returns `true` if this environment already exists on the quartz project.
-    pub fn exists(&self, ctx: &Ctx) -> bool {
-        self.dir(ctx).exists()
+    pub fn exists(&self) -> bool {
+        self.dir().exists()
     }
 
-    pub fn parse(ctx: &Ctx, name: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let mut env = Self::new(name);
+    pub fn parse(mount_path: PathBuf, name: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut env = Self::new(name, mount_path);
 
-        if let Ok(var_contents) = std::fs::read_to_string(env.dir(ctx).join("variables")) {
+        if let Ok(var_contents) = std::fs::read_to_string(env.dir().join("variables")) {
             env.variables = Variables::parse(&var_contents);
         }
-        if let Ok(header_contents) = std::fs::read_to_string(env.dir(ctx).join("headers")) {
+        if let Ok(header_contents) = std::fs::read_to_string(env.dir().join("headers")) {
             env.headers = Headers::parse(&header_contents);
         }
 
         Ok(env)
     }
 
-    pub fn cookie_jar(&self, ctx: &Ctx) -> CookieJar {
-        let path = self.dir(ctx).join(CookieJar::FILENAME);
+
+    pub fn cookie_jar(&self) -> CookieJar {
+        let path = self.dir().join(CookieJar::FILENAME);
         let mut jar = CookieJar::read(&path).unwrap_or_default();
 
         jar.path = path;

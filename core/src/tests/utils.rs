@@ -36,7 +36,7 @@ impl TestQuartz<MockEditor> {
         let dir_buf_path = dir.path().to_path_buf();
         let config_dir_path = config_dir.path().to_path_buf();
         let mock_editor = MockEditor::default();
-        let qz = Quartz::init(&dir_buf_path, config_dir_path, mock_editor)
+        let qz = Quartz::init(dir_buf_path, config_dir_path, mock_editor)
             .map_err(|_| QuartzError::Internal)?;
 
         Ok(Self {

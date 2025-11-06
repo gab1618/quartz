@@ -113,7 +113,7 @@ impl Ctx {
             .get(self, StateField::Env)
             .unwrap_or("default".into());
 
-        Env::parse(self, &state)
+        Env::parse(self.path().to_path_buf(), &state)
             .unwrap_or_else(|_| panic!("could not resolve {} environment", state.red()))
     }
 

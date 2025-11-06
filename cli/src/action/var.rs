@@ -45,7 +45,7 @@ pub fn cmd<E: Editor>(mut quartz: Quartz<E>, command: Cmd) -> QuartzResult {
 
 pub fn edit(ctx: &Ctx) -> QuartzResult {
     let env = ctx.require_env();
-    ctx.edit(&env.dir(ctx).join("variables"), |c| {
+    ctx.edit(&env.dir().join("variables"), |c| {
         Variables::parse(c);
         Ok(())
     })?;

@@ -50,7 +50,7 @@ pub async fn cmd(ctx: &Ctx, mut args: Args) -> QuartzResult {
             .insert("user-agent".to_string(), Ctx::user_agent());
     }
 
-    let mut cookie_jar = env.cookie_jar(ctx);
+    let mut cookie_jar = env.cookie_jar();
 
     let extras = args.cookies.iter().flat_map(|c| {
         if c.contains('=') {
