@@ -22,7 +22,6 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use colored::Colorize;
 use endpoint::Endpoint;
 
 use crate::editor::Editor;
@@ -68,71 +67,6 @@ pub struct SwitchArgs {
     pub handle: Option<String>,
     pub patch: EndpointPatch,
     pub empty: bool,
-}
-
-#[derive(Default)]
-enum UsageState {
-    #[default]
-    NotUsing,
-    Using,
-    UsingHiddenChild,
-}
-struct Output {
-    method: Option<String>,
-    handle: String,
-    has_more: bool,
-    usage: UsageState,
-}
-
-impl Output {
-    fn builder() -> OutputBuilder {
-        OutputBuilder::default()
-    }
-}
-
-#[derive(Default)]
-struct OutputBuilder {
-    method: Option<String>,
-    handle: Option<String>,
-    has_more: bool,
-    usage: UsageState,
-}
-
-impl OutputBuilder {
-    fn method(&mut self, method: String) -> &mut Self {
-        self.method = Some(method);
-        self
-    }
-
-    fn handle(&mut self, handle: String) -> &mut Self {
-        self.handle = Some(handle);
-        self
-    }
-
-    fn has_more(&mut self, has_more: bool) -> &mut Self {
-        self.has_more = has_more;
-        self
-    }
-
-    fn usage(&mut self, usage: UsageState) -> &mut Self {
-        self.usage = usage;
-        self
-    }
-
-    fn build(self) -> Result<Output, ()> {
-        let handle = self.handle.ok_or(())?;
-
-        if handle.is_empty() {
-            return Err(());
-        }
-
-        Ok(Output {
-            method: self.method,
-            handle,
-            has_more: self.has_more,
-            usage: self.usage,
-        })
-    }
 }
 
 impl<E: Editor> Quartz<E> {
