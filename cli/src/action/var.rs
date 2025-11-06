@@ -22,20 +22,20 @@ pub fn cmd<E: Editor>(mut quartz: Quartz<E>, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Edit => edit(&mut quartz.ctx)?,
         Cmd::Get(args) => {
-            if let Some(v) = quartz.var_get(&args.key) {
+            if let Some(v) = quartz.env_var_get(&args.key) {
                 print!("{v}");
             }
         }
         Cmd::Set(args) => {
             for variable in args.variables {
-                quartz.var_set(&variable)?;
+                quartz.env_var_set(&variable)?;
             }
         }
         Cmd::Rm(args) => {
-            quartz.var_rm(args.keys)?;
+            quartz.env_var_rm(args.keys)?;
         }
         Cmd::Ls => {
-            let vars = quartz.vars_get();
+            let vars = quartz.env_vars_get();
             print!("{vars}");
         }
     };

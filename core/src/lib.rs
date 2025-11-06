@@ -199,19 +199,19 @@ impl<E: Editor> Quartz<E> {
         Ok(())
     }
 
-    pub fn header_set(&self, header: &str) -> QuartzResult {
+    pub fn env_header_set(&self, header: &str) -> QuartzResult {
         let mut env = self.current_env();
         env.headers.set(header)?;
         env.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
         Ok(())
     }
-    pub fn header_rm(&self, header: &str) -> QuartzResult {
+    pub fn env_header_rm(&self, header: &str) -> QuartzResult {
         let mut env = self.current_env();
         env.headers.remove(header);
         env.update(&self.ctx).map_err(|_| QuartzError::Internal)?;
         Ok(())
     }
-    pub fn header_get(&self, key: &str) -> QuartzResult<String> {
+    pub fn env_header_get(&self, key: &str) -> QuartzResult<String> {
         let env = self.current_env();
         let value = env
             .headers
@@ -220,7 +220,7 @@ impl<E: Editor> Quartz<E> {
             .to_owned();
         Ok(value)
     }
-    pub fn var_set(&self, var: &str) -> QuartzResult {
+    pub fn env_var_set(&self, var: &str) -> QuartzResult {
         let mut curr_env = self.current_env();
 
         curr_env.variables.set(var)?;
@@ -228,7 +228,7 @@ impl<E: Editor> Quartz<E> {
 
         Ok(())
     }
-    pub fn var_get(&self, name: &str) -> Option<String> {
+    pub fn env_var_get(&self, name: &str) -> Option<String> {
         let curr_env = self.current_env();
 
         let v = curr_env
@@ -239,13 +239,13 @@ impl<E: Editor> Quartz<E> {
 
         v
     }
-    pub fn vars_get(&self) -> Variables {
+    pub fn env_vars_get(&self) -> Variables {
         let curr_env = self.current_env();
         let vars = curr_env.variables;
 
         vars
     }
-    pub fn var_rm(&self, keys: Vec<String>) -> QuartzResult {
+    pub fn env_var_rm(&self, keys: Vec<String>) -> QuartzResult {
         let mut env = self.current_env();
 
         for key in keys {

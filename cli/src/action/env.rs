@@ -36,7 +36,7 @@ pub fn cmd<E: Editor>(quartz: Quartz<E>, command: Cmd) -> QuartzResult {
         Cmd::Rm(args) => quartz.remove_env(&args.env)?,
         Cmd::Header { command } => match command {
             HeaderCmd::Set { header } => {
-                quartz.header_set(&header)?;
+                quartz.env_header_set(&header)?;
             }
             HeaderCmd::Ls => {
                 let curr_env = quartz.current_env();
@@ -44,11 +44,11 @@ pub fn cmd<E: Editor>(quartz: Quartz<E>, command: Cmd) -> QuartzResult {
             }
             HeaderCmd::Rm { key } => {
                 for header in key {
-                    quartz.header_rm(&header)?
+                    quartz.env_header_rm(&header)?
                 }
             }
             HeaderCmd::Get { key } => {
-                let header = quartz.header_get(&key)?;
+                let header = quartz.env_header_get(&key)?;
                 println!("{header}");
             }
         },
