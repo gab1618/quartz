@@ -150,4 +150,50 @@ impl Env {
 
         jar
     }
+    pub fn header_set(&mut self, header: &str) -> QuartzResult {
+        self.headers.set(header)?;
+        self.update().map_err(|_| QuartzError::Internal)?;
+        Ok(())
+    }
+    pub fn header_rm(&mut self, header: &str) -> QuartzResult {
+        self.headers.remove(header);
+        self.update().map_err(|_| QuartzError::Internal)?;
+        Ok(())
+    }
+    pub fn header_get(&self, key: &str) -> QuartzResult<String> {
+        let value = self
+            .headers
+            .get(key)
+            .ok_or(QuartzError::Internal)?
+            .to_owned();
+        Ok(value)
+    }
+    pub fn var_set(&mut self, var: &str) -> QuartzResult {
+        self.variables.set(var)?;
+        self.update()?;
+
+        Ok(())
+    }
+    pub fn var_get(&self, name: &str) -> Option<String> {
+        let v = self
+            .variables
+            .get(name)
+            .map(|inner| inner.to_owned())
+            .to_owned();
+
+        v
+    }
+    pub fn vars(&self) -> Variables {
+        let vars = self.variables.clone();
+
+        vars
+    }
+    pub fn var_rm(&mut self, keys: Vec<String>) -> QuartzResult {
+        for key in keys {
+            self.variables.remove(&key).ok_or(QuartzError::Internal)?;
+        }
+
+        self.update().map_err(|_| QuartzError::Internal)?;
+        Ok(())
+    }
 }
