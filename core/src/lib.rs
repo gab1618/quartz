@@ -133,7 +133,10 @@ impl<E: Editor> Quartz<E> {
     pub fn current_env(&self) -> Env {
         self.ctx.require_env()
     }
-    pub fn get_env(&self, name: &str) {}
+    pub fn get_env(&self, name: &str) -> Option<Env> {
+        let env = Env::parse(self.path.clone(), name).ok();
+        env
+    }
     pub fn create_env(&self, name: &str) -> QuartzResult {
         let new_env = Env::new(name, self.ctx.path().to_path_buf());
 
