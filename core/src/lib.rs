@@ -25,12 +25,11 @@ use std::str::FromStr;
 use endpoint::Endpoint;
 
 use crate::editor::Editor;
-use crate::pairmap::PairMap;
 use crate::tree::Tree;
 use crate::{
     ctx::{Ctx, CtxArgs},
     endpoint::{EndpointHandle, EndpointPatch},
-    env::{Env, Variables},
+    env::Env,
     state::StateField,
 };
 
@@ -189,11 +188,11 @@ impl<E: Editor> Quartz<E> {
         Ok(())
     }
 
-    pub fn cp_env(&self, from: &str, to: &str) -> QuartzResult {
+    pub fn cp_env(&self, src: &str, dest: &str) -> QuartzResult<Env> {
         let src =
-            Env::parse(self.ctx.path().to_path_buf(), from).map_err(|_| QuartzError::Internal)?;
-        let mut dest = Env::parse(self.ctx.path().to_path_buf(), to)
-            .unwrap_or(Env::new(to, self.ctx.path().to_path_buf()));
+            Env::parse(self.ctx.path().to_path_buf(), src).map_err(|_| QuartzError::Internal)?;
+        let mut dest = Env::parse(self.ctx.path().to_path_buf(), dest)
+            .unwrap_or(Env::new(dest, self.ctx.path().to_path_buf()));
 
         for (key, value) in src.variables.iter() {
             dest.variables.insert(key.to_string(), value.to_string());
@@ -209,64 +208,7 @@ impl<E: Editor> Quartz<E> {
             dest.write().map_err(|_| QuartzError::Internal)?;
         }
 
-        Ok(())
-    }
-
-    pub fn env_header_set(&self, header: &str) -> QuartzResult {
-        let mut env = self.current_env();
-        env.headers.set(header)?;
-        env.update().map_err(|_| QuartzError::Internal)?;
-        Ok(())
-    }
-    pub fn env_header_rm(&self, header: &str) -> QuartzResult {
-        let mut env = self.current_env();
-        env.headers.remove(header);
-        env.update().map_err(|_| QuartzError::Internal)?;
-        Ok(())
-    }
-    pub fn env_header_get(&self, key: &str) -> QuartzResult<String> {
-        let env = self.current_env();
-        let value = env
-            .headers
-            .get(key)
-            .ok_or(QuartzError::Internal)?
-            .to_owned();
-        Ok(value)
-    }
-    pub fn env_var_set(&self, var: &str) -> QuartzResult {
-        let mut curr_env = self.current_env();
-
-        curr_env.variables.set(var)?;
-        curr_env.update()?;
-
-        Ok(())
-    }
-    pub fn env_var_get(&self, name: &str) -> Option<String> {
-        let curr_env = self.current_env();
-
-        let v = curr_env
-            .variables
-            .get(name)
-            .map(|inner| inner.to_owned())
-            .to_owned();
-
-        v
-    }
-    pub fn env_vars_get(&self) -> Variables {
-        let curr_env = self.current_env();
-        let vars = curr_env.variables;
-
-        vars
-    }
-    pub fn env_var_rm(&self, keys: Vec<String>) -> QuartzResult {
-        let mut env = self.current_env();
-
-        for key in keys {
-            env.variables.remove(&key).ok_or(QuartzError::Internal)?;
-        }
-
-        env.update().map_err(|_| QuartzError::Internal)?;
-        Ok(())
+        Ok(dest)
     }
     pub fn config_set(&self, key: &str, value: &str) -> QuartzResult {
         let mut curr_config = self.ctx.config.parse();
