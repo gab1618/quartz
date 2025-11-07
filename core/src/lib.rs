@@ -162,12 +162,14 @@ impl<E: Editor> Quartz<E> {
         Ok(env_names)
     }
     pub fn switch_env(&self, name: &str) -> QuartzResult<Env> {
-        let requested_env = Env::new(name, self.ctx.path().to_path_buf());
+        let requested_env =
+            Env::parse(self.ctx.path().to_path_buf(), name).map_err(|_| QuartzError::Internal)?;
         if !requested_env.exists() {
             return Err(QuartzError::Internal);
         }
         StateField::Env
             .set(&self.ctx, name)
+            .map_err(|_| QuartzError::Internal)?;
 
         Ok(requested_env)
     }
