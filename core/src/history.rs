@@ -29,7 +29,7 @@ pub struct History {
 impl History {
     pub fn new(ctx: &Ctx) -> QuartzResult<Self> {
         let paths = std::fs::read_dir(Self::dir(ctx)).map_err(|_| QuartzError::Internal)?;
-        let mut timestemps: Vec<i64> = Vec::new();
+        let mut timestamps: Vec<i64> = Vec::new();
 
         for path in paths {
             let timestemp = path
@@ -40,14 +40,14 @@ impl History {
                 .parse::<i64>()
                 .map_err(|_| QuartzError::Internal)?;
 
-            timestemps.push(timestemp);
+            timestamps.push(timestemp);
         }
 
-        timestemps.sort();
-        timestemps.reverse();
+        timestamps.sort();
+        timestamps.reverse();
 
         Ok(Self {
-            entries: timestemps.clone(),
+            entries: timestamps.clone(),
         })
     }
 
