@@ -39,9 +39,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
             action::ls::cmd(args, quartz)?;
         }
         Cmd::Show { command } => action::show::cmd(&mut quartz.ctx, command)?,
-        Cmd::Edit => {
-            quartz.handle_edit()
-        }?,
+        Cmd::Edit => { quartz.handle_edit() }?,
         Cmd::Cp(args) => {
             quartz.handle_cp(args.recursive, args.src, args.dest)?;
         }
@@ -56,17 +54,11 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Body(args) => action::body::cmd(&mut quartz.ctx, args)?,
         Cmd::History(args) => action::history::cmd(&mut quartz.ctx, args)?,
         Cmd::Last { command } => {
-            action::last::cmd(&mut quartz.ctx, command).map_err(|_| QuartzError::Internal)?
+            action::last::cmd(quartz, command).map_err(|_| QuartzError::Internal)?
         }
-        Cmd::Var { command } => {
-            action::var::cmd(quartz, command)?
-        }
-        Cmd::Env { command } => {
-            action::env::cmd(quartz, command)?
-        }
-        Cmd::Config { command } => {
-            action::config::cmd(quartz, command)?
-        }
+        Cmd::Var { command } => action::var::cmd(quartz, command)?,
+        Cmd::Env { command } => action::env::cmd(quartz, command)?,
+        Cmd::Config { command } => action::config::cmd(quartz, command)?,
     };
 
     Ok(())

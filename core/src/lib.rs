@@ -25,6 +25,7 @@ use std::str::FromStr;
 use endpoint::Endpoint;
 
 use crate::editor::Editor;
+use crate::history::History;
 use crate::tree::Tree;
 use crate::{
     ctx::{Ctx, CtxArgs},
@@ -504,5 +505,11 @@ impl<E: Editor> Quartz<E> {
         )?;
 
         Ok(())
+    }
+    pub fn history(&self) -> QuartzResult<History> {
+        let history = History::new(&self.ctx)?;
+        let a = history.entries(&self.ctx);
+
+        Ok(history)
     }
 }
