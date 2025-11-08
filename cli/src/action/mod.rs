@@ -28,7 +28,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Init(_) => (), // Init is only run on main, before ctx is resolved
 
-        Cmd::Send(args) => action::send::cmd(&mut quartz.ctx, args).await?,
+        Cmd::Send(args) => action::send::cmd(quartz, args).await?,
         Cmd::Create(args) => {
             quartz.handle_create(&args.handle, args.patch, args.switch)?;
         }

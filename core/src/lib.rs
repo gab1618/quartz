@@ -22,10 +22,16 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+use chrono::Utc;
 use endpoint::Endpoint;
+use hyper::body::{Bytes, HttpBody};
+use hyper::header::{HeaderName, HeaderValue};
+use hyper::{Body, Client, Uri};
 
+use crate::cookie::CookieJar;
 use crate::editor::Editor;
 use crate::history::History;
+use crate::pairmap::PairMap;
 use crate::tree::Tree;
 use crate::{
     ctx::{Ctx, CtxArgs},
@@ -506,10 +512,153 @@ impl<E: Editor> Quartz<E> {
 
         Ok(())
     }
-    pub fn history(&self) -> QuartzResult<History> {
-        let history = History::new(&self.ctx)?;
-        let a = history.entries(&self.ctx);
+    pub async fn send(
+        &self,
+        variables: Vec<String>,
+        mut patch: EndpointPatch,
+        no_follow: bool,
+        cookies: Vec<String>,
+        aditional_cookie_jar: Option<PathBuf>,
+    ) -> QuartzResult<Bytes> {
+        let (handle, mut endpoint) = self.ctx.require_endpoint();
+        let mut env = self.ctx.require_env();
+        for var in variables {
+            env.variables.set(&var)?;
+        }
 
-        Ok(history)
+        if !endpoint.headers.contains_key("user-agent") {
+            endpoint
+                .headers
+                .insert("user-agent".to_string(), Ctx::user_agent());
+        }
+
+        let mut cookie_jar = env.cookie_jar();
+
+        let extras = cookies.iter().flat_map(|c| {
+            if c.contains('=') {
+                return vec![c.to_owned()];
+            }
+
+            let path = Path::new(c);
+            if !path.exists() {
+                panic!("no such file: {c}");
+            }
+
+            CookieJar::read(path)
+                .unwrap()
+                .iter()
+                .map(|c| format!("{}={}", c.name(), c.value()))
+                .collect()
+        });
+
+        let cookie_value = cookie_jar
+            .iter()
+            .map(|c| format!("{}={}", c.name(), c.value()))
+            .chain(extras)
+            .collect::<Vec<String>>()
+            .join("; ");
+
+        if !cookie_value.is_empty() {
+            endpoint
+                .headers
+                .insert(String::from("Cookie"), cookie_value);
+        }
+
+        let mut entry = history::Entry::builder();
+        entry
+            .handle(handle.handle())
+            .timestemp(Utc::now().timestamp_micros());
+
+        endpoint.update(&mut patch);
+        endpoint.apply_env(&env);
+
+        let body = endpoint.body().cloned();
+
+        let mut res: hyper::Response<Body>;
+
+        loop {
+            let mut req = endpoint
+                // TODO: Find a way around this clone
+                .clone()
+                .into_request()
+                .unwrap_or_else(|_| panic!("malformed request"));
+            for (key, val) in env.headers.iter() {
+                if !endpoint.headers.contains_key(key) {
+                    req.headers_mut().insert(
+                        HeaderName::from_str(key).map_err(|_| QuartzError::Internal)?,
+                        HeaderValue::from_str(val).map_err(|_| QuartzError::Internal)?,
+                    );
+                }
+            }
+
+            entry.message(&req);
+            if let Some(ref body) = body {
+                entry.message_raw(body.to_owned());
+            }
+
+            let client = {
+                let https = hyper_tls::HttpsConnector::new();
+                Client::builder().build(https)
+            };
+
+            res = client
+                .request(req)
+                .await
+                .map_err(|_| QuartzError::Internal)?;
+
+            entry.message(&res);
+
+            if let Some(cookie_header) = res.headers().get("Set-Cookie") {
+                let url = endpoint.full_url().map_err(|_| QuartzError::Internal)?;
+
+                cookie_jar.set(
+                    url.host().unwrap(),
+                    cookie_header.to_str().map_err(|_| QuartzError::Internal)?,
+                );
+            }
+
+            if no_follow || !res.status().is_redirection() {
+                break;
+            }
+
+            if let Some(location) = res.headers().get("Location") {
+                let location = location.to_str().map_err(|_| QuartzError::Internal)?;
+
+                if location.starts_with('/') {
+                    let url = endpoint.full_url().map_err(|_| QuartzError::Internal)?;
+                    // This is awful
+                    endpoint.url = Uri::builder()
+                        .authority(url.authority().unwrap().as_str())
+                        .scheme(url.scheme().unwrap().as_str())
+                        .path_and_query(location)
+                        .build()
+                        .map_err(|_| QuartzError::Internal)?
+                        .to_string();
+                } else if Uri::from_str(location).is_ok() {
+                    endpoint.url = location.to_string();
+                }
+            };
+        }
+
+        match aditional_cookie_jar {
+            Some(path) => cookie_jar
+                .write_at(&path)
+                .map_err(|_| QuartzError::Internal)?,
+            None => cookie_jar.write().map_err(|_| QuartzError::Internal)?,
+        };
+
+        let mut bytes = Bytes::new();
+
+        while let Some(chunk) = res.data().await {
+            if let Ok(chunk) = chunk {
+                bytes = [bytes, chunk].concat().into();
+            }
+        }
+
+        entry.message_raw(String::from_utf8(bytes.to_vec()).map_err(|_| QuartzError::Internal)?);
+
+        History::write(&self.ctx, entry.build()?)?;
+
+        Ok(bytes)
     }
 }
