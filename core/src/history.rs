@@ -1,4 +1,4 @@
-use crate::{QuartzError, QuartzResult, ctx::Ctx, snippet};
+use crate::{QuartzError, QuartzResult, snippet};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -22,13 +22,17 @@ pub struct EntryBuilder {
 }
 
 pub struct History {
-    /// Entry timestemp identification
-    entries: Vec<i64>,
+    mount_path: PathBuf,
 }
 
 impl History {
-    pub fn new(ctx: &Ctx) -> QuartzResult<Self> {
-        let paths = std::fs::read_dir(Self::dir(ctx)).map_err(|_| QuartzError::Internal)?;
+    pub fn new(mount_path: PathBuf) -> QuartzResult<Self> {
+        Ok(Self { mount_path })
+    }
+
+    pub fn entries(&self) -> QuartzResult<Vec<Entry>> {
+        let paths =
+            std::fs::read_dir(self.dir()).map_err(|_| QuartzError::Internal)?;
         let mut timestamps: Vec<i64> = Vec::new();
 
         for path in paths {
@@ -45,40 +49,34 @@ impl History {
 
         timestamps.sort();
         timestamps.reverse();
-
-        Ok(Self {
-            entries: timestamps.clone(),
-        })
-    }
-
-    pub fn entries(&self, ctx: &Ctx) -> Vec<Entry> {
-        self.entries
+        let entries = timestamps
             .iter()
             .filter_map(|timestemp| {
-                Entry::read(&History::dir(ctx).join(timestemp.to_string())).ok()
+                Entry::read(&self.dir().join(timestemp.to_string())).ok()
             })
-            .collect()
+            .collect();
+
+        Ok(entries)
     }
 
-    pub fn dir(ctx: &Ctx) -> PathBuf {
-        ctx.path().join("user").join("history")
+    pub fn dir(&self) -> PathBuf {
+        self.mount_path.join("user").join("history")
     }
 
-    pub fn last(ctx: &Ctx) -> Option<Entry> {
-        let history = History::new(ctx).ok()?;
+    pub fn last_entry(&self) -> QuartzResult<Option<Entry>> {
+        let last_entry = self.entries()?.into_iter().next();
 
-        let entry = Entry::read(&History::dir(ctx).join(history.entries.first()?.to_string()));
+        Ok(last_entry)
 
-        entry.ok()
     }
 
-    pub fn write(ctx: &Ctx, entry: Entry) -> QuartzResult {
+    pub fn write(&self, entry: Entry) -> QuartzResult {
         let content = toml::to_string(&entry).map_err(|_| QuartzError::Internal)?;
 
         std::fs::OpenOptions::new()
             .create(true)
             .write(true)
-            .open(History::dir(ctx).join(entry.timestemp.to_string()))
+            .open(self.dir().join(entry.timestemp.to_string()))
             .map_err(|_| QuartzError::Internal)?
             .write_all(content.as_bytes())
             .map_err(|_| QuartzError::Internal)?;

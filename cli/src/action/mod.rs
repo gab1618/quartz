@@ -52,7 +52,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Query { command } => action::query::cmd(&mut quartz.ctx, command)?,
         Cmd::Header { command } => action::header::cmd(&mut quartz.ctx, command)?,
         Cmd::Body(args) => action::body::cmd(&mut quartz.ctx, args)?,
-        Cmd::History(args) => action::history::cmd(&mut quartz.ctx, args)?,
+        Cmd::History(args) => action::history::cmd(quartz, args)?,
         Cmd::Last { command } => {
             action::last::cmd(quartz, command).map_err(|_| QuartzError::Internal)?
         }

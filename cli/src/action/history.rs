@@ -1,4 +1,6 @@
-use quartz_core::{history::History, ctx::Ctx, QuartzResult};
+use quartz_core::{Quartz, QuartzResult};
+
+use crate::editor::FileEditor;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -7,13 +9,13 @@ pub struct Args {
     max_count: Option<usize>,
 }
 
-pub fn cmd(ctx: &Ctx, args: Args) -> QuartzResult {
-    let history = History::new(ctx)?;
+pub fn cmd(quartz: Quartz<FileEditor>, args: Args) -> QuartzResult {
+    let history = quartz.history()?;
     let mut count = 0;
     let max_count = args.max_count.unwrap_or(usize::MAX);
 
     let mut output = String::new();
-    for entry in history.entries(ctx) {
+    for entry in history.entries()? {
         if count >= max_count {
             break;
         }
@@ -27,7 +29,7 @@ pub fn cmd(ctx: &Ctx, args: Args) -> QuartzResult {
         output.push_str(&format!("{entry}\n"));
     }
 
-    ctx.paginate(output.as_bytes())?;
+    quartz.paginate(output.as_bytes())?;
 
     Ok(())
 }

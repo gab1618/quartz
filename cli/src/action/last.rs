@@ -1,16 +1,15 @@
-use std::convert::Infallible;
-
 use crate::{
     cli::{LastCmd as Cmd, LastResCmd as ResCmd},
     editor::FileEditor,
 };
 use quartz_core::{
-    Quartz,
-    history::{self, History},
+    Quartz, QuartzError, QuartzResult,
+    history::{self},
 };
 
-pub fn cmd(quartz: Quartz<FileEditor>, maybe_command: Option<Cmd>) -> Result<(), Infallible> {
-    let entry = History::last(&quartz.ctx).expect("no history found");
+pub fn cmd(quartz: Quartz<FileEditor>, maybe_command: Option<Cmd>) -> QuartzResult {
+    let h = quartz.history()?;
+    let entry = h.last_entry()?.ok_or(QuartzError::Internal)?;
 
     if maybe_command.is_none() {
         println!("{entry}");

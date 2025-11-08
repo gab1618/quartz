@@ -657,8 +657,17 @@ impl<E: Editor> Quartz<E> {
 
         entry.message_raw(String::from_utf8(bytes.to_vec()).map_err(|_| QuartzError::Internal)?);
 
-        History::write(&self.ctx, entry.build()?)?;
+        let h = self.history()?;
+        h.write(entry.build()?)?;
 
         Ok(bytes)
+    }
+    pub fn history(&self) -> QuartzResult<History> {
+        let h = History::new(self.path.clone())?;
+
+        Ok(h)
+    }
+    pub fn paginate(&self, content: &[u8]) -> QuartzResult {
+        todo!()
     }
 }
