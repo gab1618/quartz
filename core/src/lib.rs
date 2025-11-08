@@ -29,7 +29,7 @@ use hyper::body::{Bytes, HttpBody};
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::{Body, Client, Uri};
 
-use crate::config::Config;
+use crate::config::{Config, ConfigManager};
 use crate::cookie::CookieJar;
 use crate::editor::Editor;
 use crate::history::History;
@@ -229,37 +229,8 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
 
         Ok(dest)
     }
-    pub fn config_set(&self, key: &str, value: &str) -> QuartzResult {
-        let mut curr_config = self.ctx.config.parse();
-        match key {
-            "preferences.editor" => curr_config.preferences.set_editor(value),
-            "preferences.pager" => curr_config.preferences.set_pager(value),
-            "ui.colors" => curr_config.ui.set_colors(matches!(value, "true")),
-            _ => {
-                return Err(QuartzError::Internal);
-            }
-        };
-
-        self.ctx.config.save(curr_config);
-
-        Ok(())
-    }
-    pub fn config_get(&self, key: &str) -> QuartzResult<String> {
-        let value = match key {
-            "preferences.editor" => Some(self.ctx.config.parse().preferences.editor()),
-            "preferences.pager" => Some(self.ctx.config.parse().preferences.pager()),
-            "ui.colors" => Some(self.ctx.config.parse().ui.colors().to_string()),
-            _ => None,
-        }
-        .ok_or(QuartzError::Internal)?;
-
-        Ok(value)
-    }
-    pub fn config_ls(&self) -> QuartzResult<String> {
-        let content =
-            toml::to_string(&self.ctx.config.parse()).map_err(|_| QuartzError::Internal)?;
-
-        Ok(content)
+    pub fn config(&self) -> &ConfigManager {
+        &self.ctx.config
     }
     pub fn handle_create(
         &self,

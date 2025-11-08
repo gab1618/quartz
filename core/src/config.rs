@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{fs::OpenOptions, io::Write, path::{Path, PathBuf}};
+use std::{
+    fs::OpenOptions,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use crate::{QuartzError, QuartzResult};
 
@@ -18,6 +22,37 @@ impl ConfigManager {
     pub fn save(&self, mut conf: Config) {
         let save_filepath = Config::filepath(&self.mount_path);
         conf.write(save_filepath).unwrap();
+    }
+    pub fn set(&self, key: &str, value: &str) -> QuartzResult {
+        let mut curr_config = self.parse();
+        match key {
+            "preferences.editor" => curr_config.preferences.set_editor(value),
+            "preferences.pager" => curr_config.preferences.set_pager(value),
+            "ui.colors" => curr_config.ui.set_colors(matches!(value, "true")),
+            _ => {
+                return Err(QuartzError::Internal);
+            }
+        };
+
+        self.save(curr_config);
+
+        Ok(())
+    }
+    pub fn get(&self, key: &str) -> QuartzResult<String> {
+        let value = match key {
+            "preferences.editor" => Some(self.parse().preferences.editor()),
+            "preferences.pager" => Some(self.parse().preferences.pager()),
+            "ui.colors" => Some(self.parse().ui.colors().to_string()),
+            _ => None,
+        }
+        .ok_or(QuartzError::Internal)?;
+
+        Ok(value)
+    }
+    pub fn raw_configs(&self) -> QuartzResult<String> {
+        let content = toml::to_string(&self.parse()).map_err(|_| QuartzError::Internal)?;
+
+        Ok(content)
     }
 }
 

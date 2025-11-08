@@ -15,17 +15,20 @@ pub struct SetArgs {
 pub fn cmd(quartz: CliQuartz, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Get(args) => {
-            let config = quartz.config_get(&args.key)?;
+            let config_manager = quartz.config();
+            let config = config_manager .get(&args.key)?;
             println!("{config}");
         }
         Cmd::Edit => {
             quartz.edit_config()?;
         }
         Cmd::Set(args) => {
-            quartz.config_set(&args.key, &args.value)?;
+            let config_manager = quartz.config();
+            config_manager.set(&args.key, &args.value)?;
         }
         Cmd::Ls => {
-            let configs = quartz.config_ls()?;
+            let config_manager = quartz.config();
+            let configs = config_manager.raw_configs()?;
             println!("{configs}");
         }
     };
