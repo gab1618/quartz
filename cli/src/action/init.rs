@@ -1,4 +1,4 @@
-use crate::{QuartzResult, action::pager::CliPager, editor::FileEditor};
+use crate::{QuartzResult, action::pager::CliPager, editor::CliEditor};
 use std::path::{Path, PathBuf};
 
 use quartz_core::{Quartz, QuartzError};
@@ -14,7 +14,7 @@ pub fn cmd(args: Args) -> QuartzResult {
     Quartz::init(
         directory,
         home_dir,
-        FileEditor::default(),
+        CliEditor::default(),
         CliPager::default(),
     )?;
 

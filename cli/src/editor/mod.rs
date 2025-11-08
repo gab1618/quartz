@@ -1,9 +1,9 @@
 use quartz_core::{Quartz, QuartzError, QuartzResult, editor::Editor, pager::Pager};
 
 #[derive(Default)]
-pub struct FileEditor {}
+pub struct CliEditor {}
 
-impl Editor for FileEditor {
+impl Editor for CliEditor {
     fn edit<E: Editor, P: Pager>(
         &self,
         quartz: &Quartz<E, P>,
