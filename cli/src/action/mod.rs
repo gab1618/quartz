@@ -1,6 +1,7 @@
 use quartz_core::Quartz;
 use quartz_core::QuartzError;
 
+use crate::action::pager::CliPager;
 use crate::QuartzResult;
 use crate::action;
 use crate::editor::FileEditor;
@@ -21,9 +22,12 @@ pub mod send;
 pub mod show;
 pub mod snippet;
 pub mod var;
+pub mod pager;
+
+pub type CliQuartz = Quartz<FileEditor, CliPager>;
 
 pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
-    let mut quartz = Quartz::from_ctx(ctx, FileEditor::default());
+    let mut quartz = Quartz::from_ctx(ctx, FileEditor::default(), CliPager::default());
 
     match command {
         Cmd::Init(_) => (), // Init is only run on main, before ctx is resolved

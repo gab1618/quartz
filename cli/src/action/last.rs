@@ -1,13 +1,13 @@
 use crate::{
+    action::CliQuartz,
     cli::{LastCmd as Cmd, LastResCmd as ResCmd},
-    editor::FileEditor,
 };
 use quartz_core::{
-    Quartz, QuartzError, QuartzResult,
+    QuartzError, QuartzResult,
     history::{self},
 };
 
-pub fn cmd(quartz: Quartz<FileEditor>, maybe_command: Option<Cmd>) -> QuartzResult {
+pub fn cmd(quartz: CliQuartz, maybe_command: Option<Cmd>) -> QuartzResult {
     let h = quartz.history()?;
     let entry = h.last_entry()?.ok_or(QuartzError::Internal)?;
 

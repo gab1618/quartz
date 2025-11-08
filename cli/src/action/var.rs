@@ -1,5 +1,5 @@
-use crate::cli::VarCmd as Cmd;
-use quartz_core::{Quartz, QuartzResult, ctx::Ctx, editor::Editor, env::Variables};
+use crate::{action::CliQuartz, cli::VarCmd as Cmd};
+use quartz_core::{QuartzResult, ctx::Ctx, env::Variables};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
@@ -18,7 +18,7 @@ pub struct RmArgs {
     keys: Vec<String>,
 }
 
-pub fn cmd<E: Editor>(mut quartz: Quartz<E>, command: Cmd) -> QuartzResult {
+pub fn cmd(mut quartz: CliQuartz, command: Cmd) -> QuartzResult {
     let mut curr_env = quartz.current_env();
     match command {
         Cmd::Edit => edit(&mut quartz.ctx)?,

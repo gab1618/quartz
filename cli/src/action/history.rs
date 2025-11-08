@@ -1,6 +1,6 @@
-use quartz_core::{Quartz, QuartzResult};
+use quartz_core::QuartzResult;
 
-use crate::editor::FileEditor;
+use crate::action::CliQuartz;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -9,7 +9,7 @@ pub struct Args {
     max_count: Option<usize>,
 }
 
-pub fn cmd(quartz: Quartz<FileEditor>, args: Args) -> QuartzResult {
+pub fn cmd(quartz: CliQuartz, args: Args) -> QuartzResult {
     let history = quartz.history()?;
     let mut count = 0;
     let max_count = args.max_count.unwrap_or(usize::MAX);

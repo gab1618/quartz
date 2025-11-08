@@ -5,6 +5,7 @@ pub mod editor;
 pub mod endpoint;
 pub mod env;
 pub mod history;
+pub mod pager;
 pub mod pairmap;
 pub mod snippet;
 pub mod state;
@@ -31,6 +32,7 @@ use hyper::{Body, Client, Uri};
 use crate::cookie::CookieJar;
 use crate::editor::Editor;
 use crate::history::History;
+use crate::pager::Pager;
 use crate::pairmap::PairMap;
 use crate::tree::Tree;
 use crate::{
@@ -64,9 +66,10 @@ impl Display for QuartzError {
 
 impl Error for QuartzError {}
 
-pub struct Quartz<E: Editor> {
+pub struct Quartz<E: Editor, P: Pager> {
     pub ctx: Ctx,
     editor: E,
+    pager: P,
     path: PathBuf,
 }
 
@@ -76,15 +79,16 @@ pub struct SwitchArgs {
     pub empty: bool,
 }
 
-impl<E: Editor> Quartz<E> {
-    pub fn from_ctx(ctx: Ctx, editor: E) -> Self {
+impl<E: Editor, P: Pager> Quartz<E, P> {
+    pub fn from_ctx(ctx: Ctx, editor: E, pager: P) -> Self {
         Self {
             path: ctx.path().to_path_buf(),
             ctx,
             editor,
+            pager,
         }
     }
-    pub fn init(path: PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
+    pub fn init(path: PathBuf, config_path: PathBuf, editor: E, pager: P) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
 
         // TODO: properly propagate these errors for better diagnostics context
@@ -133,6 +137,7 @@ impl<E: Editor> Quartz<E> {
         Ok(Self {
             ctx: curr_ctx,
             editor,
+            pager,
             path,
         })
     }
@@ -668,6 +673,6 @@ impl<E: Editor> Quartz<E> {
         Ok(h)
     }
     pub fn paginate(&self, content: &[u8]) -> QuartzResult {
-        todo!()
+        self.pager.paginate(&self, content)
     }
 }

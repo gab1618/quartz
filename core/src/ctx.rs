@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::{ExitCode, Stdio};
+use std::process::ExitCode;
 
 use colored::Colorize;
 
@@ -192,28 +192,6 @@ impl Ctx {
         }
 
         std::fs::rename(&temp_path, path).map_err(|_| QuartzError::Internal)?;
-        Ok(())
-    }
-
-    /// Open user's preferred pager with content.
-    pub fn paginate(&self, input: &[u8]) -> QuartzResult {
-        let pager = self.config.parse().preferences.pager();
-
-        let mut child = std::process::Command::new(&pager)
-            .stdin(Stdio::piped())
-            .spawn()
-            .unwrap_or_else(|err| {
-                panic!("failed to open pager: {}\n\n{}", pager, err);
-            });
-
-        child
-            .stdin
-            .as_mut()
-            .unwrap()
-            .write_all(input)
-            .map_err(|_| QuartzError::Internal)?;
-        child.wait().map_err(|_| QuartzError::Internal)?;
-
         Ok(())
     }
 
