@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{fs::OpenOptions, io::Write, path::PathBuf};
+use std::{fs::OpenOptions, io::Write, path::{Path, PathBuf}};
 
 use crate::{QuartzError, QuartzResult};
 
@@ -12,11 +12,11 @@ impl ConfigManager {
         Self { mount_path }
     }
     pub fn parse(&self) -> Config {
-        let parsed = Config::parse(self.mount_path.clone());
+        let parsed = Config::parse(&self.mount_path);
         parsed
     }
     pub fn save(&self, mut conf: Config) {
-        let save_filepath = Config::filepath(self.mount_path.clone());
+        let save_filepath = Config::filepath(&self.mount_path);
         conf.write(save_filepath).unwrap();
     }
 }
@@ -32,11 +32,11 @@ impl Config {
         ".quartz.toml".to_string()
     }
 
-    pub fn filepath(mount_path: PathBuf) -> PathBuf {
+    pub fn filepath(mount_path: &Path) -> PathBuf {
         mount_path.join(Self::filename())
     }
 
-    pub fn parse(mount_path: PathBuf) -> Self {
+    pub fn parse(mount_path: &Path) -> Self {
         let filepath = Config::filepath(mount_path);
 
         if let Ok(config_toml) = std::fs::read_to_string(filepath) {

@@ -29,6 +29,7 @@ use hyper::body::{Bytes, HttpBody};
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::{Body, Client, Uri};
 
+use crate::config::Config;
 use crate::cookie::CookieJar;
 use crate::editor::Editor;
 use crate::history::History;
@@ -71,6 +72,7 @@ pub struct Quartz<E: Editor, P: Pager> {
     editor: E,
     pager: P,
     path: PathBuf,
+    config_path: PathBuf,
 }
 
 pub struct SwitchArgs {
@@ -80,9 +82,10 @@ pub struct SwitchArgs {
 }
 
 impl<E: Editor, P: Pager> Quartz<E, P> {
-    pub fn from_ctx(ctx: Ctx, editor: E, pager: P) -> Self {
+    pub fn from_ctx(ctx: Ctx, config_path: PathBuf, editor: E, pager: P) -> Self {
         Self {
             path: ctx.path().to_path_buf(),
+            config_path,
             ctx,
             editor,
             pager,
@@ -127,7 +130,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
 
         let curr_ctx = Ctx::new(
             path.clone(),
-            config_path,
+            config_path.clone(),
             CtxArgs {
                 from_handle: None,
                 early_apply_environment: false,
@@ -137,9 +140,13 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         Ok(Self {
             ctx: curr_ctx,
             editor,
+            config_path,
             pager,
             path,
         })
+    }
+    pub fn path(&self) -> &PathBuf {
+        &self.path
     }
     pub fn current_env(&self) -> Env {
         self.ctx.require_env()
@@ -505,6 +512,14 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         F: FnOnce(&str) -> QuartzResult,
     {
         self.edit_with_extension::<F>(path, None, validate)
+    }
+
+    pub fn edit_config(&self) -> QuartzResult {
+        let config_file_path = Config::filepath(&self.config_path);
+
+        self.edit(&config_file_path, validator::toml_as::<Config>)?;
+
+        Ok(())
     }
 
     pub fn handle_edit(&self) -> QuartzResult {

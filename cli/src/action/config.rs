@@ -18,7 +18,9 @@ pub fn cmd(quartz: CliQuartz, command: Cmd) -> QuartzResult {
             let config = quartz.config_get(&args.key)?;
             println!("{config}");
         }
-        Cmd::Edit => todo!(),
+        Cmd::Edit => {
+            quartz.edit_config()?;
+        }
         Cmd::Set(args) => {
             quartz.config_set(&args.key, &args.value)?;
         }
