@@ -701,4 +701,16 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
 
         Ok(())
     }
+    pub fn set_body(&self, input: String) {
+        let handle = self.ctx.require_handle();
+
+        if let Ok(mut file) = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(handle.dir(&self.ctx).join("body"))
+        {
+            let _ = file.write_all(input.as_bytes());
+        }
+    }
 }

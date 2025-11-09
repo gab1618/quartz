@@ -1,6 +1,5 @@
 use crate::{action::CliQuartz, cli::BodyCmd as Cmd};
 use quartz_core::QuartzResult;
-use std::io::Write;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -37,8 +36,6 @@ pub fn edit(quartz: CliQuartz, format: Option<String>) -> QuartzResult {
 }
 
 pub fn stdin(quartz: CliQuartz) {
-    let handle = quartz.ctx.require_handle();
-
     let mut input = String::new();
     while let Ok(bytes) = std::io::stdin().read_line(&mut input) {
         if bytes == 0 {
@@ -46,12 +43,5 @@ pub fn stdin(quartz: CliQuartz) {
         }
     }
 
-    if let Ok(mut file) = std::fs::OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open(handle.dir(&quartz.ctx).join("body"))
-    {
-        let _ = file.write_all(input.as_bytes());
-    }
+    quartz.set_body(input);
 }
