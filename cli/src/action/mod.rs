@@ -37,14 +37,16 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Create(args) => {
             quartz.handle_create(&args.handle, args.patch)?;
             if args.switch {
-                quartz.handle_switch(Some(args.handle))?;
+                quartz.handle_switch(args.handle)?;
             }
         }
         Cmd::Use(args) => {
-            let handle = quartz.handle_switch(args.handle)?;
+            if let Some(handle) = args.handle {
+                quartz.handle_switch(handle)?;
+            }
             quartz.apply_endpoint_patch(args.patch)?;
             if args.empty {
-                handle.make_empty(&quartz.ctx);
+                quartz.make_handle_empty();
             }
         }
         Cmd::Ls(args) => {

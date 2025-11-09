@@ -139,6 +139,10 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
             path,
         })
     }
+    pub fn make_handle_empty(&self) {
+        let handle = self.ctx.require_handle();
+        handle.make_empty(&self.ctx);
+    }
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
@@ -250,48 +254,31 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         Ok(endpoint)
     }
 
-    pub fn handle_switch(
-        &self,
-        handle: Option<String>,
-    ) -> QuartzResult<EndpointHandle> {
-        let handle = if let Some(mut handle) = handle {
-            if handle == "-" {
-                if let Ok(previous_handle) = StateField::PreviousEndpoint.get(&self.ctx) {
-                    handle = previous_handle;
-                } else {
-                    return Err(QuartzError::Internal);
-                }
-            }
+    pub fn handle_switch(&self, mut handle: String) -> QuartzResult<EndpointHandle> {
+        if handle == "-" {
+            let previous_handle = StateField::PreviousEndpoint.get(&self.ctx)?;
+            handle = previous_handle;
+        }
 
-            let handle = EndpointHandle::from(handle);
+        let handle = EndpointHandle::from(handle);
 
-            if !handle.exists(&self.ctx) {
-                return Err(QuartzError::Internal);
-            }
+        if !handle.exists(&self.ctx) {
+            return Err(QuartzError::Internal);
+        }
 
-            let previous = StateField::Endpoint.get(&self.ctx);
-            if StateField::Endpoint
-                .set(&self.ctx, &handle.path.join("/"))
-                .is_ok()
-            {
-                if let Ok(prev) = previous {
-                    let _ = StateField::PreviousEndpoint.set(&self.ctx, &prev);
-                }
-            } else {
-                return Err(QuartzError::Internal);
-            }
+        let previous = StateField::Endpoint.get(&self.ctx);
+        StateField::Endpoint.set(&self.ctx, &handle.path.join("/"))?;
 
-            handle
-        } else {
-            self.ctx.require_handle()
-        };
+        if let Ok(prev) = previous {
+            let _ = StateField::PreviousEndpoint.set(&self.ctx, &prev);
+        }
 
         Ok(handle)
     }
 
     pub fn apply_endpoint_patch(&self, mut patch: EndpointPatch) -> QuartzResult {
         if !patch.has_changes() {
-            return Ok(())
+            return Ok(());
         }
         let (_, mut curr_endpoint) = self.ctx.require_endpoint();
         curr_endpoint.update(&mut patch);
