@@ -75,12 +75,6 @@ pub struct Quartz<E: Editor, P: Pager> {
     config_path: PathBuf,
 }
 
-pub struct SwitchArgs {
-    pub handle: Option<String>,
-    pub patch: EndpointPatch,
-    pub empty: bool,
-}
-
 impl<E: Editor, P: Pager> Quartz<E, P> {
     pub fn from_ctx(ctx: Ctx, config_path: PathBuf, editor: E, pager: P) -> Self {
         Self {
