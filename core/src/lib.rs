@@ -253,7 +253,6 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
     pub fn handle_switch(
         &self,
         handle: Option<String>,
-        mut patch: EndpointPatch,
         empty: bool,
     ) -> QuartzResult {
         let handle = if let Some(mut handle) = handle {
@@ -292,16 +291,16 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
             handle.make_empty(&self.ctx);
         }
 
+        Ok(())
+    }
+
+    pub fn apply_endpoint_patch(&self, mut patch: EndpointPatch) -> QuartzResult {
         if !patch.has_changes() {
-            return Ok(());
+            return Ok(())
         }
-
-        let mut endpoint = handle
-            .endpoint(&self.ctx)
-            .unwrap_or(Endpoint::new(handle.dir(&self.ctx)));
-
-        endpoint.update(&mut patch);
-        endpoint.write();
+        let (_, mut curr_endpoint) = self.ctx.require_endpoint();
+        curr_endpoint.update(&mut patch);
+        curr_endpoint.write();
 
         Ok(())
     }
