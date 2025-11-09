@@ -13,6 +13,7 @@ pub trait Editor {
     }
 }
 
+#[derive(Default)]
 pub struct NoEditor {}
 impl Editor for NoEditor {
     fn edit<E: Editor, P: Pager>(
