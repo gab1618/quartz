@@ -661,4 +661,44 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
     pub fn paginate(&self, content: &[u8]) -> QuartzResult {
         self.pager.paginate(&self, content)
     }
+    pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
+        const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
+        let handle = self.ctx.require_handle();
+        let path = handle.dir(&self.ctx).join("body");
+
+        let format = if format.is_some() {
+            format
+        } else {
+            let endpoint = self.ctx.require_endpoint_from_handle(&handle);
+
+            if let Some(content) = endpoint.headers.get("content-type") {
+                let ext = POSSIBLE_EXT.iter().find_map(|ext| {
+                    if content.contains(*ext) {
+                        Some(ext.to_string())
+                    } else {
+                        None
+                    }
+                });
+
+                ext
+            } else {
+                None
+            }
+        };
+
+        if let Some(format) = format {
+            // We cannot validate json for now. If we do so, variable notation will fail because it can
+            // generate invalid JSON. For exemple:
+            //
+            // { "value": {{n}} }
+            //
+            // n must be a number, so we don't wrap it in quotes. This JSON before variables is
+            // invalid. A solution may or may not be done later.
+            self.edit_with_extension(&path, Some(&format), validator::infallible)?;
+        } else {
+            self.edit(&path, validator::infallible)?;
+        }
+
+        Ok(())
+    }
 }
