@@ -43,7 +43,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Ls(args) => {
             action::ls::cmd(args, quartz)?;
         }
-        Cmd::Show { command } => action::show::cmd(&mut quartz.ctx, command)?,
+        Cmd::Show { command } => action::show::cmd(quartz, command)?,
         Cmd::Edit => { quartz.handle_edit() }?,
         Cmd::Cp(args) => {
             quartz.handle_cp(args.recursive, args.src, args.dest)?;

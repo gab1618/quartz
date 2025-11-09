@@ -1,5 +1,5 @@
 use crate::{action::CliQuartz, cli::BodyCmd as Cmd};
-use quartz_core::{QuartzResult, ctx::Ctx};
+use quartz_core::QuartzResult;
 use std::io::Write;
 
 #[derive(clap::Args, Debug)]
@@ -14,16 +14,16 @@ pub struct Args {
 
 pub fn cmd(quartz: CliQuartz, args: Args) -> QuartzResult {
     match args.command {
-        Cmd::Show => print(&quartz.ctx),
-        Cmd::Stdin => stdin(&quartz.ctx),
+        Cmd::Show => print(quartz),
+        Cmd::Stdin => stdin(quartz),
         Cmd::Edit => edit(quartz, args.format)?,
     };
 
     Ok(())
 }
 
-pub fn print(ctx: &Ctx) {
-    let (_, mut endpoint) = ctx.require_endpoint();
+pub fn print(quartz: CliQuartz) {
+    let (_, mut endpoint) = quartz.ctx.require_endpoint();
 
     if let Some(body) = endpoint.body() {
         print!("{body}");
@@ -36,8 +36,8 @@ pub fn edit(quartz: CliQuartz, format: Option<String>) -> QuartzResult {
     Ok(())
 }
 
-pub fn stdin(ctx: &Ctx) {
-    let handle = ctx.require_handle();
+pub fn stdin(quartz: CliQuartz) {
+    let handle = quartz.ctx.require_handle();
 
     let mut input = String::new();
     while let Ok(bytes) = std::io::stdin().read_line(&mut input) {
@@ -50,7 +50,7 @@ pub fn stdin(ctx: &Ctx) {
         .create(true)
         .write(true)
         .truncate(true)
-        .open(handle.dir(ctx).join("body"))
+        .open(handle.dir(&quartz.ctx).join("body"))
     {
         let _ = file.write_all(input.as_bytes());
     }
