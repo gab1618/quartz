@@ -35,7 +35,10 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
 
         Cmd::Send(args) => action::send::cmd(quartz, args).await?,
         Cmd::Create(args) => {
-            quartz.handle_create(&args.handle, args.patch, args.switch)?;
+            quartz.handle_create(&args.handle, args.patch)?;
+            if args.switch {
+                quartz.handle_switch(Some(args.handle), Default::default(), false)?;
+            }
         }
         Cmd::Use(args) => {
             quartz.handle_switch(args.handle, args.patch, args.empty)?;

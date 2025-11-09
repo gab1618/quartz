@@ -230,7 +230,6 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         &self,
         handle: &str,
         mut patch: endpoint::EndpointPatch,
-        switch: bool,
     ) -> QuartzResult {
         if handle.is_empty() {
             return Err(QuartzError::Internal);
@@ -244,12 +243,6 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
 
         let mut endpoint = Endpoint::from(&mut patch);
         endpoint.set_handle(&self.ctx, &handle);
-
-        if switch {
-            StateField::Endpoint
-                .set(&self.ctx, &handle.path.join("/"))
-                .map_err(|_| QuartzError::Internal)?;
-        }
 
         handle.write(&self.ctx);
         endpoint.write();
