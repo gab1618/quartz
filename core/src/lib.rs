@@ -230,7 +230,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         &self,
         handle: &str,
         mut patch: endpoint::EndpointPatch,
-    ) -> QuartzResult {
+    ) -> QuartzResult<Endpoint> {
         if handle.is_empty() {
             return Err(QuartzError::Internal);
         }
@@ -247,14 +247,13 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         handle.write(&self.ctx);
         endpoint.write();
 
-        Ok(())
+        Ok(endpoint)
     }
 
     pub fn handle_switch(
         &self,
         handle: Option<String>,
-        empty: bool,
-    ) -> QuartzResult {
+    ) -> QuartzResult<EndpointHandle> {
         let handle = if let Some(mut handle) = handle {
             if handle == "-" {
                 if let Ok(previous_handle) = StateField::PreviousEndpoint.get(&self.ctx) {
@@ -287,11 +286,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
             self.ctx.require_handle()
         };
 
-        if empty {
-            handle.make_empty(&self.ctx);
-        }
-
-        Ok(())
+        Ok(handle)
     }
 
     pub fn apply_endpoint_patch(&self, mut patch: EndpointPatch) -> QuartzResult {
