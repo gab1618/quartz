@@ -19,7 +19,7 @@ use std::collections::VecDeque;
 use std::error::Error;
 use std::ffi::OsString;
 use std::fmt::Display;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -669,16 +669,31 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
 
         Ok(())
     }
-    pub fn set_body(&self, input: String) {
+    pub fn set_body(&self, input: String) -> QuartzResult {
         let handle = self.ctx.require_handle();
 
-        if let Ok(mut file) = std::fs::OpenOptions::new()
+        let mut f = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
             .open(handle.dir(&self.ctx).join("body"))
-        {
-            let _ = file.write_all(input.as_bytes());
-        }
+            .map_err(|_| QuartzError::Internal)?;
+
+        f.write_all(input.as_bytes())
+            .map_err(|_| QuartzError::Internal)?;
+
+        Ok(())
+    }
+    pub fn get_body(&self) -> QuartzResult<String> {
+        let handle = self.ctx.require_handle();
+        let mut f = std::fs::OpenOptions::new()
+            .read(true)
+            .open(handle.dir(&self.ctx).join("body"))
+            .map_err(|_| QuartzError::Internal)?;
+        let mut body_content = String::new();
+        f.read_to_string(&mut body_content)
+            .map_err(|_| QuartzError::Internal)?;
+
+        Ok(body_content)
     }
 }
