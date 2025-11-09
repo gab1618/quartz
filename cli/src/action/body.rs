@@ -43,5 +43,5 @@ pub fn stdin(quartz: CliQuartz) {
         }
     }
 
-    quartz.set_body(input);
+    quartz.set_body(input).unwrap();
 }
