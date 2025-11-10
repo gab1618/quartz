@@ -136,7 +136,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
             editor,
             config_path,
             pager,
-            path,
+            path: quartz_dir,
         })
     }
     pub fn make_handle_empty(&self) {
