@@ -53,7 +53,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
                 quartz.apply_endpoint_patch(endpoint, args.patch)?;
             }
             if args.empty {
-                quartz.make_handle_empty();
+                quartz.make_handle_empty()?;
             }
         }
         Cmd::Ls(args) => {

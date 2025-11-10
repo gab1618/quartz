@@ -139,9 +139,11 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
             path: quartz_dir,
         })
     }
-    pub fn make_handle_empty(&self) {
-        let handle = self.ctx.require_handle();
+    pub fn make_handle_empty(&self) -> QuartzResult {
+        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
         handle.make_empty(&self.ctx);
+
+        Ok(())
     }
     pub fn current_handle(&self) -> Option<EndpointHandle> {
         let curr_endpoint_name = StateField::Endpoint.get(&self.ctx).ok();
