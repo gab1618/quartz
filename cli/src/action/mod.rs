@@ -35,16 +35,23 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
 
         Cmd::Send(args) => action::send::cmd(quartz, args).await?,
         Cmd::Create(args) => {
-            quartz.handle_create(&args.handle, args.patch)?;
+            let endpoint = quartz.handle_create(&args.handle)?;
             if args.switch {
                 quartz.handle_switch(args.handle)?;
             }
+            quartz.apply_endpoint_patch(endpoint, args.patch)?;
         }
         Cmd::Use(args) => {
-            if let Some(handle) = args.handle {
-                quartz.handle_switch(handle)?;
+            let curr_handle = match args.handle {
+                Some(handle) => Some(quartz.handle_switch(handle)?),
+                None => quartz.current_handle(),
+            };
+            let curr_endpoint = curr_handle
+                .map(|handle| handle.endpoint(&quartz.ctx))
+                .unwrap();
+            if let Some(endpoint) = curr_endpoint {
+                quartz.apply_endpoint_patch(endpoint, args.patch)?;
             }
-            quartz.apply_endpoint_patch(args.patch)?;
             if args.empty {
                 quartz.make_handle_empty();
             }

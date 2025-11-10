@@ -143,6 +143,12 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         let handle = self.ctx.require_handle();
         handle.make_empty(&self.ctx);
     }
+    pub fn current_handle(&self) -> Option<EndpointHandle> {
+        let curr_endpoint_name = StateField::Endpoint.get(&self.ctx).ok();
+
+        let parsed = curr_endpoint_name.map(|handle_name| EndpointHandle::from(handle_name));
+        parsed
+    }
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
@@ -234,11 +240,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
     pub fn config(&self) -> &ConfigManager {
         &self.ctx.config
     }
-    pub fn handle_create(
-        &self,
-        handle: &str,
-        mut patch: endpoint::EndpointPatch,
-    ) -> QuartzResult<Endpoint> {
+    pub fn handle_create(&self, handle: &str) -> QuartzResult<Endpoint> {
         if handle.is_empty() {
             return Err(QuartzError::Internal);
         }
@@ -249,7 +251,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
             return Err(QuartzError::Internal);
         }
 
-        let mut endpoint = Endpoint::from(&mut patch);
+        let mut endpoint = Endpoint::default();
         endpoint.set_handle(&self.ctx, &handle);
 
         handle.write(&self.ctx);
@@ -280,13 +282,13 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         Ok(handle)
     }
 
-    pub fn apply_endpoint_patch(&self, mut patch: EndpointPatch) -> QuartzResult {
-        if !patch.has_changes() {
-            return Ok(());
-        }
-        let (_, mut curr_endpoint) = self.ctx.require_endpoint();
-        curr_endpoint.update(&mut patch);
-        curr_endpoint.write();
+    pub fn apply_endpoint_patch(
+        &self,
+        mut endpoint: Endpoint,
+        mut patch: EndpointPatch,
+    ) -> QuartzResult {
+        endpoint.update(&mut patch);
+        endpoint.write();
 
         Ok(())
     }
