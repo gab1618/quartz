@@ -470,7 +470,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
     }
 
     pub fn handle_edit(&self) -> QuartzResult {
-        let handle = self.ctx.require_handle();
+        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
 
         self.edit(
             &handle.dir(&self.ctx).join("endpoint.toml"),
@@ -639,7 +639,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
     }
     pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
-        let handle = self.ctx.require_handle();
+        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
         let path = handle.dir(&self.ctx).join("body");
 
         let format = if format.is_some() {
@@ -678,7 +678,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         Ok(())
     }
     pub fn set_body(&self, input: String) -> QuartzResult {
-        let handle = self.ctx.require_handle();
+        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
 
         let mut f = std::fs::OpenOptions::new()
             .create(true)
@@ -693,7 +693,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         Ok(())
     }
     pub fn get_body(&self) -> QuartzResult<String> {
-        let handle = self.ctx.require_handle();
+        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
         let mut f = std::fs::OpenOptions::new()
             .read(true)
             .open(handle.dir(&self.ctx).join("body"))
