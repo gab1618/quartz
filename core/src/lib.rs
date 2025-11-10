@@ -146,8 +146,12 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
-    pub fn current_env(&self) -> Env {
-        self.ctx.require_env()
+    pub fn current_env(&self) -> QuartzResult<Env> {
+        let curr_env_name = StateField::Env.get(&self.ctx).unwrap_or("default".into());
+
+        let parsed_env = Env::parse(self.path().to_path_buf(), &curr_env_name)
+            .map_err(|_| QuartzError::Internal)?;
+        Ok(parsed_env)
     }
     pub fn get_env(&self, name: &str) -> Option<Env> {
         let env = Env::parse(self.path.clone(), name).ok();
@@ -195,7 +199,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         if !env.exists() {
             return Err(QuartzError::Internal);
         }
-        let curr_env = self.current_env();
+        let curr_env = self.current_env()?;
         if env.name == curr_env.name {
             return Err(QuartzError::Internal);
         }
@@ -480,7 +484,7 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
         let (handle, mut endpoint) = self.ctx.require_endpoint();
-        let mut env = self.ctx.require_env();
+        let mut env = self.current_env()?;
         for var in variables {
             env.variables.set(&var)?;
         }

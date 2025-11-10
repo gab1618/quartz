@@ -42,7 +42,7 @@ pub fn cmd(quartz: CliQuartz, command: Cmd) -> QuartzResult {
         }
         Cmd::Rm(args) => quartz.remove_env(&args.env)?,
         Cmd::Header { command } => {
-            let mut curr_env = quartz.current_env();
+            let mut curr_env = quartz.current_env().unwrap();
             match command {
                 HeaderCmd::Set { header } => {
                     curr_env.header_set(&header)?;

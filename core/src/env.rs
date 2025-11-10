@@ -8,7 +8,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{cookie::CookieJar, endpoint::Headers, pairmap::PairMap, QuartzError, QuartzResult};
+use crate::{QuartzError, QuartzResult, cookie::CookieJar, endpoint::Headers, pairmap::PairMap};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Variables(pub HashMap<String, String>);
@@ -140,7 +140,6 @@ impl Env {
 
         Ok(env)
     }
-
 
     pub fn cookie_jar(&self) -> CookieJar {
         let path = self.dir().join(CookieJar::FILENAME);

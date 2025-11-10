@@ -19,7 +19,7 @@ pub struct RmArgs {
 }
 
 pub fn cmd(mut quartz: CliQuartz, command: Cmd) -> QuartzResult {
-    let mut curr_env = quartz.current_env();
+    let mut curr_env = quartz.current_env()?;
     match command {
         Cmd::Edit => edit(&mut quartz.ctx)?,
         Cmd::Get(args) => {
