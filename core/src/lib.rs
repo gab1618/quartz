@@ -43,6 +43,8 @@ use crate::{
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;
 
+pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
+
 #[derive(Debug)]
 pub enum QuartzError {
     Internal,
@@ -485,7 +487,7 @@ impl<E: Editor> Quartz<E> {
         if !endpoint.headers.contains_key("user-agent") {
             endpoint
                 .headers
-                .insert("user-agent".to_string(), Ctx::user_agent());
+                .insert("user-agent".to_string(), USER_AGENT.to_owned());
         }
 
         let mut cookie_jar = env.cookie_jar();

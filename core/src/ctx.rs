@@ -24,8 +24,6 @@ pub struct Ctx {
 }
 
 impl Ctx {
-    const VERSION: &'static str = env!("CARGO_PKG_VERSION");
-
     pub fn new(mut dir: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let config = ConfigManager::new(config_path);
         let state = State {
@@ -181,13 +179,6 @@ impl Ctx {
 
         std::fs::rename(&temp_path, path).map_err(|_| QuartzError::Internal)?;
         Ok(())
-    }
-
-    pub fn user_agent() -> String {
-        let mut agent = String::from("quartz/");
-        agent.push_str(Ctx::VERSION);
-
-        agent
     }
 
     pub fn path(&self) -> &Path {
