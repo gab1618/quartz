@@ -1,5 +1,5 @@
-use crate::{action::CliQuartz, cli::BodyCmd as Cmd};
-use quartz_core::{QuartzError, QuartzResult};
+use crate::cli::BodyCmd as Cmd;
+use quartz_core::{Quartz, QuartzError, QuartzResult};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -11,7 +11,7 @@ pub struct Args {
     command: crate::cli::BodyCmd,
 }
 
-pub fn cmd(quartz: CliQuartz, args: Args) -> QuartzResult {
+pub fn cmd(quartz: Quartz, args: Args) -> QuartzResult {
     match args.command {
         Cmd::Show => {
             print(quartz)?;
@@ -23,7 +23,7 @@ pub fn cmd(quartz: CliQuartz, args: Args) -> QuartzResult {
     Ok(())
 }
 
-pub fn print(quartz: CliQuartz) -> QuartzResult {
+pub fn print(quartz: Quartz) -> QuartzResult {
     let curr_handle = quartz.current_handle().ok_or(QuartzError::Internal)?;
     let mut curr_endpoint = curr_handle
         .endpoint(&quartz.ctx)
@@ -36,13 +36,13 @@ pub fn print(quartz: CliQuartz) -> QuartzResult {
     Ok(())
 }
 
-pub fn edit(quartz: CliQuartz, format: Option<String>) -> QuartzResult {
+pub fn edit(quartz: Quartz, format: Option<String>) -> QuartzResult {
     quartz.body_edit(format)?;
 
     Ok(())
 }
 
-pub fn stdin(quartz: CliQuartz) {
+pub fn stdin(quartz: Quartz) {
     let mut input = String::new();
     while let Ok(bytes) = std::io::stdin().read_line(&mut input) {
         if bytes == 0 {

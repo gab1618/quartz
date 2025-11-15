@@ -1,7 +1,6 @@
 pub mod config;
 pub mod cookie;
 pub mod ctx;
-pub mod editor;
 pub mod endpoint;
 pub mod env;
 pub mod history;
@@ -16,7 +15,6 @@ mod tests;
 
 use std::collections::VecDeque;
 use std::error::Error;
-use std::ffi::OsString;
 use std::fmt::Display;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -30,7 +28,6 @@ use hyper::{Body, Client, Uri};
 
 use crate::config::{Config, ConfigManager};
 use crate::cookie::CookieJar;
-use crate::editor::Editor;
 use crate::history::History;
 use crate::pairmap::PairMap;
 use crate::tree::Tree;
@@ -67,24 +64,22 @@ impl Display for QuartzError {
 
 impl Error for QuartzError {}
 
-pub struct Quartz<E: Editor> {
+pub struct Quartz {
     pub ctx: Ctx,
-    editor: E,
     path: PathBuf,
     config_path: PathBuf,
 }
 
-impl<E: Editor> Quartz<E> {
-    pub fn new(path: PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
+impl Quartz {
+    pub fn new(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let ctx = Ctx::new(path.clone(), config_path.clone())?;
         Ok(Self {
             ctx,
-            editor,
             path,
             config_path,
         })
     }
-    pub fn init(path: PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
+    pub fn init(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
 
         // TODO: properly propagate these errors for better diagnostics context
@@ -125,7 +120,6 @@ impl<E: Editor> Quartz<E> {
 
         Ok(Self {
             ctx: curr_ctx,
-            editor,
             config_path,
             path: quartz_dir,
         })
@@ -404,58 +398,10 @@ impl<E: Editor> Quartz<E> {
         tree_base
     }
 
-    pub fn edit_with_extension<F>(
-        &self,
-        path: &Path,
-        extension: Option<&str>,
-        validate: F,
-    ) -> QuartzResult
-    where
-        F: FnOnce(&str) -> QuartzResult,
-    {
-        let mut temp_path = self.ctx.path().join("user").join("EDIT");
-
-        let extension: Option<OsString> = {
-            if let Some(extension) = extension {
-                Some(OsString::from(extension))
-            } else {
-                path.extension().map(|extension| extension.to_os_string())
-            }
-        };
-
-        if let Some(extension) = extension {
-            temp_path.set_extension(extension);
-        }
-
-        if !path.exists() {
-            std::fs::File::create(path).map_err(|_| QuartzError::Internal)?;
-        }
-
-        std::fs::copy(path, &temp_path).map_err(|_| QuartzError::Internal)?;
-
-        self.editor.edit(&self, &temp_path)?;
-
-        let content = std::fs::read_to_string(&temp_path).map_err(|_| QuartzError::Internal)?;
-
-        if let Err(_err) = validate(&content) {
-            std::fs::remove_file(&temp_path).map_err(|_| QuartzError::Internal)?;
-        }
-
-        std::fs::rename(&temp_path, path).map_err(|_| QuartzError::Internal)?;
-        Ok(())
-    }
-
-    pub fn edit<F>(&self, path: &Path, validate: F) -> QuartzResult
-    where
-        F: FnOnce(&str) -> QuartzResult,
-    {
-        self.edit_with_extension::<F>(path, None, validate)
-    }
-
     pub fn edit_config(&self) -> QuartzResult {
         let config_file_path = Config::filepath(&self.config_path);
 
-        self.edit(&config_file_path, validator::toml_as::<Config>)?;
+        self.ctx.edit(&config_file_path, validator::toml_as::<Config>)?;
 
         Ok(())
     }
@@ -463,7 +409,7 @@ impl<E: Editor> Quartz<E> {
     pub fn handle_edit(&self) -> QuartzResult {
         let handle = self.current_handle().ok_or(QuartzError::Internal)?;
 
-        self.edit(
+        self.ctx.edit(
             &handle.dir(&self.ctx).join("endpoint.toml"),
             validator::toml_as::<Endpoint>,
         )?;
@@ -658,9 +604,9 @@ impl<E: Editor> Quartz<E> {
             //
             // n must be a number, so we don't wrap it in quotes. This JSON before variables is
             // invalid. A solution may or may not be done later.
-            self.edit_with_extension(&path, Some(&format), validator::infallible)?;
+            self.ctx.edit_with_extension(&path, Some(&format), validator::infallible)?;
         } else {
-            self.edit(&path, validator::infallible)?;
+            self.ctx.edit(&path, validator::infallible)?;
         }
 
         Ok(())

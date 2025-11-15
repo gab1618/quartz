@@ -1,16 +1,12 @@
 mod action;
 mod cli;
-mod editor;
 
 use std::env::current_dir;
 
 use clap::Parser;
 use colored::Colorize;
 
-use crate::{
-    cli::{Cli, Cmd},
-    editor::CliEditor,
-};
+use crate::cli::{Cli, Cmd};
 use quartz_core::{Quartz, QuartzError, QuartzResult};
 
 #[tokio::main]
@@ -38,7 +34,7 @@ async fn main() -> QuartzResult {
     let home_dir = std::env::home_dir().unwrap();
     let curr_dir = current_dir().map_err(|_| QuartzError::Internal)?;
 
-    let quartz = Quartz::new(curr_dir, home_dir, CliEditor::default())?;
+    let quartz = Quartz::new(curr_dir, home_dir)?;
 
     // When true, ensures pagers and/or grep keeps the output colored
     colored::control::set_override(quartz.config().parse().ui.colors());

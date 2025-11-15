@@ -1,31 +1,11 @@
-use std::{
-    cell::Cell,
-    ops::{Deref, DerefMut},
-};
+use std::ops::{Deref, DerefMut};
 
 use tempfile::{TempDir, tempdir};
 
-use crate::{Quartz, QuartzError, QuartzResult, editor::Editor};
-
-#[derive(Default)]
-pub struct MockEditor {
-    edit_calls_count: Cell<u8>,
-}
-impl Editor for MockEditor {
-    fn edit<E: Editor>(
-        &self,
-        _quartz: &Quartz<E>,
-        _file_path: &std::path::PathBuf,
-    ) -> QuartzResult {
-        let curr_call_count = self.edit_calls_count.take();
-        self.edit_calls_count.set(curr_call_count + 1);
-
-        Ok(())
-    }
-}
+use crate::{Quartz, QuartzError, QuartzResult};
 
 pub struct TestQuartz {
-    pub inner: Quartz<MockEditor>,
+    pub inner: Quartz,
     #[allow(unused)]
     dir: TempDir,
     #[allow(unused)]
@@ -39,9 +19,7 @@ impl TestQuartz {
 
         let dir_buf_path = dir.path().to_path_buf();
         let config_dir_path = config_dir.path().to_path_buf();
-        let mock_editor = MockEditor::default();
-        let qz = Quartz::init(dir_buf_path, config_dir_path, mock_editor)
-            .map_err(|_| QuartzError::Internal)?;
+        let qz = Quartz::init(dir_buf_path, config_dir_path).map_err(|_| QuartzError::Internal)?;
 
         Ok(Self {
             inner: qz,
@@ -52,7 +30,7 @@ impl TestQuartz {
 }
 
 impl Deref for TestQuartz {
-    type Target = Quartz<MockEditor>;
+    type Target = Quartz;
     fn deref(&self) -> &Self::Target {
         &self.inner
     }

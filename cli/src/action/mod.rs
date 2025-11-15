@@ -4,7 +4,6 @@ use quartz_core::QuartzError;
 use crate::QuartzResult;
 use crate::action;
 use crate::cli::Cmd;
-use crate::editor::CliEditor;
 
 pub mod body;
 pub mod config;
@@ -22,9 +21,7 @@ pub mod show;
 pub mod snippet;
 pub mod var;
 
-pub type CliQuartz = Quartz<CliEditor>;
-
-pub async fn cmd(mut quartz: CliQuartz, command: Cmd) -> QuartzResult {
+pub async fn cmd(mut quartz: Quartz, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Init(_) => (), // Init is only run on main, before ctx is resolved
 

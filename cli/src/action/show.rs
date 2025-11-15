@@ -1,7 +1,7 @@
-use crate::{action::{self, CliQuartz}, cli::ShowCmd as Cmd};
-use quartz_core::{QuartzError, QuartzResult, ctx::Ctx, state::StateField};
+use crate::{action, cli::ShowCmd as Cmd};
+use quartz_core::{Quartz, QuartzError, QuartzResult, ctx::Ctx, state::StateField};
 
-pub fn cmd(quartz: CliQuartz, command: Cmd) -> QuartzResult {
+pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Query { key } => {
             if let Some(key) = key {

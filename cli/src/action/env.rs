@@ -1,8 +1,5 @@
-use crate::{
-    action::CliQuartz,
-    cli::{EnvCmd as Cmd, HeaderCmd},
-};
-use quartz_core::QuartzResult;
+use crate::cli::{EnvCmd as Cmd, HeaderCmd};
+use quartz_core::{Quartz, QuartzResult};
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {
@@ -25,7 +22,7 @@ pub struct RmArgs {
     env: String,
 }
 
-pub fn cmd(quartz: CliQuartz, command: Cmd) -> QuartzResult {
+pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Create(args) => quartz.create_env(&args.name)?,
         Cmd::Cp(args) => {
