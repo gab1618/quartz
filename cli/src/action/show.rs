@@ -19,7 +19,7 @@ pub fn cmd(quartz: CliQuartz, command: Cmd) -> QuartzResult {
         }
         Cmd::Url => url(&quartz.ctx),
         Cmd::Method => method(&quartz.ctx),
-        Cmd::Body => action::body::print(quartz),
+        Cmd::Body => action::body::print(quartz)?,
         Cmd::Handle => handle(&quartz.ctx),
         Cmd::Env => {
             let curr_env = quartz.ctx.require_env();
