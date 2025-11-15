@@ -35,7 +35,7 @@ use crate::history::History;
 use crate::pairmap::PairMap;
 use crate::tree::Tree;
 use crate::{
-    ctx::{Ctx, CtxArgs},
+    ctx::Ctx,
     endpoint::{EndpointHandle, EndpointPatch},
     env::Env,
     state::StateField,
@@ -73,13 +73,14 @@ pub struct Quartz<E: Editor> {
 }
 
 impl<E: Editor> Quartz<E> {
-    pub fn from_ctx(ctx: Ctx, config_path: PathBuf, editor: E) -> Self {
-        Self {
-            path: ctx.path().to_path_buf(),
-            config_path,
+    pub fn new(path: PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
+        let ctx = Ctx::new(path.clone(), config_path.clone())?;
+        Ok(Self {
             ctx,
             editor,
-        }
+            path,
+            config_path,
+        })
     }
     pub fn init(path: PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
@@ -118,14 +119,7 @@ impl<E: Editor> Quartz<E> {
             }
         }
 
-        let curr_ctx = Ctx::new(
-            path.clone(),
-            config_path.clone(),
-            CtxArgs {
-                from_handle: None,
-                early_apply_environment: false,
-            },
-        )?;
+        let curr_ctx = Ctx::new(path.clone(), config_path.clone())?;
 
         Ok(Self {
             ctx: curr_ctx,

@@ -17,7 +17,6 @@ pub struct CtxArgs {
 }
 
 pub struct Ctx {
-    pub args: CtxArgs,
     pub config: ConfigManager,
     pub state: State,
     path: PathBuf,
@@ -27,10 +26,10 @@ pub struct Ctx {
 impl Ctx {
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-    pub fn new(mut dir: PathBuf, config_path: PathBuf, args: CtxArgs) -> QuartzResult<Self> {
+    pub fn new(mut dir: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let config = ConfigManager::new(config_path);
         let state = State {
-            handle: args.from_handle.clone(),
+            handle: None,
             previous_handle: None,
         };
 
@@ -45,7 +44,6 @@ impl Ctx {
         }
 
         Ok(Ctx {
-            args,
             config,
             state,
             path: dir.join(".quartz"),
@@ -64,11 +62,6 @@ impl Ctx {
     }
 
     pub fn require_handle(&self) -> EndpointHandle {
-        if let Some(handle) = &self.args.from_handle {
-            // Overwritten by argument
-            return EndpointHandle::from(handle);
-        }
-
         let mut result = None;
         if let Ok(handle) = self.state.get(self, StateField::Endpoint) {
             if !handle.is_empty() {
@@ -90,14 +83,9 @@ impl Ctx {
     }
 
     pub fn require_endpoint_from_handle(&self, handle: &EndpointHandle) -> Endpoint {
-        let mut endpoint = handle.endpoint(self).unwrap_or_else(|| {
+        let endpoint = handle.endpoint(self).unwrap_or_else(|| {
             panic!("no endpoint at {}", handle.handle().red());
         });
-
-        if self.args.early_apply_environment {
-            let env = self.require_env();
-            endpoint.apply_env(&env);
-        }
 
         endpoint
     }

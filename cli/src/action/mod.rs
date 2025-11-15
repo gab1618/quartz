@@ -3,8 +3,8 @@ use quartz_core::QuartzError;
 
 use crate::QuartzResult;
 use crate::action;
+use crate::cli::Cmd;
 use crate::editor::CliEditor;
-use crate::{Ctx, cli::Cmd};
 
 pub mod body;
 pub mod config;
@@ -24,10 +24,7 @@ pub mod var;
 
 pub type CliQuartz = Quartz<CliEditor>;
 
-pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
-    let home_dir = std::env::home_dir().ok_or(QuartzError::Internal)?;
-    let mut quartz = Quartz::from_ctx(ctx, home_dir, CliEditor::default());
-
+pub async fn cmd(mut quartz: CliQuartz, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Init(_) => (), // Init is only run on main, before ctx is resolved
 
