@@ -73,9 +73,10 @@ pub struct Quartz {
 impl Quartz {
     pub fn new(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let ctx = Ctx::new(path.clone(), config_path.clone())?;
+        let quartz_path = path.join(".quartz");
         Ok(Self {
             ctx,
-            path,
+            path: quartz_path,
             config_path,
         })
     }
