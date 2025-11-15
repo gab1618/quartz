@@ -23,7 +23,7 @@ pub mod show;
 pub mod snippet;
 pub mod var;
 
-pub async fn cmd(mut quartz: Quartz, command: Cmd) -> QuartzResult {
+pub async fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Init(_) => (), // Init is only run on main, before ctx is resolved
 
@@ -41,7 +41,7 @@ pub async fn cmd(mut quartz: Quartz, command: Cmd) -> QuartzResult {
                 None => quartz.current_handle(),
             };
             let curr_endpoint = curr_handle
-                .map(|handle| handle.endpoint(&quartz.ctx))
+                .map(|handle| handle.endpoint(&quartz))
                 .unwrap();
             if let Some(endpoint) = curr_endpoint {
                 quartz.apply_endpoint_patch(endpoint, args.patch)?;
@@ -75,8 +75,8 @@ pub async fn cmd(mut quartz: Quartz, command: Cmd) -> QuartzResult {
         Cmd::Rm(args) => {
             quartz.handle_rm(args.recursive, args.handles)?;
         }
-        Cmd::Query { command } => action::query::cmd(&mut quartz.ctx, command)?,
-        Cmd::Header { command } => action::header::cmd(&mut quartz.ctx, command)?,
+        Cmd::Query { command } => action::query::cmd(quartz, command)?,
+        Cmd::Header { command } => action::header::cmd(quartz, command)?,
         Cmd::Body(args) => action::body::cmd(quartz, args)?,
         Cmd::History(args) => action::history::cmd(quartz, args)?,
         Cmd::Last { command } => {

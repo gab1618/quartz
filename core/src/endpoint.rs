@@ -8,6 +8,7 @@ use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
+use crate::Quartz;
 use crate::env::{Env, Variables};
 use crate::state::StateField;
 use crate::tree::Tree;
@@ -216,8 +217,8 @@ impl EndpointHandle {
         self.path.last().unwrap_or(&String::new()).clone()
     }
 
-    pub fn dir(&self, ctx: &Ctx) -> PathBuf {
-        let mut result = ctx.path().join("endpoints");
+    pub fn dir(&self, quartz: &Quartz) -> PathBuf {
+        let mut result = quartz.path().join("endpoints");
 
         for parent in &self.path {
             let name = Endpoint::name_to_dir(parent);
@@ -232,13 +233,15 @@ impl EndpointHandle {
         self.path.join("/")
     }
 
-    pub fn exists(&self, ctx: &Ctx) -> bool {
-        self.dir(ctx).exists()
+    pub fn exists(&self, quartz: &Quartz) -> bool {
+        let path = self.dir(quartz);
+        println!("PATH: {}", path.display());
+        path.exists()
     }
 
     /// Records files to build this endpoint with `parse` methods.
-    pub fn write(&self, ctx: &Ctx) {
-        let mut dir = ctx.path().join("endpoints");
+    pub fn write(&self, quartz: &Quartz) {
+        let mut dir = quartz.path().join("endpoints");
         for entry in &self.path {
             dir = dir.join(Endpoint::name_to_dir(entry));
 
@@ -254,15 +257,15 @@ impl EndpointHandle {
             let _ = file.write_all(entry.as_bytes());
         }
 
-        std::fs::create_dir_all(self.dir(ctx))
+        std::fs::create_dir_all(self.dir(quartz))
             .unwrap_or_else(|_| panic!("failed to create endpoint"));
     }
 
     /// Removes endpoint to make it an empty handle
-    pub fn make_empty(&self, ctx: &Ctx) {
-        if self.endpoint(ctx).is_some() {
-            let _ = std::fs::remove_file(self.dir(ctx).join("endpoint.toml"));
-            let _ = std::fs::remove_file(self.dir(ctx).join("body"));
+    pub fn make_empty(&self, quartz: &Quartz) {
+        if self.endpoint(quartz).is_some() {
+            let _ = std::fs::remove_file(self.dir(quartz).join("endpoint.toml"));
+            let _ = std::fs::remove_file(self.dir(quartz).join("body"));
         }
     }
 
@@ -270,10 +273,10 @@ impl EndpointHandle {
         self.path.len()
     }
 
-    pub fn children(&self, ctx: &Ctx) -> Vec<EndpointHandle> {
+    pub fn children(&self, quartz: &Quartz) -> Vec<EndpointHandle> {
         let mut list = Vec::<EndpointHandle>::new();
 
-        if let Ok(paths) = std::fs::read_dir(self.dir(ctx)) {
+        if let Ok(paths) = std::fs::read_dir(self.dir(quartz)) {
             for path in paths {
                 let path = path.unwrap().path();
 
@@ -298,8 +301,8 @@ impl EndpointHandle {
     }
 
     #[must_use]
-    pub fn endpoint(&self, ctx: &Ctx) -> Option<Endpoint> {
-        Endpoint::from_dir(&self.dir(ctx)).ok()
+    pub fn endpoint(&self, quartz: &Quartz) -> Option<Endpoint> {
+        Endpoint::from_dir(&self.dir(quartz)).ok()
     }
 
     pub fn replace(&mut self, from: &str, to: &str) {
@@ -307,11 +310,11 @@ impl EndpointHandle {
         self.path = EndpointHandle::from(handle).path;
     }
 
-    pub fn tree(self, ctx: &Ctx) -> Tree<Self> {
+    pub fn tree(self, quartz: &Quartz) -> Tree<Self> {
         let mut tree = Tree::new(self);
 
-        for child in tree.root.value.children(ctx) {
-            let child_tree = child.tree(ctx);
+        for child in tree.root.value.children(quartz) {
+            let child_tree = child.tree(quartz);
             tree.root.children.push(child_tree.root);
         }
 
@@ -418,8 +421,8 @@ impl Endpoint {
         }
     }
 
-    pub fn set_handle(&mut self, ctx: &Ctx, handle: &EndpointHandle) {
-        self.path = handle.dir(ctx).to_path_buf();
+    pub fn set_handle(&mut self, quartz: &Quartz, handle: &EndpointHandle) {
+        self.path = handle.dir(quartz).to_path_buf();
     }
 
     pub fn parent(&self) -> Option<Self> {

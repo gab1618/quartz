@@ -26,7 +26,7 @@ pub fn cmd(quartz: Quartz, args: Args) -> QuartzResult {
 pub fn print(quartz: Quartz) -> QuartzResult {
     let curr_handle = quartz.current_handle().ok_or(QuartzError::Internal)?;
     let mut curr_endpoint = curr_handle
-        .endpoint(&quartz.ctx)
+        .endpoint(&quartz)
         .ok_or(QuartzError::Internal)?;
 
     if let Some(body) = curr_endpoint.body() {

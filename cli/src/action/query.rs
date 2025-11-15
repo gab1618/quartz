@@ -1,7 +1,6 @@
 use crate::cli::QueryCmd as Cmd;
 use colored::Colorize;
-use quartz_core::{ctx::Ctx, pairmap::PairMap, QuartzResult};
-use std::process::ExitCode;
+use quartz_core::{Quartz, QuartzResult, pairmap::PairMap};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
@@ -20,19 +19,20 @@ pub struct RmArgs {
     keys: Vec<String>,
 }
 
-pub fn cmd(ctx: &mut Ctx, command: Cmd) -> QuartzResult {
+pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
     match command {
-        Cmd::Get(args) => get(ctx, args.key),
-        Cmd::Set(args) => set(ctx, args.queries),
-        Cmd::Rm(args) => rm(ctx, args.keys)?,
-        Cmd::Ls => ls(ctx),
+        Cmd::Get(args) => get(quartz, args.key),
+        Cmd::Set(args) => set(quartz, args.queries),
+        Cmd::Rm(args) => rm(quartz, args.keys)?,
+        Cmd::Ls => ls(quartz),
     };
 
     Ok(())
 }
 
-pub fn get(ctx: &Ctx, key: String) {
-    let (_, endpoint) = ctx.require_endpoint();
+pub fn get(quartz: Quartz, key: String) {
+    let handle = quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&quartz).unwrap();
 
     let value = endpoint
         .query
@@ -42,8 +42,9 @@ pub fn get(ctx: &Ctx, key: String) {
     println!("{value}");
 }
 
-pub fn set(ctx: &Ctx, queries: Vec<String>) {
-    let (_, mut endpoint) = ctx.require_endpoint();
+pub fn set(quartz: Quartz, queries: Vec<String>) {
+    let handle = quartz.current_handle().unwrap();
+    let mut endpoint = handle.endpoint(&quartz).unwrap();
 
     for input in queries {
         endpoint.query.set(&input).unwrap();
@@ -52,15 +53,15 @@ pub fn set(ctx: &Ctx, queries: Vec<String>) {
     endpoint.write();
 }
 
-pub fn rm(ctx: &mut Ctx, keys: Vec<String>) -> QuartzResult {
-    let (_, mut endpoint) = ctx.require_endpoint();
+pub fn rm(quartz: Quartz, keys: Vec<String>) -> QuartzResult {
+    let handle = quartz.current_handle().unwrap();
+    let mut endpoint = handle.endpoint(&quartz).unwrap();
 
     for k in keys {
         if endpoint.query.contains_key(&k) {
             endpoint.query.remove(&k);
             println!("Removed query param: {}", k);
         } else {
-            ctx.code(ExitCode::FAILURE);
             eprintln!("{}: No such query param", k);
         }
     }
@@ -69,12 +70,14 @@ pub fn rm(ctx: &mut Ctx, keys: Vec<String>) -> QuartzResult {
     Ok(())
 }
 
-pub fn ls(ctx: &Ctx) {
-    let (_, endpoint) = ctx.require_endpoint();
+pub fn ls(quartz: Quartz) {
+    let handle = quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&quartz).unwrap();
     print!("{}", endpoint.query);
 }
 
-pub fn print(ctx: &Ctx) {
-    let (_, endpoint) = ctx.require_endpoint();
+pub fn print(quartz: Quartz) {
+    let handle = quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&quartz).unwrap();
     println!("{}", endpoint.query_string());
 }

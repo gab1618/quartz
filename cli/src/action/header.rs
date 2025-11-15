@@ -1,19 +1,18 @@
 use crate::cli::HeaderCmd as Cmd;
-use quartz_core::{pairmap::PairMap, QuartzResult, ctx::Ctx};
+use quartz_core::{Quartz, QuartzResult, pairmap::PairMap};
 
-use std::process::ExitCode;
-
-pub fn cmd(ctx: &mut Ctx, command: Cmd) -> QuartzResult {
+pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
     match command {
-        Cmd::Get { key } => get(ctx, key),
-        Cmd::Set { header } => set(ctx, header),
-        Cmd::Rm { key } => rm(ctx, key),
-        Cmd::Ls => ls(ctx),
+        Cmd::Get { key } => get(quartz, key),
+        Cmd::Set { header } => set(quartz, header),
+        Cmd::Rm { key } => rm(quartz, key),
+        Cmd::Ls => ls(quartz),
     }
 }
 
-pub fn get(ctx: &Ctx, key: String) -> QuartzResult {
-    let (_, endpoint) = ctx.require_endpoint();
+pub fn get(quartz: Quartz, key: String) -> QuartzResult {
+    let handle = quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&quartz).unwrap();
     if let Some(header) = endpoint.headers.get(&key) {
         println!("{}", header);
     } else {
@@ -23,22 +22,23 @@ pub fn get(ctx: &Ctx, key: String) -> QuartzResult {
     Ok(())
 }
 
-pub fn set(ctx: &Ctx, header: String) -> QuartzResult {
-    let (_, mut endpoint) = ctx.require_endpoint();
+pub fn set(quartz: Quartz, header: String) -> QuartzResult {
+    let handle = quartz.current_handle().unwrap();
+    let mut endpoint = handle.endpoint(&quartz).unwrap();
     endpoint.headers.set(&header)?;
     endpoint.write();
     Ok(())
 }
 
-pub fn rm(ctx: &mut Ctx, keys: Vec<String>) -> QuartzResult {
-    let (_, mut endpoint) = ctx.require_endpoint();
+pub fn rm(quartz: Quartz, keys: Vec<String>) -> QuartzResult {
+    let handle = quartz.current_handle().unwrap();
+    let mut endpoint = handle.endpoint(&quartz).unwrap();
 
     for k in keys {
         if endpoint.headers.contains_key(&k) {
             endpoint.headers.remove(&k);
             println!("Removed header: {}", k);
         } else {
-            ctx.code(ExitCode::FAILURE);
             eprintln!("{}: No such header", k);
         }
     }
@@ -47,8 +47,9 @@ pub fn rm(ctx: &mut Ctx, keys: Vec<String>) -> QuartzResult {
     Ok(())
 }
 
-pub fn ls(ctx: &Ctx) -> QuartzResult {
-    let (_, endpoint) = ctx.require_endpoint();
+pub fn ls(quartz: Quartz) -> QuartzResult {
+    let handle = quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&quartz).unwrap();
 
     print!("{}", endpoint.headers);
     Ok(())

@@ -6,7 +6,6 @@ use std::process::ExitCode;
 use colored::Colorize;
 
 use crate::config::ConfigManager;
-use crate::endpoint::{Endpoint, EndpointHandle};
 use crate::env::Env;
 use crate::state::{State, StateField};
 use crate::{QuartzError, QuartzResult};
@@ -47,45 +46,6 @@ impl Ctx {
             path: dir.join(".quartz"),
             code: ExitCode::default(),
         })
-    }
-
-    pub fn require_input_handle(&self, handle: &str) -> EndpointHandle {
-        let result = EndpointHandle::from(handle);
-
-        if !result.exists(self) {
-            panic!("could not find {} handle", handle.red());
-        }
-
-        result
-    }
-
-    pub fn require_handle(&self) -> EndpointHandle {
-        let mut result = None;
-        if let Ok(handle) = self.state.get(self, StateField::Endpoint) {
-            if !handle.is_empty() {
-                result = Some(EndpointHandle::from(handle));
-            }
-        }
-
-        match result {
-            Some(handle) => handle,
-            None => panic!("no handle in use. Try {}", "quartz use <HANDLE>".green()),
-        }
-    }
-
-    pub fn require_endpoint(&self) -> (EndpointHandle, Endpoint) {
-        let handle = self.require_handle();
-        let endpoint = self.require_endpoint_from_handle(&handle);
-
-        (handle, endpoint)
-    }
-
-    pub fn require_endpoint_from_handle(&self, handle: &EndpointHandle) -> Endpoint {
-        let endpoint = handle.endpoint(self).unwrap_or_else(|| {
-            panic!("no endpoint at {}", handle.handle().red());
-        });
-
-        endpoint
     }
 
     /// Returns current env.

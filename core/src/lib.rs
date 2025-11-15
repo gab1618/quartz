@@ -127,7 +127,7 @@ impl Quartz {
     }
     pub fn make_handle_empty(&self) -> QuartzResult {
         let handle = self.current_handle().ok_or(QuartzError::Internal)?;
-        handle.make_empty(&self.ctx);
+        handle.make_empty(&self);
 
         Ok(())
     }
@@ -235,14 +235,14 @@ impl Quartz {
 
         let handle = EndpointHandle::from(handle);
 
-        if handle.exists(&self.ctx) {
+        if handle.exists(&self) {
             return Err(QuartzError::Internal);
         }
 
         let mut endpoint = Endpoint::default();
-        endpoint.set_handle(&self.ctx, &handle);
+        endpoint.set_handle(&self, &handle);
 
-        handle.write(&self.ctx);
+        handle.write(&self);
         endpoint.write();
 
         Ok(endpoint)
@@ -256,7 +256,7 @@ impl Quartz {
 
         let handle = EndpointHandle::from(handle);
 
-        if !handle.exists(&self.ctx) {
+        if !handle.exists(&self) {
             return Err(QuartzError::Internal);
         }
 
@@ -282,8 +282,8 @@ impl Quartz {
     }
 
     pub fn handle_cp(&self, recursive: bool, src: String, dest: String) -> QuartzResult {
-        let src_handle = self.ctx.require_input_handle(&src);
-        if !src_handle.exists(&self.ctx) {
+        let src_handle = EndpointHandle::from(&src);
+        if !src_handle.exists(&self) {
             panic!("no such handle: {}", src_handle.handle());
         }
 
@@ -291,19 +291,19 @@ impl Quartz {
         queue.push_back(src_handle);
 
         while let Some(mut src_handle) = queue.pop_front() {
-            let endpoint = src_handle.endpoint(&self.ctx);
+            let endpoint = src_handle.endpoint(&self);
 
             if recursive {
-                for child in src_handle.children(&self.ctx) {
+                for child in src_handle.children(&self) {
                     queue.push_back(child.clone());
                 }
             }
 
             src_handle.replace(&src, &dest);
-            src_handle.write(&self.ctx);
+            src_handle.write(&self);
 
             if let Some(mut endpoint) = endpoint {
-                endpoint.set_handle(&self.ctx, &src_handle);
+                endpoint.set_handle(&self, &src_handle);
                 endpoint.write();
             }
         }
@@ -315,12 +315,12 @@ impl Quartz {
         for name in handles {
             let handle = EndpointHandle::from(&name);
 
-            if !handle.exists(&self.ctx) {
+            if !handle.exists(&self) {
                 eprintln!("no such handle: {name}");
                 continue;
             }
 
-            if !handle.children(&self.ctx).is_empty() && !recursive {
+            if !handle.children(&self).is_empty() && !recursive {
                 eprintln!(
                     "{} has child handles. Use -r option to confirm",
                     handle.handle(),
@@ -328,7 +328,7 @@ impl Quartz {
                 continue;
             }
 
-            if std::fs::remove_dir_all(handle.dir(&self.ctx)).is_ok() {
+            if std::fs::remove_dir_all(handle.dir(&self)).is_ok() {
                 println!("Deleted endpoint {}", handle.handle());
             } else {
                 eprintln!("failed to delete endpoint {}", handle.handle());
@@ -353,7 +353,7 @@ impl Quartz {
 
         for arg in &handles {
             let handle = EndpointHandle::from(arg);
-            if !handle.exists(&self.ctx) {
+            if !handle.exists(&self) {
                 eprintln!("no such handle: {arg}");
                 continue;
             }
@@ -364,27 +364,27 @@ impl Quartz {
 
         while let Some((src, mut handle)) = queue.pop_front() {
             let mut dest = EndpointHandle::from(dest.handle()); // copy
-            for child in handle.children(&self.ctx) {
+            for child in handle.children(&self) {
                 queue.push_back((src, child));
             }
 
-            let maybe_endpoint = handle.endpoint(&self.ctx);
+            let maybe_endpoint = handle.endpoint(&self);
 
             if handles.len() >= 2 {
                 dest.path.push(handle.path.last().unwrap().to_string());
             }
 
             handle.replace(src, &dest.handle());
-            handle.write(&self.ctx);
+            handle.write(&self);
 
             if let Some(mut endpoint) = maybe_endpoint {
-                endpoint.set_handle(&self.ctx, &handle);
+                endpoint.set_handle(&self, &handle);
                 endpoint.write();
             }
         }
 
         for handle in original_handles {
-            let _ = std::fs::remove_dir_all(handle.dir(&self.ctx));
+            let _ = std::fs::remove_dir_all(handle.dir(&self));
         }
 
         Ok(())
@@ -393,9 +393,9 @@ impl Quartz {
         let tree_base = handle
             .map(|name| {
                 let handle = EndpointHandle::from(name);
-                handle.tree(&self.ctx)
+                handle.tree(&self)
             })
-            .unwrap_or(EndpointHandle::QUARTZ.tree(&self.ctx));
+            .unwrap_or(EndpointHandle::QUARTZ.tree(&self));
         tree_base
     }
 
@@ -410,7 +410,7 @@ impl Quartz {
 
     pub fn handle_endpoint_file_path(&self) -> Option<PathBuf> {
         let handle = self.current_handle();
-        let dir = handle.map(|inner| inner.dir(&self.ctx).join("endpoint.toml"));
+        let dir = handle.map(|inner| inner.dir(&self).join("endpoint.toml"));
         dir
     }
 
@@ -422,7 +422,8 @@ impl Quartz {
         cookies: Vec<String>,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
-        let (handle, mut endpoint) = self.ctx.require_endpoint();
+        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
+        let mut endpoint = handle.endpoint(self).ok_or(QuartzError::Internal)?;
         let mut env = self.current_env()?;
         for var in variables {
             env.variables.set(&var)?;
@@ -572,12 +573,12 @@ impl Quartz {
     pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
         let handle = self.current_handle().ok_or(QuartzError::Internal)?;
-        let path = handle.dir(&self.ctx).join("body");
+        let path = handle.dir(&self).join("body");
 
         let format = if format.is_some() {
             format
         } else {
-            let endpoint = self.ctx.require_endpoint_from_handle(&handle);
+            let endpoint = handle.endpoint(self).ok_or(QuartzError::Internal)?;
 
             if let Some(content) = endpoint.headers.get("content-type") {
                 let ext = POSSIBLE_EXT.iter().find_map(|ext| {
@@ -617,7 +618,7 @@ impl Quartz {
             .create(true)
             .write(true)
             .truncate(true)
-            .open(handle.dir(&self.ctx).join("body"))
+            .open(handle.dir(&self).join("body"))
             .map_err(|_| QuartzError::Internal)?;
 
         f.write_all(input.as_bytes())
@@ -629,7 +630,7 @@ impl Quartz {
         let handle = self.current_handle().ok_or(QuartzError::Internal)?;
         let mut f = std::fs::OpenOptions::new()
             .read(true)
-            .open(handle.dir(&self.ctx).join("body"))
+            .open(handle.dir(&self).join("body"))
             .map_err(|_| QuartzError::Internal)?;
         let mut body_content = String::new();
         f.read_to_string(&mut body_content)
