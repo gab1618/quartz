@@ -5,7 +5,6 @@ pub mod editor;
 pub mod endpoint;
 pub mod env;
 pub mod history;
-pub mod pager;
 pub mod pairmap;
 pub mod snippet;
 pub mod state;
@@ -33,7 +32,6 @@ use crate::config::{Config, ConfigManager};
 use crate::cookie::CookieJar;
 use crate::editor::Editor;
 use crate::history::History;
-use crate::pager::Pager;
 use crate::pairmap::PairMap;
 use crate::tree::Tree;
 use crate::{
@@ -67,25 +65,23 @@ impl Display for QuartzError {
 
 impl Error for QuartzError {}
 
-pub struct Quartz<E: Editor, P: Pager> {
+pub struct Quartz<E: Editor> {
     pub ctx: Ctx,
     editor: E,
-    pager: P,
     path: PathBuf,
     config_path: PathBuf,
 }
 
-impl<E: Editor, P: Pager> Quartz<E, P> {
-    pub fn from_ctx(ctx: Ctx, config_path: PathBuf, editor: E, pager: P) -> Self {
+impl<E: Editor> Quartz<E> {
+    pub fn from_ctx(ctx: Ctx, config_path: PathBuf, editor: E) -> Self {
         Self {
             path: ctx.path().to_path_buf(),
             config_path,
             ctx,
             editor,
-            pager,
         }
     }
-    pub fn init(path: PathBuf, config_path: PathBuf, editor: E, pager: P) -> QuartzResult<Self> {
+    pub fn init(path: PathBuf, config_path: PathBuf, editor: E) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
 
         // TODO: properly propagate these errors for better diagnostics context
@@ -135,7 +131,6 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
             ctx: curr_ctx,
             editor,
             config_path,
-            pager,
             path: quartz_dir,
         })
     }
@@ -633,9 +628,6 @@ impl<E: Editor, P: Pager> Quartz<E, P> {
         let h = History::new(self.path.clone())?;
 
         Ok(h)
-    }
-    pub fn paginate(&self, content: &[u8]) -> QuartzResult {
-        self.pager.paginate(&self, content)
     }
     pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];

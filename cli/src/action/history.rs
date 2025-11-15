@@ -1,4 +1,6 @@
-use quartz_core::QuartzResult;
+use std::{io::Write, process::Stdio};
+
+use quartz_core::{QuartzError, QuartzResult};
 
 use crate::action::CliQuartz;
 
@@ -29,7 +31,22 @@ pub fn cmd(quartz: CliQuartz, args: Args) -> QuartzResult {
         output.push_str(&format!("{entry}\n"));
     }
 
-    quartz.paginate(output.as_bytes())?;
+    let pager = quartz.ctx.config.parse().preferences.pager();
+
+    let mut child = std::process::Command::new(&pager)
+        .stdin(Stdio::piped())
+        .spawn()
+        .unwrap_or_else(|err| {
+            panic!("failed to open pager: {}\n\n{}", pager, err);
+        });
+
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(output.as_bytes())
+        .map_err(|_| QuartzError::Internal)?;
+    child.wait().map_err(|_| QuartzError::Internal)?;
 
     Ok(())
 }

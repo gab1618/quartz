@@ -5,16 +5,16 @@ use std::{
 
 use tempfile::{TempDir, tempdir};
 
-use crate::{Quartz, QuartzError, QuartzResult, editor::Editor, pager::Pager};
+use crate::{Quartz, QuartzError, QuartzResult, editor::Editor};
 
 #[derive(Default)]
 pub struct MockEditor {
     edit_calls_count: Cell<u8>,
 }
 impl Editor for MockEditor {
-    fn edit<E: Editor, P: Pager>(
+    fn edit<E: Editor>(
         &self,
-        _quartz: &Quartz<E, P>,
+        _quartz: &Quartz<E>,
         _file_path: &std::path::PathBuf,
     ) -> QuartzResult {
         let curr_call_count = self.edit_calls_count.take();
@@ -24,20 +24,8 @@ impl Editor for MockEditor {
     }
 }
 
-#[derive(Default)]
-pub struct MockPager {}
-impl Pager for MockPager {
-    fn paginate<E: Editor, P: Pager>(
-        &self,
-        _quartz: &Quartz<E, P>,
-        _content: &[u8],
-    ) -> QuartzResult {
-        Ok(())
-    }
-}
-
 pub struct TestQuartz {
-    pub inner: Quartz<MockEditor, MockPager>,
+    pub inner: Quartz<MockEditor>,
     #[allow(unused)]
     dir: TempDir,
     #[allow(unused)]
@@ -52,8 +40,7 @@ impl TestQuartz {
         let dir_buf_path = dir.path().to_path_buf();
         let config_dir_path = config_dir.path().to_path_buf();
         let mock_editor = MockEditor::default();
-        let mock_pager = MockPager::default();
-        let qz = Quartz::init(dir_buf_path, config_dir_path, mock_editor, mock_pager)
+        let qz = Quartz::init(dir_buf_path, config_dir_path, mock_editor)
             .map_err(|_| QuartzError::Internal)?;
 
         Ok(Self {
@@ -65,8 +52,7 @@ impl TestQuartz {
 }
 
 impl Deref for TestQuartz {
-    type Target = Quartz<MockEditor, MockPager>;
-
+    type Target = Quartz<MockEditor>;
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
