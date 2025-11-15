@@ -401,21 +401,18 @@ impl Quartz {
     pub fn edit_config(&self) -> QuartzResult {
         let config_file_path = Config::filepath(&self.config_path);
 
-        self.ctx.edit(&config_file_path, validator::toml_as::<Config>)?;
+        self.ctx
+            .edit(&config_file_path, validator::toml_as::<Config>)?;
 
         Ok(())
     }
 
-    pub fn handle_edit(&self) -> QuartzResult {
-        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
-
-        self.ctx.edit(
-            &handle.dir(&self.ctx).join("endpoint.toml"),
-            validator::toml_as::<Endpoint>,
-        )?;
-
-        Ok(())
+    pub fn handle_endpoint_file_path(&self) -> Option<PathBuf> {
+        let handle = self.current_handle();
+        let dir = handle.map(|inner| inner.dir(&self.ctx).join("endpoint.toml"));
+        dir
     }
+
     pub async fn send(
         &self,
         variables: Vec<String>,
@@ -604,7 +601,8 @@ impl Quartz {
             //
             // n must be a number, so we don't wrap it in quotes. This JSON before variables is
             // invalid. A solution may or may not be done later.
-            self.ctx.edit_with_extension(&path, Some(&format), validator::infallible)?;
+            self.ctx
+                .edit_with_extension(&path, Some(&format), validator::infallible)?;
         } else {
             self.ctx.edit(&path, validator::infallible)?;
         }

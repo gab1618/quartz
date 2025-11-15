@@ -1,3 +1,5 @@
+use quartz_core::endpoint::Endpoint;
+use quartz_core::validator;
 use quartz_core::Quartz;
 use quartz_core::QuartzError;
 
@@ -52,7 +54,18 @@ pub async fn cmd(mut quartz: Quartz, command: Cmd) -> QuartzResult {
             action::ls::cmd(args, quartz)?;
         }
         Cmd::Show { command } => action::show::cmd(quartz, command)?,
-        Cmd::Edit => { quartz.handle_edit() }?,
+        Cmd::Edit => {
+            let endpoint_path = quartz
+                .handle_endpoint_file_path()
+                .ok_or(QuartzError::Internal)?;
+
+            quartz.ctx.edit(
+                &endpoint_path,
+                validator::toml_as::<Endpoint>,
+            )?;
+
+            Ok(())
+        }?,
         Cmd::Cp(args) => {
             quartz.handle_cp(args.recursive, args.src, args.dest)?;
         }
