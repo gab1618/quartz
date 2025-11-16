@@ -152,7 +152,7 @@ impl Quartz {
         env
     }
     pub fn create_env(&self, name: &str) -> QuartzResult {
-        let new_env = Env::new(name, self.ctx.path().to_path_buf());
+        let new_env = Env::new(name, self.path().to_path_buf());
 
         if new_env.exists() {
             return Err(QuartzError::Internal);
@@ -163,7 +163,7 @@ impl Quartz {
     }
     pub fn get_envs(&self) -> QuartzResult<Vec<String>> {
         let entries =
-            std::fs::read_dir(self.ctx.path().join("env")).map_err(|_| QuartzError::Internal)?;
+            std::fs::read_dir(self.path().join("env")).map_err(|_| QuartzError::Internal)?;
         let env_names = entries
             .map(|entry| {
                 let ok_dir_entry = entry.map_err(|_| QuartzError::Internal)?;
@@ -177,7 +177,7 @@ impl Quartz {
     }
     pub fn switch_env(&self, name: &str) -> QuartzResult<Env> {
         let requested_env =
-            Env::parse(self.ctx.path().to_path_buf(), name).map_err(|_| QuartzError::Internal)?;
+            Env::parse(self.path().to_path_buf(), name).map_err(|_| QuartzError::Internal)?;
         if !requested_env.exists() {
             return Err(QuartzError::Internal);
         }
@@ -188,7 +188,7 @@ impl Quartz {
         Ok(requested_env)
     }
     pub fn remove_env(&self, name: &str) -> QuartzResult {
-        let env = Env::new(name, self.ctx.path().to_path_buf());
+        let env = Env::new(name, self.path().to_path_buf());
 
         if !env.exists() {
             return Err(QuartzError::Internal);
@@ -205,9 +205,9 @@ impl Quartz {
 
     pub fn cp_env(&self, src: &str, dest: &str) -> QuartzResult<Env> {
         let src =
-            Env::parse(self.ctx.path().to_path_buf(), src).map_err(|_| QuartzError::Internal)?;
-        let mut dest = Env::parse(self.ctx.path().to_path_buf(), dest)
-            .unwrap_or(Env::new(dest, self.ctx.path().to_path_buf()));
+            Env::parse(self.path().to_path_buf(), src).map_err(|_| QuartzError::Internal)?;
+        let mut dest = Env::parse(self.path().to_path_buf(), dest)
+            .unwrap_or(Env::new(dest, self.path().to_path_buf()));
 
         for (key, value) in src.variables.iter() {
             dest.variables.insert(key.to_string(), value.to_string());
