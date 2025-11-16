@@ -1,4 +1,4 @@
-use quartz_core::{QuartzResult, endpoint::EndpointPatch};
+use quartz_core::{error::QuartzResult, endpoint::EndpointPatch};
 use std::path::PathBuf;
 use tokio::io::{AsyncWriteExt, stdout};
 

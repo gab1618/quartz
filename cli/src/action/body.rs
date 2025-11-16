@@ -1,5 +1,5 @@
 use crate::{cli::BodyCmd as Cmd, ctx::Ctx};
-use quartz_core::{QuartzError, QuartzResult};
+use quartz_core::error::{QuartzError, QuartzResult};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {

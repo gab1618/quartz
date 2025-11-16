@@ -2,6 +2,7 @@ pub mod config;
 pub mod cookie;
 pub mod endpoint;
 pub mod env;
+pub mod error;
 pub mod history;
 pub mod pairmap;
 pub mod snippet;
@@ -13,8 +14,6 @@ pub mod validator;
 mod tests;
 
 use std::collections::VecDeque;
-use std::error::Error;
-use std::fmt::Display;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -27,6 +26,7 @@ use hyper::{Body, Client, Uri};
 
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
+use crate::error::{QuartzError, QuartzResult};
 use crate::history::History;
 use crate::pairmap::PairMap;
 use crate::tree::Tree;
@@ -36,31 +36,7 @@ use crate::{
     state::StateField,
 };
 
-pub type QuartzResult<T = ()> = Result<T, QuartzError>;
-
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
-
-#[derive(Debug)]
-pub enum QuartzError {
-    Internal,
-    Init,
-    AlreadyInitialized,
-    Setup,
-}
-
-impl Display for QuartzError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use QuartzError::*;
-        match self {
-            Internal => writeln!(f, "internal failure"),
-            Init => writeln!(f, "Failed to initialize quartz"),
-            AlreadyInitialized => writeln!(f, "Quartz already initialized"),
-            Setup => writeln!(f, "Failed to setup"),
-        }
-    }
-}
-
-impl Error for QuartzError {}
 
 pub struct Quartz {
     config: ConfigManager,
@@ -85,7 +61,7 @@ impl Quartz {
             return Err(QuartzError::AlreadyInitialized);
         }
 
-        std::fs::create_dir(&quartz_dir).map_err(|_| QuartzError::Init)?;
+        std::fs::create_dir(&quartz_dir).map_err(QuartzError::Init)?;
 
         let ensure_dirs = vec![
             "endpoints",

@@ -1,6 +1,6 @@
 use std::{io::Write, process::Stdio};
 
-use quartz_core::{QuartzError, QuartzResult};
+use quartz_core::error::{QuartzError, QuartzResult};
 
 use crate::ctx::Ctx;
 

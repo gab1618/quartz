@@ -3,6 +3,7 @@ members = ["cli", "core"]
 
 [workspace.dependencies]
 quartz-core = {path = "./core"}
+thiserror = "2.0.17"
 
 [profile.release]
 opt-level = 'z'

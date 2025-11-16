@@ -1,4 +1,4 @@
-use quartz_core::QuartzError;
+use quartz_core::error::QuartzError;
 use quartz_core::endpoint::Endpoint;
 use quartz_core::validator;
 

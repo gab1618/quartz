@@ -1,6 +1,6 @@
 use crate::{cli::QueryCmd as Cmd, ctx::Ctx};
 use colored::Colorize;
-use quartz_core::{QuartzResult, pairmap::PairMap};
+use quartz_core::{error::QuartzResult, pairmap::PairMap};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {

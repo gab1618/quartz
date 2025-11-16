@@ -1,5 +1,5 @@
 use crate::{cli::HeaderCmd as Cmd, ctx::Ctx};
-use quartz_core::{QuartzResult, pairmap::PairMap};
+use quartz_core::{error::QuartzResult, pairmap::PairMap};
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {

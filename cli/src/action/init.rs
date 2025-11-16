@@ -1,7 +1,7 @@
 use crate::QuartzResult;
 use std::path::{Path, PathBuf};
 
-use quartz_core::{Quartz, QuartzError};
+use quartz_core::{Quartz, error::QuartzError};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {

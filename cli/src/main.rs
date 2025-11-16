@@ -11,7 +11,10 @@ use crate::{
     cli::{Cli, Cmd},
     ctx::Ctx,
 };
-use quartz_core::{Quartz, QuartzError, QuartzResult};
+use quartz_core::{
+    Quartz,
+    error::{QuartzError, QuartzResult},
+};
 
 #[tokio::main]
 async fn main() -> QuartzResult {

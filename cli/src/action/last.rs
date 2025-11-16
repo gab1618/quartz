@@ -3,7 +3,7 @@ use crate::{
     ctx::Ctx,
 };
 use quartz_core::{
-    QuartzError, QuartzResult,
+    error::{QuartzError, QuartzResult},
     history::{self},
 };
 

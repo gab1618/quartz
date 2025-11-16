@@ -2,7 +2,7 @@ use crate::{
     cli::{EnvCmd as Cmd, HeaderCmd},
     ctx::Ctx,
 };
-use quartz_core::QuartzResult;
+use quartz_core::error::QuartzResult;
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {

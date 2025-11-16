@@ -1,5 +1,5 @@
 use crate::{action, cli::ShowCmd as Cmd, ctx::Ctx};
-use quartz_core::{QuartzError, QuartzResult};
+use quartz_core::error::{QuartzError, QuartzResult};
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {

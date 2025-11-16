@@ -1,5 +1,5 @@
 use crate::{cli::VarCmd as Cmd, ctx::Ctx};
-use quartz_core::{QuartzResult, env::Variables};
+use quartz_core::{env::Variables, error::QuartzResult};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
