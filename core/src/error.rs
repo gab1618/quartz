@@ -28,6 +28,8 @@ pub enum QuartzError {
     InvalidConfigKey(String),
     #[error("Could not save config: {0}")]
     SaveConfig(#[source] std::io::Error),
+    #[error("Could not read cookies: {0}")]
+    ReadCookies(#[source] std::io::Error)
 }
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;

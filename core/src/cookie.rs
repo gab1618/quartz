@@ -505,7 +505,7 @@ impl CookieJar {
     /// This function will return an error if the file does not exist.
     pub fn read(path: &Path) -> QuartzResult<Self> {
         let mut cookies = Self::default();
-        let file = std::fs::read_to_string(path).map_err(|_| QuartzError::Internal)?;
+        let file = std::fs::read_to_string(path).map_err(QuartzError::ReadCookies)?;
         let lines = file.lines();
 
         for line in lines {
