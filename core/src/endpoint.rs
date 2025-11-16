@@ -276,26 +276,25 @@ impl EndpointHandle {
     }
 
     pub fn children(&self, quartz: &Quartz) -> QuartzResult<Vec<EndpointHandle>> {
-        let mut list = Vec::<EndpointHandle>::new();
-
         let paths = std::fs::read_dir(self.dir(quartz)).map_err(QuartzError::GetHandleChildren)?;
         let valid_paths = paths
             .filter(|entry| entry.is_ok())
             .map(|entry| entry.unwrap().path())
-            .filter(|path| path.is_dir())
-            .collect::<Vec<_>>();
-        for path in valid_paths {
-            let spec_file_path = path.join("spec");
-            let raw_spec_content =
-                std::fs::read(spec_file_path).map_err(QuartzError::GetHandleChildren)?;
-            let spec =
-                String::from_utf8(raw_spec_content).map_err(|_| QuartzError::ParseHandleSpec)?;
+            .filter(|path| path.is_dir());
 
-            let mut path = self.path.clone();
-            path.push(spec);
+        let list = valid_paths
+            .map(|path| {
+                let spec_file_path = path.join("spec");
+                let raw_spec_content =
+                    std::fs::read(spec_file_path).map_err(QuartzError::GetHandleChildren)?;
+                let spec = String::from_utf8(raw_spec_content)
+                    .map_err(|_| QuartzError::ParseHandleSpec)?;
 
-            list.push(EndpointHandle::new(path))
-        }
+                let mut path = self.path.clone();
+                path.push(spec);
+                Ok(EndpointHandle::new(path))
+            })
+            .collect::<QuartzResult<Vec<_>>>()?;
 
         Ok(list)
     }
