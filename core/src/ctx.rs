@@ -5,7 +5,6 @@ use std::process::ExitCode;
 
 use colored::Colorize;
 
-use crate::config::ConfigManager;
 use crate::state::State;
 use crate::{QuartzError, QuartzResult};
 
@@ -15,15 +14,13 @@ pub struct CtxArgs {
 }
 
 pub struct Ctx {
-    pub config: ConfigManager,
     pub state: State,
     path: PathBuf,
     code: ExitCode,
 }
 
 impl Ctx {
-    pub fn new(mut dir: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
-        let config = ConfigManager::new(config_path);
+    pub fn new(mut dir: PathBuf) -> QuartzResult<Self> {
         let state = State {
             handle: None,
             previous_handle: None,
@@ -40,7 +37,6 @@ impl Ctx {
         }
 
         Ok(Ctx {
-            config,
             state,
             path: dir.join(".quartz"),
             code: ExitCode::default(),
@@ -58,11 +54,11 @@ impl Ctx {
     ///
     /// * `path` - A path slice to a file
     /// * `validate` - Validator method to ensure the edit can be saved without errors
-    pub fn edit<F>(&self, path: &Path, validate: F) -> QuartzResult
+    pub fn edit<F>(&self, path: &Path, editor: String, validate: F) -> QuartzResult
     where
         F: FnOnce(&str) -> QuartzResult,
     {
-        self.edit_with_extension::<F>(path, None, validate)
+        self.edit_with_extension::<F>(path, None, editor, validate)
     }
 
     /// Opens an editor to modified the specified file at `path` with `extension` in a temporary file.
@@ -81,6 +77,7 @@ impl Ctx {
         &self,
         path: &Path,
         extension: Option<&str>,
+        editor: String,
         validate: F,
     ) -> QuartzResult
     where
@@ -106,7 +103,6 @@ impl Ctx {
 
         std::fs::copy(path, &temp_path).map_err(|_| QuartzError::Internal)?;
 
-        let editor = self.config.parse().preferences.editor();
         let _ = std::process::Command::new(&editor)
             .arg(&temp_path)
             .status()

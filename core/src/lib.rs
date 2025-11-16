@@ -66,22 +66,26 @@ impl Error for QuartzError {}
 
 pub struct Quartz {
     pub ctx: Ctx,
+    config: ConfigManager,
     path: PathBuf,
     config_path: PathBuf,
 }
 
 impl Quartz {
     pub fn new(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
-        let ctx = Ctx::new(path.clone(), config_path.clone())?;
+        let ctx = Ctx::new(path.clone())?;
         let quartz_path = path.join(".quartz");
+        let config = ConfigManager::new(config_path.clone());
         Ok(Self {
             ctx,
             path: quartz_path,
             config_path,
+            config,
         })
     }
     pub fn init(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
+        let config = ConfigManager::new(config_path.clone());
 
         // TODO: properly propagate these errors for better diagnostics context
         if quartz_dir.exists() {
@@ -117,12 +121,13 @@ impl Quartz {
             }
         }
 
-        let curr_ctx = Ctx::new(path.clone(), config_path.clone())?;
+        let curr_ctx = Ctx::new(path.clone())?;
 
         Ok(Self {
             ctx: curr_ctx,
             config_path,
             path: quartz_dir,
+            config,
         })
     }
     pub fn make_handle_empty(&self) -> QuartzResult {
@@ -204,8 +209,7 @@ impl Quartz {
     }
 
     pub fn cp_env(&self, src: &str, dest: &str) -> QuartzResult<Env> {
-        let src =
-            Env::parse(self.path().to_path_buf(), src).map_err(|_| QuartzError::Internal)?;
+        let src = Env::parse(self.path().to_path_buf(), src).map_err(|_| QuartzError::Internal)?;
         let mut dest = Env::parse(self.path().to_path_buf(), dest)
             .unwrap_or(Env::new(dest, self.path().to_path_buf()));
 
@@ -226,7 +230,7 @@ impl Quartz {
         Ok(dest)
     }
     pub fn config(&self) -> &ConfigManager {
-        &self.ctx.config
+        &self.config
     }
     pub fn handle_create(&self, handle: &str) -> QuartzResult<Endpoint> {
         if handle.is_empty() {
@@ -401,9 +405,10 @@ impl Quartz {
 
     pub fn edit_config(&self) -> QuartzResult {
         let config_file_path = Config::filepath(&self.config_path);
+        let editor = self.config().parse().preferences.editor();
 
         self.ctx
-            .edit(&config_file_path, validator::toml_as::<Config>)?;
+            .edit(&config_file_path, editor, validator::toml_as::<Config>)?;
 
         Ok(())
     }
@@ -574,6 +579,7 @@ impl Quartz {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
         let handle = self.current_handle().ok_or(QuartzError::Internal)?;
         let path = handle.dir(&self).join("body");
+        let editor = self.config().parse().preferences.editor();
 
         let format = if format.is_some() {
             format
@@ -604,9 +610,9 @@ impl Quartz {
             // n must be a number, so we don't wrap it in quotes. This JSON before variables is
             // invalid. A solution may or may not be done later.
             self.ctx
-                .edit_with_extension(&path, Some(&format), validator::infallible)?;
+                .edit_with_extension(&path, Some(&format), editor, validator::infallible)?;
         } else {
-            self.ctx.edit(&path, validator::infallible)?;
+            self.ctx.edit(&path, editor, validator::infallible)?;
         }
 
         Ok(())

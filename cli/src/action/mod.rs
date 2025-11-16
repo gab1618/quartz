@@ -1,7 +1,7 @@
-use quartz_core::endpoint::Endpoint;
-use quartz_core::validator;
 use quartz_core::Quartz;
 use quartz_core::QuartzError;
+use quartz_core::endpoint::Endpoint;
+use quartz_core::validator;
 
 use crate::QuartzResult;
 use crate::action;
@@ -40,9 +40,7 @@ pub async fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
                 Some(handle) => Some(quartz.handle_switch(handle)?),
                 None => quartz.current_handle(),
             };
-            let curr_endpoint = curr_handle
-                .map(|handle| handle.endpoint(&quartz))
-                .unwrap();
+            let curr_endpoint = curr_handle.map(|handle| handle.endpoint(&quartz)).unwrap();
             if let Some(endpoint) = curr_endpoint {
                 quartz.apply_endpoint_patch(endpoint, args.patch)?;
             }
@@ -58,11 +56,11 @@ pub async fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
             let endpoint_path = quartz
                 .handle_endpoint_file_path()
                 .ok_or(QuartzError::Internal)?;
+            let editor = quartz.config().parse().preferences.editor();
 
-            quartz.ctx.edit(
-                &endpoint_path,
-                validator::toml_as::<Endpoint>,
-            )?;
+            quartz
+                .ctx
+                .edit(&endpoint_path, editor, validator::toml_as::<Endpoint>)?;
 
             Ok(())
         }?,

@@ -29,7 +29,7 @@ pub fn cmd(quartz: Quartz, args: Args) -> QuartzResult {
         output.push_str(&format!("{entry}\n"));
     }
 
-    let pager = quartz.ctx.config.parse().preferences.pager();
+    let pager = quartz.config().parse().preferences.pager();
 
     let mut child = std::process::Command::new(&pager)
         .stdin(Stdio::piped())
