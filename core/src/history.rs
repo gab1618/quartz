@@ -31,29 +31,26 @@ impl History {
     }
 
     pub fn entries(&self) -> QuartzResult<Vec<Entry>> {
-        let paths =
-            std::fs::read_dir(self.dir()).map_err(|_| QuartzError::Internal)?;
-        let mut timestamps: Vec<i64> = Vec::new();
+        let paths = std::fs::read_dir(self.dir()).map_err(|_| QuartzError::ReadHistoryEntries)?;
+        let mut timestamps = paths
+            .map(|path| {
+                let timestamp = path
+                    .map_err(|_| QuartzError::ReadHistoryEntries)?
+                    .file_name()
+                    .to_str()
+                    .ok_or(QuartzError::ReadHistoryEntries)?
+                    .parse::<i64>()
+                    .map_err(|_| QuartzError::ReadHistoryEntries)?;
 
-        for path in paths {
-            let timestemp = path
-                .map_err(|_| QuartzError::Internal)?
-                .file_name()
-                .to_str()
-                .ok_or(QuartzError::Internal)?
-                .parse::<i64>()
-                .map_err(|_| QuartzError::Internal)?;
-
-            timestamps.push(timestemp);
-        }
+                Ok(timestamp)
+            })
+            .collect::<QuartzResult<Vec<_>>>()?;
 
         timestamps.sort();
         timestamps.reverse();
         let entries = timestamps
             .iter()
-            .filter_map(|timestemp| {
-                Entry::read(&self.dir().join(timestemp.to_string())).ok()
-            })
+            .filter_map(|timestemp| Entry::read(&self.dir().join(timestemp.to_string())).ok())
             .collect();
 
         Ok(entries)
@@ -67,19 +64,18 @@ impl History {
         let last_entry = self.entries()?.into_iter().next();
 
         Ok(last_entry)
-
     }
 
     pub fn write(&self, entry: Entry) -> QuartzResult {
-        let content = toml::to_string(&entry).map_err(|_| QuartzError::Internal)?;
+        let content = toml::to_string(&entry).map_err(|_| QuartzError::SerializeHistory)?;
 
         std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .open(self.dir().join(entry.timestemp.to_string()))
-            .map_err(|_| QuartzError::Internal)?
+            .map_err(|_| QuartzError::SaveHistory)?
             .write_all(content.as_bytes())
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(|_| QuartzError::SaveHistory)?;
 
         Ok(())
     }
@@ -114,10 +110,10 @@ impl EntryBuilder {
     }
 
     pub fn build(self) -> QuartzResult<Entry> {
-        let handle = self.handle.ok_or(QuartzError::Internal)?;
+        let handle = self.handle.ok_or(QuartzError::GetEntryBuilderHandle)?;
 
         if self.timestemp == 0 || self.messages.is_empty() {
-            return Err(QuartzError::Internal);
+            return Err(QuartzError::EmptyHistory);
         }
 
         Ok(Entry {
@@ -142,9 +138,9 @@ impl Entry {
     }
 
     pub fn read(path: &Path) -> QuartzResult<Self> {
-        let content = std::fs::read_to_string(path).map_err(|_| QuartzError::Internal)?;
+        let content = std::fs::read_to_string(path).map_err(|_| QuartzError::ReadHistoryEntry)?;
 
-        Ok(toml::from_str(&content).map_err(|_| QuartzError::Internal)?)
+        Ok(toml::from_str(&content).map_err(|_| QuartzError::ParseHistoryEntry)?)
     }
 }
 

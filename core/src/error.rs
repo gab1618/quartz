@@ -40,6 +40,20 @@ pub enum QuartzError {
     SerializeEndpoint(#[source] toml::ser::Error),
     #[error("Could not save endpoint: {0}")]
     SaveEndpoint(#[source] std::io::Error),
+    #[error("Could not read history entries")]
+    ReadHistoryEntries,
+    #[error("Could not serialize history")]
+    SerializeHistory,
+    #[error("Could not save history")]
+    SaveHistory,
+    #[error("Could not get handle in entrybuilder")]
+    GetEntryBuilderHandle,
+    #[error("Empty history")]
+    EmptyHistory,
+    #[error("Could not read history entry")]
+    ReadHistoryEntry,
+    #[error("Could not parse history entry")]
+    ParseHistoryEntry,
 }
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;
