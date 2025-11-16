@@ -14,7 +14,7 @@ pub struct Args {
 
 pub fn cmd(args: Args, quartz: Quartz) -> QuartzResult {
     let tree_root = quartz.handle_tree(args.handle);
-    let current_handle = StateField::Endpoint.get(&quartz.ctx).ok();
+    let current_handle = StateField::Endpoint.get(&quartz).ok();
     output_tree(&quartz.ctx, tree_root.root, current_handle, 0);
 
     Ok(())

@@ -24,7 +24,7 @@ pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
         Cmd::Body => action::body::print(quartz)?,
         Cmd::Handle => handle(quartz),
         Cmd::Env => {
-            let curr_env = quartz.ctx.require_env();
+            let curr_env = quartz.current_env().unwrap();
             println!("{}", curr_env.name);
         }
         Cmd::Cookies(args) => action::cookie::print(quartz, args),

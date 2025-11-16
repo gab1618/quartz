@@ -6,8 +6,7 @@ use std::process::ExitCode;
 use colored::Colorize;
 
 use crate::config::ConfigManager;
-use crate::env::Env;
-use crate::state::{State, StateField};
+use crate::state::State;
 use crate::{QuartzError, QuartzResult};
 
 pub struct CtxArgs {
@@ -46,21 +45,6 @@ impl Ctx {
             path: dir.join(".quartz"),
             code: ExitCode::default(),
         })
-    }
-
-    /// Returns current env.
-    ///
-    /// # Panics
-    ///
-    /// Program is terminated if it is unable to require it.
-    pub fn require_env(&self) -> Env {
-        let state = self
-            .state
-            .get(self, StateField::Env)
-            .unwrap_or("default".into());
-
-        Env::parse(self.path().to_path_buf(), &state)
-            .unwrap_or_else(|_| panic!("could not resolve {} environment", state.red()))
     }
 
     /// Opens an editor to modified the specified file at `path` in a temporary file.

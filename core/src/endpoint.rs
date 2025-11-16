@@ -10,9 +10,9 @@ use std::path::{Path, PathBuf};
 
 use crate::Quartz;
 use crate::env::{Env, Variables};
+use crate::pairmap::PairMap;
 use crate::state::StateField;
 use crate::tree::Tree;
-use crate::{ctx::Ctx, pairmap::PairMap};
 
 #[derive(Default, Debug, Serialize, Deserialize, Clone)]
 pub struct Query(pub HashMap<String, String>);
@@ -201,8 +201,8 @@ impl EndpointHandle {
         Self { path }
     }
 
-    pub fn from_state(ctx: &Ctx) -> Option<Self> {
-        if let Ok(handle) = ctx.state.get(ctx, StateField::Endpoint) {
+    pub fn from_state(quartz: &Quartz) -> Option<Self> {
+        if let Ok(handle) = StateField::Endpoint.get(quartz) {
             if handle.is_empty() {
                 return None;
             }

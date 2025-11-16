@@ -132,7 +132,7 @@ impl Quartz {
         Ok(())
     }
     pub fn current_handle(&self) -> Option<EndpointHandle> {
-        let curr_endpoint_name = StateField::Endpoint.get(&self.ctx).ok();
+        let curr_endpoint_name = StateField::Endpoint.get(self).ok();
 
         let parsed = curr_endpoint_name.map(|handle_name| EndpointHandle::from(handle_name));
         parsed
@@ -141,7 +141,7 @@ impl Quartz {
         &self.path
     }
     pub fn current_env(&self) -> QuartzResult<Env> {
-        let curr_env_name = StateField::Env.get(&self.ctx).unwrap_or("default".into());
+        let curr_env_name = StateField::Env.get(&self).unwrap_or("default".into());
 
         let parsed_env = Env::parse(self.path().to_path_buf(), &curr_env_name)
             .map_err(|_| QuartzError::Internal)?;
@@ -182,7 +182,7 @@ impl Quartz {
             return Err(QuartzError::Internal);
         }
         StateField::Env
-            .set(&self.ctx, name)
+            .set(self, name)
             .map_err(|_| QuartzError::Internal)?;
 
         Ok(requested_env)
@@ -250,7 +250,7 @@ impl Quartz {
 
     pub fn handle_switch(&self, mut handle: String) -> QuartzResult<EndpointHandle> {
         if handle == "-" {
-            let previous_handle = StateField::PreviousEndpoint.get(&self.ctx)?;
+            let previous_handle = StateField::PreviousEndpoint.get(self)?;
             handle = previous_handle;
         }
 
@@ -260,11 +260,11 @@ impl Quartz {
             return Err(QuartzError::Internal);
         }
 
-        let previous = StateField::Endpoint.get(&self.ctx);
-        StateField::Endpoint.set(&self.ctx, &handle.path.join("/"))?;
+        let previous = StateField::Endpoint.get(self);
+        StateField::Endpoint.set(self, &handle.path.join("/"))?;
 
         if let Ok(prev) = previous {
-            let _ = StateField::PreviousEndpoint.set(&self.ctx, &prev);
+            let _ = StateField::PreviousEndpoint.set(self, &prev);
         }
 
         Ok(handle)
