@@ -54,6 +54,9 @@ impl ConfigManager {
 
         Ok(content)
     }
+    pub fn path(&self) -> &PathBuf {
+        &self.mount_path
+    }
 }
 
 #[derive(Default, Serialize, Deserialize)]

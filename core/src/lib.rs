@@ -26,7 +26,7 @@ use hyper::body::{Bytes, HttpBody};
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::{Body, Client, Uri};
 
-use crate::config::{Config, ConfigManager};
+use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
 use crate::history::History;
 use crate::pairmap::PairMap;
@@ -68,24 +68,22 @@ pub struct Quartz {
     pub ctx: Ctx,
     config: ConfigManager,
     path: PathBuf,
-    config_path: PathBuf,
 }
 
 impl Quartz {
     pub fn new(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let ctx = Ctx::new(path.clone())?;
         let quartz_path = path.join(".quartz");
-        let config = ConfigManager::new(config_path.clone());
+        let config = ConfigManager::new(config_path);
         Ok(Self {
             ctx,
             path: quartz_path,
-            config_path,
             config,
         })
     }
     pub fn init(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
         let quartz_dir = path.join(".quartz");
-        let config = ConfigManager::new(config_path.clone());
+        let config = ConfigManager::new(config_path);
 
         // TODO: properly propagate these errors for better diagnostics context
         if quartz_dir.exists() {
@@ -125,7 +123,6 @@ impl Quartz {
 
         Ok(Self {
             ctx: curr_ctx,
-            config_path,
             path: quartz_dir,
             config,
         })
@@ -401,16 +398,6 @@ impl Quartz {
             })
             .unwrap_or(EndpointHandle::QUARTZ.tree(&self));
         tree_base
-    }
-
-    pub fn edit_config(&self) -> QuartzResult {
-        let config_file_path = Config::filepath(&self.config_path);
-        let editor = self.config().parse().preferences.editor();
-
-        self.ctx
-            .edit(&config_file_path, editor, validator::toml_as::<Config>)?;
-
-        Ok(())
     }
 
     pub fn handle_endpoint_file_path(&self) -> Option<PathBuf> {

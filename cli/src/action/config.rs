@@ -1,5 +1,5 @@
 use crate::cli::ConfigCmd as Cmd;
-use quartz_core::{Quartz, QuartzResult};
+use quartz_core::{config::Config, Quartz, QuartzResult};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
@@ -20,7 +20,9 @@ pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
             println!("{config}");
         }
         Cmd::Edit => {
-            quartz.edit_config()?;
+            let editor = quartz.config().parse().preferences.editor();
+            let config_file_path = Config::filepath(quartz.config().path());
+            quartz.ctx.edit_config(editor, config_file_path)?;
         }
         Cmd::Set(args) => {
             let config_manager = quartz.config();

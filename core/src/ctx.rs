@@ -5,8 +5,9 @@ use std::process::ExitCode;
 
 use colored::Colorize;
 
+use crate::config::Config;
 use crate::state::State;
-use crate::{QuartzError, QuartzResult};
+use crate::{QuartzError, QuartzResult, validator};
 
 pub struct CtxArgs {
     pub from_handle: Option<String>,
@@ -147,5 +148,11 @@ impl Ctx {
     #[must_use]
     pub fn exit_code(&self) -> &ExitCode {
         &self.code
+    }
+
+    pub fn edit_config(&self, editor: String, filepath: PathBuf) -> QuartzResult {
+        self.edit(&filepath, editor, validator::toml_as::<Config>)?;
+
+        Ok(())
     }
 }
