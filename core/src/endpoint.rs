@@ -245,7 +245,7 @@ impl EndpointHandle {
         for entry in &self.path {
             dir = dir.join(Endpoint::name_to_dir(entry));
 
-            std::fs::create_dir(&dir).map_err(QuartzError::SaveHandle)?;
+            std::fs::create_dir_all(&dir).map_err(QuartzError::SaveHandle)?;
 
             let mut file = std::fs::OpenOptions::new()
                 .write(true)
