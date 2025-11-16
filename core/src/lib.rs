@@ -134,7 +134,7 @@ impl Quartz {
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
-    pub fn current_env(&self) -> QuartzResult<Env> {
+    pub fn env(&self) -> QuartzResult<Env> {
         let curr_env_name = StateField::Env.get(&self).unwrap_or("default".into());
 
         let parsed_env = Env::parse(self.path().to_path_buf(), &curr_env_name)
@@ -187,7 +187,7 @@ impl Quartz {
         if !env.exists() {
             return Err(QuartzError::Internal);
         }
-        let curr_env = self.current_env()?;
+        let curr_env = self.env()?;
         if env.name == curr_env.name {
             return Err(QuartzError::Internal);
         }
@@ -408,7 +408,7 @@ impl Quartz {
     ) -> QuartzResult<Bytes> {
         let handle = self.handle().ok_or(QuartzError::Internal)?;
         let mut endpoint = handle.endpoint(self).ok_or(QuartzError::Internal)?;
-        let mut env = self.current_env()?;
+        let mut env = self.env()?;
         for var in variables {
             env.variables.set(&var)?;
         }
