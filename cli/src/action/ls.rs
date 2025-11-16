@@ -1,5 +1,5 @@
 use quartz_core::{
-    Quartz, QuartzResult, ctx::Ctx, endpoint::EndpointHandle, state::StateField, tree::Node,
+    Quartz, QuartzResult, endpoint::EndpointHandle, state::StateField, tree::Node,
 };
 
 #[derive(clap::Args, Debug)]
@@ -15,13 +15,12 @@ pub struct Args {
 pub fn cmd(args: Args, quartz: Quartz) -> QuartzResult {
     let tree_root = quartz.handle_tree(args.handle);
     let current_handle = StateField::Endpoint.get(&quartz).ok();
-    output_tree(&quartz.ctx, tree_root.root, current_handle, 0);
+    output_tree(tree_root.root, current_handle, 0);
 
     Ok(())
 }
 
 fn output_tree(
-    ctx: &Ctx,
     tree: Node<EndpointHandle>,
     current_handle: Option<String>,
     padding: usize,
@@ -43,7 +42,6 @@ fn output_tree(
     println!("{}{}{}", padding_str, handle_marker, handle_str);
     for child in tree.children {
         output_tree(
-            &ctx,
             child,
             current_handle.clone(),
             padding + aditional_padding,
