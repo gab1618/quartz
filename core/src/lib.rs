@@ -210,8 +210,8 @@ impl Quartz {
         let mut endpoint = Endpoint::default();
         endpoint.set_handle(&self, &handle);
 
-        handle.write(&self);
-        endpoint.write();
+        handle.write(&self)?;
+        endpoint.write()?;
 
         Ok(endpoint)
     }
@@ -243,8 +243,8 @@ impl Quartz {
         mut endpoint: Endpoint,
         mut patch: EndpointPatch,
     ) -> QuartzResult {
-        endpoint.update(&mut patch);
-        endpoint.write();
+        endpoint.update(&mut patch)?;
+        endpoint.write()?;
 
         Ok(())
     }
@@ -262,17 +262,17 @@ impl Quartz {
             let endpoint = src_handle.endpoint(&self);
 
             if recursive {
-                for child in src_handle.children(&self) {
+                for child in src_handle.children(&self)? {
                     queue.push_back(child.clone());
                 }
             }
 
             src_handle.replace(&src, &dest);
-            src_handle.write(&self);
+            src_handle.write(&self)?;
 
             if let Some(mut endpoint) = endpoint {
                 endpoint.set_handle(&self, &src_handle);
-                endpoint.write();
+                endpoint.write()?;
             }
         }
 
@@ -288,7 +288,7 @@ impl Quartz {
                 continue;
             }
 
-            if !handle.children(&self).is_empty() && !recursive {
+            if !handle.children(&self)?.is_empty() && !recursive {
                 eprintln!(
                     "{} has child handles. Use -r option to confirm",
                     handle.handle(),
@@ -332,7 +332,7 @@ impl Quartz {
 
         while let Some((src, mut handle)) = queue.pop_front() {
             let mut dest = EndpointHandle::from(dest.handle()); // copy
-            for child in handle.children(&self) {
+            for child in handle.children(&self)? {
                 queue.push_back((src, child));
             }
 
@@ -343,11 +343,11 @@ impl Quartz {
             }
 
             handle.replace(src, &dest.handle());
-            handle.write(&self);
+            handle.write(&self)?;
 
             if let Some(mut endpoint) = maybe_endpoint {
                 endpoint.set_handle(&self, &handle);
-                endpoint.write();
+                endpoint.write()?;
             }
         }
 
@@ -357,7 +357,7 @@ impl Quartz {
 
         Ok(())
     }
-    pub fn handle_tree(&self, handle: Option<String>) -> Tree<EndpointHandle> {
+    pub fn handle_tree(&self, handle: Option<String>) -> QuartzResult<Tree<EndpointHandle>> {
         let tree_base = handle
             .map(|name| {
                 let handle = EndpointHandle::from(name);
@@ -431,7 +431,7 @@ impl Quartz {
             .handle(handle.handle())
             .timestemp(Utc::now().timestamp_micros());
 
-        endpoint.update(&mut patch);
+        endpoint.update(&mut patch)?;
         endpoint.apply_env(&env);
 
         let body = endpoint.body().cloned();

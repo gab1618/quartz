@@ -29,7 +29,17 @@ pub enum QuartzError {
     #[error("Could not save config: {0}")]
     SaveConfig(#[source] std::io::Error),
     #[error("Could not read cookies: {0}")]
-    ReadCookies(#[source] std::io::Error)
+    ReadCookies(#[source] std::io::Error),
+    #[error("Could not save handle: {0}")]
+    SaveHandle(#[source] std::io::Error),
+    #[error("Could not get handle children: {0}")]
+    GetHandleChildren(#[source] std::io::Error),
+    #[error("Could not parse handle spec")]
+    ParseHandleSpec,
+    #[error("Could not serialize endpoint: {0}")]
+    SerializeEndpoint(#[source] toml::ser::Error),
+    #[error("Could not save endpoint: {0}")]
+    SaveEndpoint(#[source] std::io::Error),
 }
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;

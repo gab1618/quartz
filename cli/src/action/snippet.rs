@@ -23,7 +23,7 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> QuartzResult {
         env.variables.set(&var)?;
     }
 
-    endpoint.update(&mut args.patch);
+    endpoint.update(&mut args.patch)?;
     endpoint.apply_env(&env);
 
     match args.command {

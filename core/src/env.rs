@@ -139,7 +139,7 @@ impl Env {
             env.variables = Variables::parse(&var_contents);
         }
         if let Ok(header_contents) = std::fs::read_to_string(env.dir().join("headers")) {
-            env.headers = Headers::parse(&header_contents);
+            env.headers = Headers::parse(&header_contents)?;
         }
 
         Ok(env)

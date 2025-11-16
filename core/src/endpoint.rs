@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use crate::Quartz;
 use crate::env::{Env, Variables};
+use crate::error::{QuartzError, QuartzResult};
 use crate::pairmap::PairMap;
 use crate::state::StateField;
 use crate::tree::Tree;
@@ -53,12 +54,12 @@ impl PairMap<'_> for Query {
 pub struct Headers(pub HashMap<String, String>);
 
 impl Headers {
-    pub fn parse(file_content: &str) -> Self {
+    pub fn parse(file_content: &str) -> QuartzResult<Self> {
         let mut headers = Headers::default();
         for header in file_content.lines().filter(|line| !line.is_empty()) {
-            headers.set(header).unwrap();
+            headers.set(header)?;
         }
-        headers
+        Ok(headers)
     }
 }
 
@@ -239,25 +240,27 @@ impl EndpointHandle {
     }
 
     /// Records files to build this endpoint with `parse` methods.
-    pub fn write(&self, quartz: &Quartz) {
+    pub fn write(&self, quartz: &Quartz) -> QuartzResult {
         let mut dir = quartz.path().join("endpoints");
         for entry in &self.path {
             dir = dir.join(Endpoint::name_to_dir(entry));
 
-            let _ = std::fs::create_dir(&dir);
+            std::fs::create_dir(&dir).map_err(QuartzError::SaveHandle)?;
 
             let mut file = std::fs::OpenOptions::new()
                 .write(true)
                 .truncate(true)
                 .create(true)
                 .open(dir.join("spec"))
-                .unwrap();
+                .map_err(QuartzError::SaveHandle)?;
 
-            let _ = file.write_all(entry.as_bytes());
+            file.write_all(entry.as_bytes())
+                .map_err(QuartzError::SaveHandle)?;
         }
 
-        std::fs::create_dir_all(self.dir(quartz))
-            .unwrap_or_else(|_| panic!("failed to create endpoint"));
+        std::fs::create_dir_all(self.dir(quartz)).map_err(QuartzError::SaveHandle)?;
+
+        Ok(())
     }
 
     /// Removes endpoint to make it an empty handle
@@ -272,31 +275,29 @@ impl EndpointHandle {
         self.path.len()
     }
 
-    pub fn children(&self, quartz: &Quartz) -> Vec<EndpointHandle> {
+    pub fn children(&self, quartz: &Quartz) -> QuartzResult<Vec<EndpointHandle>> {
         let mut list = Vec::<EndpointHandle>::new();
 
-        if let Ok(paths) = std::fs::read_dir(self.dir(quartz)) {
-            for path in paths {
-                let path = path.unwrap().path();
+        let paths = std::fs::read_dir(self.dir(quartz)).map_err(QuartzError::GetHandleChildren)?;
+        let valid_paths = paths
+            .filter(|entry| entry.is_ok())
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| path.is_dir())
+            .collect::<Vec<_>>();
+        for path in valid_paths {
+            let spec_file_path = path.join("spec");
+            let raw_spec_content =
+                std::fs::read(spec_file_path).map_err(QuartzError::GetHandleChildren)?;
+            let spec =
+                String::from_utf8(raw_spec_content).map_err(|_| QuartzError::ParseHandleSpec)?;
 
-                if !path.is_dir() {
-                    continue;
-                }
+            let mut path = self.path.clone();
+            path.push(spec);
 
-                if let Ok(vec) = std::fs::read(path.join("spec")) {
-                    let spec = String::from_utf8(vec).unwrap_or_else(|_| {
-                        panic!("failed to get handle");
-                    });
-
-                    let mut path = self.path.clone();
-                    path.push(spec);
-
-                    list.push(EndpointHandle::new(path))
-                }
-            }
+            list.push(EndpointHandle::new(path))
         }
 
-        list
+        Ok(list)
     }
 
     #[must_use]
@@ -309,24 +310,26 @@ impl EndpointHandle {
         self.path = EndpointHandle::from(handle).path;
     }
 
-    pub fn tree(self, quartz: &Quartz) -> Tree<Self> {
+    pub fn tree(self, quartz: &Quartz) -> QuartzResult<Tree<Self>> {
         let mut tree = Tree::new(self);
 
-        for child in tree.root.value.children(quartz) {
-            let child_tree = child.tree(quartz);
+        for child in tree.root.value.children(quartz)? {
+            let child_tree = child.tree(quartz)?;
             tree.root.children.push(child_tree.root);
         }
 
-        tree
+        Ok(tree)
     }
 }
 
-impl From<&mut EndpointPatch> for Endpoint {
-    fn from(value: &mut EndpointPatch) -> Self {
-        let mut endpoint = Self::default();
-        endpoint.update(value);
+impl TryFrom<&mut EndpointPatch> for Endpoint {
+    type Error = QuartzError;
 
-        endpoint
+    fn try_from(value: &mut EndpointPatch) -> Result<Self, Self::Error> {
+        let mut endpoint = Self::default();
+        endpoint.update(value)?;
+
+        Ok(endpoint)
     }
 }
 
@@ -353,7 +356,7 @@ impl Endpoint {
         Ok(endpoint)
     }
 
-    pub fn update(&mut self, src: &mut EndpointPatch) {
+    pub fn update(&mut self, src: &mut EndpointPatch) -> QuartzResult {
         if let Some(method) = &mut src.method {
             std::mem::swap(&mut self.method, method);
         }
@@ -363,15 +366,15 @@ impl Endpoint {
         }
 
         for input in &src.query {
-            self.query.set(input).unwrap();
+            self.query.set(input)?;
         }
 
         for input in &src.headers {
-            self.headers.set(input).unwrap();
+            self.headers.set(input)?;
         }
 
         for input in &src.query {
-            self.query.set(input).unwrap();
+            self.query.set(input)?;
         }
 
         if let Some(data) = &src.data {
@@ -386,10 +389,12 @@ impl Endpoint {
                 self.body = Some(raw.to_owned());
             }
         }
+
+        Ok(())
     }
 
-    pub fn to_toml(&self) -> Result<String, toml::ser::Error> {
-        toml::to_string(&self)
+    pub fn to_toml(&self) -> QuartzResult<String> {
+        toml::to_string(&self).map_err(QuartzError::SerializeEndpoint)
     }
 
     pub fn load_body(&mut self) -> Option<&String> {
@@ -560,20 +565,20 @@ impl Endpoint {
         result.join("&")
     }
 
-    pub fn write(&mut self) {
-        let toml_content = self
-            .to_toml()
-            .unwrap_or_else(|_| panic!("failed to generate settings"));
+    pub fn write(&mut self) -> QuartzResult {
+        let toml_content = self.to_toml()?;
 
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
             .open(self.path.join("endpoint.toml"))
-            .unwrap_or_else(|_| panic!("failed to open config file"));
+            .map_err(QuartzError::SaveEndpoint)?;
 
         file.write_all(toml_content.as_bytes())
-            .unwrap_or_else(|_| panic!("failed to write to config file"));
+            .map_err(QuartzError::SaveEndpoint)?;
+
+        Ok(())
     }
 }
 

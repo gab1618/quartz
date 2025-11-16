@@ -22,7 +22,7 @@ pub struct RmArgs {
 pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Get(args) => get(ctx, args.key),
-        Cmd::Set(args) => set(ctx, args.queries),
+        Cmd::Set(args) => set(ctx, args.queries)?,
         Cmd::Rm(args) => rm(ctx, args.keys)?,
         Cmd::Ls => ls(ctx),
     };
@@ -42,15 +42,17 @@ pub fn get(ctx: Ctx, key: String) {
     println!("{value}");
 }
 
-pub fn set(ctx: Ctx, queries: Vec<String>) {
+pub fn set(ctx: Ctx, queries: Vec<String>) -> QuartzResult {
     let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     for input in queries {
-        endpoint.query.set(&input).unwrap();
+        endpoint.query.set(&input)?;
     }
 
-    endpoint.write();
+    endpoint.write()?;
+
+    Ok(())
 }
 
 pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
@@ -66,7 +68,7 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
         }
     }
 
-    endpoint.write();
+    endpoint.write()?;
     Ok(())
 }
 
