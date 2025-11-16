@@ -113,8 +113,7 @@ impl Quartz {
     pub fn env(&self) -> QuartzResult<Env> {
         let curr_env_name = StateField::Env.get(&self).unwrap_or("default".into());
 
-        let parsed_env = Env::parse(self.path().to_path_buf(), &curr_env_name)
-            .map_err(|_| QuartzError::Internal)?;
+        let parsed_env = Env::parse(self.path().to_path_buf(), &curr_env_name)?;
         Ok(parsed_env)
     }
     pub fn get_env(&self, name: &str) -> Option<Env> {
@@ -125,9 +124,9 @@ impl Quartz {
         let new_env = Env::new(name, self.path().to_path_buf());
 
         if new_env.exists() {
-            return Err(QuartzError::Internal);
+            return Err(QuartzError::AlreadyExistingEnv);
         }
-        new_env.write().map_err(|_| QuartzError::Internal)?;
+        new_env.write()?;
 
         Ok(())
     }

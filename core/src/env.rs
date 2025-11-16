@@ -88,9 +88,9 @@ impl Env {
     pub fn write(&self) -> QuartzResult {
         let dir = self.dir();
 
-        std::fs::create_dir(dir).map_err(|_| QuartzError::Internal)?;
+        std::fs::create_dir(dir).map_err(QuartzError::CreateEnvDir)?;
 
-        self.update().map_err(|_| QuartzError::Internal)?;
+        self.update()?;
 
         Ok(())
     }
@@ -101,23 +101,23 @@ impl Env {
             .write(true)
             .truncate(true)
             .open(self.dir().join("variables"))
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::UpdateVariablesFile)?;
         let mut headers_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
             .open(self.dir().join("headers"))
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::UpdateHeadersFile)?;
 
         if !self.variables.is_empty() {
             var_file
                 .write_all(format!("{}", self.variables).as_bytes())
-                .map_err(|_| QuartzError::Internal)?;
+                .map_err(QuartzError::UpdateVariablesFile)?;
         }
         if !self.headers.0.is_empty() {
             headers_file
                 .write_all(format!("{}", self.headers).as_bytes())
-                .map_err(|_| QuartzError::Internal)?;
+                .map_err(QuartzError::UpdateHeadersFile)?;
         }
 
         Ok(())
@@ -128,8 +128,12 @@ impl Env {
         self.dir().exists()
     }
 
-    pub fn parse(mount_path: PathBuf, name: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn parse(mount_path: PathBuf, name: &str) -> QuartzResult<Self> {
         let mut env = Self::new(name, mount_path);
+
+        if !env.exists() {
+            return Err(QuartzError::EnvNotFound);
+        }
 
         if let Ok(var_contents) = std::fs::read_to_string(env.dir().join("variables")) {
             env.variables = Variables::parse(&var_contents);
@@ -151,19 +155,19 @@ impl Env {
     }
     pub fn header_set(&mut self, header: &str) -> QuartzResult {
         self.headers.set(header)?;
-        self.update().map_err(|_| QuartzError::Internal)?;
+        self.update()?;
         Ok(())
     }
     pub fn header_rm(&mut self, header: &str) -> QuartzResult {
         self.headers.remove(header);
-        self.update().map_err(|_| QuartzError::Internal)?;
+        self.update()?;
         Ok(())
     }
     pub fn header_get(&self, key: &str) -> QuartzResult<String> {
         let value = self
             .headers
             .get(key)
-            .ok_or(QuartzError::Internal)?
+            .ok_or(QuartzError::HeaderNotFound)?
             .to_owned();
         Ok(value)
     }
@@ -189,10 +193,12 @@ impl Env {
     }
     pub fn var_rm(&mut self, keys: Vec<String>) -> QuartzResult {
         for key in keys {
-            self.variables.remove(&key).ok_or(QuartzError::Internal)?;
+            self.variables
+                .remove(&key)
+                .ok_or(QuartzError::RemoveHeader)?;
         }
 
-        self.update().map_err(|_| QuartzError::Internal)?;
+        self.update()?;
         Ok(())
     }
 }
