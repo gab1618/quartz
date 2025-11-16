@@ -38,7 +38,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Use(args) => {
             let curr_handle = match args.handle {
                 Some(handle) => Some(ctx.quartz.handle_switch(handle)?),
-                None => ctx.quartz.current_handle(),
+                None => ctx.quartz.handle(),
             };
             let curr_endpoint = curr_handle
                 .map(|handle| handle.endpoint(&ctx.quartz))

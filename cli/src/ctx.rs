@@ -101,7 +101,7 @@ impl Ctx {
 
     pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
-        let handle = self.quartz.current_handle().ok_or(QuartzError::Internal)?;
+        let handle = self.quartz.handle().ok_or(QuartzError::Internal)?;
         let path = handle.dir(&self.quartz).join("body");
         let editor = self.quartz.config().parse().preferences.editor();
 

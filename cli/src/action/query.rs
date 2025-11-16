@@ -31,7 +31,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
 }
 
 pub fn get(ctx: Ctx, key: String) {
-    let handle = ctx.quartz.current_handle().unwrap();
+    let handle = ctx.quartz.handle().unwrap();
     let endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     let value = endpoint
@@ -43,7 +43,7 @@ pub fn get(ctx: Ctx, key: String) {
 }
 
 pub fn set(ctx: Ctx, queries: Vec<String>) {
-    let handle = ctx.quartz.current_handle().unwrap();
+    let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     for input in queries {
@@ -54,7 +54,7 @@ pub fn set(ctx: Ctx, queries: Vec<String>) {
 }
 
 pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
-    let handle = ctx.quartz.current_handle().unwrap();
+    let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     for k in keys {
@@ -71,13 +71,13 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
 }
 
 pub fn ls(ctx: Ctx) {
-    let handle = ctx.quartz.current_handle().unwrap();
+    let handle = ctx.quartz.handle().unwrap();
     let endpoint = handle.endpoint(&ctx.quartz).unwrap();
     print!("{}", endpoint.query);
 }
 
 pub fn print(ctx: Ctx) {
-    let handle = ctx.quartz.current_handle().unwrap();
+    let handle = ctx.quartz.handle().unwrap();
     let endpoint = handle.endpoint(&ctx.quartz).unwrap();
     println!("{}", endpoint.query_string());
 }

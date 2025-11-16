@@ -120,12 +120,12 @@ impl Quartz {
         })
     }
     pub fn make_handle_empty(&self) -> QuartzResult {
-        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
+        let handle = self.handle().ok_or(QuartzError::Internal)?;
         handle.make_empty(&self);
 
         Ok(())
     }
-    pub fn current_handle(&self) -> Option<EndpointHandle> {
+    pub fn handle(&self) -> Option<EndpointHandle> {
         let curr_endpoint_name = StateField::Endpoint.get(self).ok();
 
         let parsed = curr_endpoint_name.map(|handle_name| EndpointHandle::from(handle_name));
@@ -393,7 +393,7 @@ impl Quartz {
     }
 
     pub fn handle_endpoint_file_path(&self) -> Option<PathBuf> {
-        let handle = self.current_handle();
+        let handle = self.handle();
         let dir = handle.map(|inner| inner.dir(&self).join("endpoint.toml"));
         dir
     }
@@ -406,7 +406,7 @@ impl Quartz {
         cookies: Vec<String>,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
-        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
+        let handle = self.handle().ok_or(QuartzError::Internal)?;
         let mut endpoint = handle.endpoint(self).ok_or(QuartzError::Internal)?;
         let mut env = self.current_env()?;
         for var in variables {
@@ -555,7 +555,7 @@ impl Quartz {
         Ok(h)
     }
     pub fn set_body(&self, input: String) -> QuartzResult {
-        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
+        let handle = self.handle().ok_or(QuartzError::Internal)?;
 
         let mut f = std::fs::OpenOptions::new()
             .create(true)
@@ -570,7 +570,7 @@ impl Quartz {
         Ok(())
     }
     pub fn get_body(&self) -> QuartzResult<String> {
-        let handle = self.current_handle().ok_or(QuartzError::Internal)?;
+        let handle = self.handle().ok_or(QuartzError::Internal)?;
         let mut f = std::fs::OpenOptions::new()
             .read(true)
             .open(handle.dir(&self).join("body"))
