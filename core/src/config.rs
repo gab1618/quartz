@@ -19,9 +19,10 @@ impl ConfigManager {
         let parsed = Config::parse(&self.mount_path);
         parsed
     }
-    pub fn save(&self, mut conf: Config) {
+    pub fn save(&self, conf: Config) -> QuartzResult {
         let save_filepath = Config::filepath(&self.mount_path);
-        conf.write(save_filepath).unwrap();
+        conf.write(save_filepath)?;
+        Ok(())
     }
     pub fn set(&self, key: &str, value: &str) -> QuartzResult {
         let mut curr_config = self.parse();
@@ -30,11 +31,11 @@ impl ConfigManager {
             "preferences.pager" => curr_config.preferences.set_pager(value),
             "ui.colors" => curr_config.ui.set_colors(matches!(value, "true")),
             _ => {
-                return Err(QuartzError::Internal);
+                return Err(QuartzError::InvalidConfigKey(key.to_string()));
             }
         };
 
-        self.save(curr_config);
+        self.save(curr_config)?;
 
         Ok(())
     }
@@ -45,12 +46,12 @@ impl ConfigManager {
             "ui.colors" => Some(self.parse().ui.colors().to_string()),
             _ => None,
         }
-        .ok_or(QuartzError::Internal)?;
+        .ok_or(QuartzError::InvalidConfigKey(key.to_string()))?;
 
         Ok(value)
     }
     pub fn raw_configs(&self) -> QuartzResult<String> {
-        let content = toml::to_string(&self.parse()).map_err(|_| QuartzError::Internal)?;
+        let content = toml::to_string(&self.parse()).map_err(QuartzError::SerializeConfig)?;
 
         Ok(content)
     }
@@ -84,12 +85,12 @@ impl Config {
         Config::default()
     }
 
-    pub fn write(&mut self, file_path: PathBuf) -> QuartzResult {
-        let content = toml::to_string(self).map_err(|_| QuartzError::Internal)?;
+    pub fn write(mut self, file_path: PathBuf) -> QuartzResult {
+        let content = toml::to_string(&mut self).map_err(QuartzError::SerializeConfig)?;
 
         if !file_path.exists() {
-            let parent_path = file_path.parent().ok_or(QuartzError::Internal)?;
-            std::fs::create_dir_all(parent_path).map_err(|_| QuartzError::Internal)?;
+            let parent_path = file_path.parent().expect("Unreachable");
+            std::fs::create_dir_all(parent_path).map_err(QuartzError::SaveConfig)?;
         }
 
         let mut file = OpenOptions::new()
@@ -97,10 +98,10 @@ impl Config {
             .write(true)
             .truncate(true)
             .open(file_path)
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::SaveConfig)?;
 
         file.write_all(content.as_bytes())
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::SaveConfig)?;
 
         Ok(())
     }
