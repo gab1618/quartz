@@ -37,7 +37,7 @@ pub fn print(quartz: Quartz) -> QuartzResult {
 }
 
 pub fn edit(quartz: Quartz, format: Option<String>) -> QuartzResult {
-    quartz.body_edit(format)?;
+    quartz.ctx.body_edit(format, &quartz)?;
 
     Ok(())
 }
