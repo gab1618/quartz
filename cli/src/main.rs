@@ -1,12 +1,16 @@
 mod action;
 mod cli;
+mod ctx;
 
 use std::env::current_dir;
 
 use clap::Parser;
 use colored::Colorize;
 
-use crate::cli::{Cli, Cmd};
+use crate::{
+    cli::{Cli, Cmd},
+    ctx::Ctx,
+};
 use quartz_core::{Quartz, QuartzError, QuartzResult};
 
 #[tokio::main]
@@ -35,11 +39,13 @@ async fn main() -> QuartzResult {
     let curr_dir = current_dir().map_err(|_| QuartzError::Internal)?;
 
     let quartz = Quartz::new(curr_dir, home_dir)?;
-
-    // When true, ensures pagers and/or grep keeps the output colored
     colored::control::set_override(quartz.config().parse().ui.colors());
 
-    action::cmd(quartz, args.command).await?;
+    let ctx = Ctx::new(quartz);
+
+    // When true, ensures pagers and/or grep keeps the output colored
+
+    action::cmd(ctx, args.command).await?;
 
     Ok(())
 }

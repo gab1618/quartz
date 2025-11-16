@@ -1,4 +1,6 @@
-use quartz_core::{cookie::Cookie, Quartz};
+use quartz_core::cookie::Cookie;
+
+use crate::ctx::Ctx;
 
 #[derive(clap::Args, Debug)]
 pub struct PrintArgs {
@@ -9,8 +11,8 @@ pub struct PrintArgs {
     domain: Option<String>,
 }
 
-pub fn print(quartz: Quartz, args: PrintArgs) {
-    let env = quartz.current_env().unwrap();
+pub fn print(ctx: Ctx, args: PrintArgs) {
+    let env = ctx.quartz.current_env().unwrap();
     let jar = env.cookie_jar();
 
     let iter = jar.iter().filter(|c| {

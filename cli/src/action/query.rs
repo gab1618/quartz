@@ -1,6 +1,6 @@
-use crate::cli::QueryCmd as Cmd;
+use crate::{cli::QueryCmd as Cmd, ctx::Ctx};
 use colored::Colorize;
-use quartz_core::{Quartz, QuartzResult, pairmap::PairMap};
+use quartz_core::{QuartzResult, pairmap::PairMap};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
@@ -19,20 +19,20 @@ pub struct RmArgs {
     keys: Vec<String>,
 }
 
-pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
-        Cmd::Get(args) => get(quartz, args.key),
-        Cmd::Set(args) => set(quartz, args.queries),
-        Cmd::Rm(args) => rm(quartz, args.keys)?,
-        Cmd::Ls => ls(quartz),
+        Cmd::Get(args) => get(ctx, args.key),
+        Cmd::Set(args) => set(ctx, args.queries),
+        Cmd::Rm(args) => rm(ctx, args.keys)?,
+        Cmd::Ls => ls(ctx),
     };
 
     Ok(())
 }
 
-pub fn get(quartz: Quartz, key: String) {
-    let handle = quartz.current_handle().unwrap();
-    let endpoint = handle.endpoint(&quartz).unwrap();
+pub fn get(ctx: Ctx, key: String) {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     let value = endpoint
         .query
@@ -42,9 +42,9 @@ pub fn get(quartz: Quartz, key: String) {
     println!("{value}");
 }
 
-pub fn set(quartz: Quartz, queries: Vec<String>) {
-    let handle = quartz.current_handle().unwrap();
-    let mut endpoint = handle.endpoint(&quartz).unwrap();
+pub fn set(ctx: Ctx, queries: Vec<String>) {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     for input in queries {
         endpoint.query.set(&input).unwrap();
@@ -53,9 +53,9 @@ pub fn set(quartz: Quartz, queries: Vec<String>) {
     endpoint.write();
 }
 
-pub fn rm(quartz: Quartz, keys: Vec<String>) -> QuartzResult {
-    let handle = quartz.current_handle().unwrap();
-    let mut endpoint = handle.endpoint(&quartz).unwrap();
+pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     for k in keys {
         if endpoint.query.contains_key(&k) {
@@ -70,14 +70,14 @@ pub fn rm(quartz: Quartz, keys: Vec<String>) -> QuartzResult {
     Ok(())
 }
 
-pub fn ls(quartz: Quartz) {
-    let handle = quartz.current_handle().unwrap();
-    let endpoint = handle.endpoint(&quartz).unwrap();
+pub fn ls(ctx: Ctx) {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
     print!("{}", endpoint.query);
 }
 
-pub fn print(quartz: Quartz) {
-    let handle = quartz.current_handle().unwrap();
-    let endpoint = handle.endpoint(&quartz).unwrap();
+pub fn print(ctx: Ctx) {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
     println!("{}", endpoint.query_string());
 }

@@ -1,6 +1,5 @@
 pub mod config;
 pub mod cookie;
-pub mod ctx;
 pub mod endpoint;
 pub mod env;
 pub mod history;
@@ -32,7 +31,6 @@ use crate::history::History;
 use crate::pairmap::PairMap;
 use crate::tree::Tree;
 use crate::{
-    ctx::Ctx,
     endpoint::{EndpointHandle, EndpointPatch},
     env::Env,
     state::StateField,
@@ -65,18 +63,15 @@ impl Display for QuartzError {
 impl Error for QuartzError {}
 
 pub struct Quartz {
-    pub ctx: Ctx,
     config: ConfigManager,
     path: PathBuf,
 }
 
 impl Quartz {
     pub fn new(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
-        let ctx = Ctx::new(path.clone())?;
         let quartz_path = path.join(".quartz");
         let config = ConfigManager::new(config_path);
         Ok(Self {
-            ctx,
             path: quartz_path,
             config,
         })
@@ -119,10 +114,7 @@ impl Quartz {
             }
         }
 
-        let curr_ctx = Ctx::new(path.clone())?;
-
         Ok(Self {
-            ctx: curr_ctx,
             path: quartz_dir,
             config,
         })

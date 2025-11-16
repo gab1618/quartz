@@ -1,60 +1,58 @@
-use crate::{action, cli::ShowCmd as Cmd};
-use quartz_core::{
-    Quartz, QuartzError, QuartzResult,
-};
+use crate::{action, cli::ShowCmd as Cmd, ctx::Ctx};
+use quartz_core::{QuartzError, QuartzResult};
 
-pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Query { key } => {
             if let Some(key) = key {
-                action::query::get(quartz, key);
+                action::query::get(ctx, key);
             } else {
-                action::query::print(quartz);
+                action::query::print(ctx);
             }
         }
         Cmd::Headers { key } => {
             if let Some(key) = key {
-                action::header::get(quartz, key)?;
+                action::header::get(ctx, key)?;
             } else {
-                action::header::ls(quartz)?;
+                action::header::ls(ctx)?;
             }
         }
-        Cmd::Url => url(quartz),
-        Cmd::Method => method(quartz),
-        Cmd::Body => action::body::print(quartz)?,
-        Cmd::Handle => handle(quartz),
+        Cmd::Url => url(ctx),
+        Cmd::Method => method(ctx),
+        Cmd::Body => action::body::print(ctx)?,
+        Cmd::Handle => handle(ctx),
         Cmd::Env => {
-            let curr_env = quartz.current_env().unwrap();
+            let curr_env = ctx.quartz.current_env().unwrap();
             println!("{}", curr_env.name);
         }
-        Cmd::Cookies(args) => action::cookie::print(quartz, args),
-        Cmd::Endpoint => endpoint(quartz)?,
-        Cmd::Snippet(args) => action::snippet::cmd(quartz, args)?,
+        Cmd::Cookies(args) => action::cookie::print(ctx, args),
+        Cmd::Endpoint => endpoint(ctx)?,
+        Cmd::Snippet(args) => action::snippet::cmd(ctx, args)?,
     };
 
     Ok(())
 }
 
-pub fn url(quartz: Quartz) {
-    let handle = quartz.current_handle().unwrap();
-    let endpoint = handle.endpoint(&quartz).unwrap();
+pub fn url(ctx: Ctx) {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
     println!("{}", endpoint.url);
 }
 
-pub fn method(quartz: Quartz) {
-    let handle = quartz.current_handle().unwrap();
-    let endpoint = handle.endpoint(&quartz).unwrap();
+pub fn method(ctx: Ctx) {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
     println!("{}", endpoint.method);
 }
 
-pub fn handle(quartz: Quartz) {
-    let handle = quartz.current_handle().unwrap();
+pub fn handle(ctx: Ctx) {
+    let handle = ctx.quartz.current_handle().unwrap();
     println!("{}", handle.head());
 }
 
-pub fn endpoint(quartz: Quartz) -> QuartzResult {
-    let handle = quartz.current_handle().unwrap();
-    let endpoint = handle.endpoint(&quartz).unwrap();
+pub fn endpoint(ctx: Ctx) -> QuartzResult {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     println!("{}", endpoint.to_toml().map_err(|_| QuartzError::Internal)?);
     Ok(())

@@ -1,6 +1,8 @@
 use std::{io::Write, process::Stdio};
 
-use quartz_core::{Quartz, QuartzError, QuartzResult};
+use quartz_core::{QuartzError, QuartzResult};
+
+use crate::ctx::Ctx;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -9,8 +11,8 @@ pub struct Args {
     max_count: Option<usize>,
 }
 
-pub fn cmd(quartz: Quartz, args: Args) -> QuartzResult {
-    let history = quartz.history()?;
+pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
+    let history = ctx.quartz.history()?;
     let mut count = 0;
     let max_count = args.max_count.unwrap_or(usize::MAX);
 
@@ -29,7 +31,7 @@ pub fn cmd(quartz: Quartz, args: Args) -> QuartzResult {
         output.push_str(&format!("{entry}\n"));
     }
 
-    let pager = quartz.config().parse().preferences.pager();
+    let pager = ctx.quartz.config().parse().preferences.pager();
 
     let mut child = std::process::Command::new(&pager)
         .stdin(Stdio::piped())

@@ -1,5 +1,8 @@
-use crate::cli::{EnvCmd as Cmd, HeaderCmd};
-use quartz_core::{Quartz, QuartzResult};
+use crate::{
+    cli::{EnvCmd as Cmd, HeaderCmd},
+    ctx::Ctx,
+};
+use quartz_core::QuartzResult;
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {
@@ -22,24 +25,24 @@ pub struct RmArgs {
     env: String,
 }
 
-pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
-        Cmd::Create(args) => quartz.create_env(&args.name)?,
+        Cmd::Create(args) => ctx.quartz.create_env(&args.name)?,
         Cmd::Cp(args) => {
-            quartz.cp_env(&args.src, &args.dest)?;
+            ctx.quartz.cp_env(&args.src, &args.dest)?;
         }
         Cmd::Use(args) => {
-            quartz.switch_env(&args.env)?;
+            ctx.quartz.switch_env(&args.env)?;
         }
         Cmd::Ls => {
-            let envs = quartz.get_envs()?;
+            let envs = ctx.quartz.get_envs()?;
             for env in envs {
                 println!("{env}");
             }
         }
-        Cmd::Rm(args) => quartz.remove_env(&args.env)?,
+        Cmd::Rm(args) => ctx.quartz.remove_env(&args.env)?,
         Cmd::Header { command } => {
-            let mut curr_env = quartz.current_env().unwrap();
+            let mut curr_env = ctx.quartz.current_env().unwrap();
             match command {
                 HeaderCmd::Set { header } => {
                     curr_env.header_set(&header)?;

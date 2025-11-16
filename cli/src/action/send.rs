@@ -1,6 +1,8 @@
-use quartz_core::{endpoint::EndpointPatch, Quartz, QuartzResult};
+use quartz_core::{QuartzResult, endpoint::EndpointPatch};
 use std::path::PathBuf;
 use tokio::io::{AsyncWriteExt, stdout};
+
+use crate::ctx::Ctx;
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -24,8 +26,9 @@ pub struct Args {
     cookie_jar: Option<PathBuf>,
 }
 
-pub async fn cmd(quartz: Quartz, args: Args) -> QuartzResult {
-    let bytes = quartz
+pub async fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
+    let bytes = ctx
+        .quartz
         .send(
             args.variables,
             args.patch,

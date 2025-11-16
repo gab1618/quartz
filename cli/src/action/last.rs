@@ -1,12 +1,14 @@
 use crate::{
     cli::{LastCmd as Cmd, LastResCmd as ResCmd},
+    ctx::Ctx,
 };
 use quartz_core::{
-    history::{self}, Quartz, QuartzError, QuartzResult
+    QuartzError, QuartzResult,
+    history::{self},
 };
 
-pub fn cmd(quartz: Quartz, maybe_command: Option<Cmd>) -> QuartzResult {
-    let h = quartz.history()?;
+pub fn cmd(ctx: Ctx, maybe_command: Option<Cmd>) -> QuartzResult {
+    let h = ctx.quartz.history()?;
     let entry = h.last_entry()?.ok_or(QuartzError::Internal)?;
 
     if maybe_command.is_none() {

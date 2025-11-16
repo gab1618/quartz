@@ -1,18 +1,18 @@
-use crate::cli::HeaderCmd as Cmd;
-use quartz_core::{Quartz, QuartzResult, pairmap::PairMap};
+use crate::{cli::HeaderCmd as Cmd, ctx::Ctx};
+use quartz_core::{QuartzResult, pairmap::PairMap};
 
-pub fn cmd(quartz: Quartz, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
-        Cmd::Get { key } => get(quartz, key),
-        Cmd::Set { header } => set(quartz, header),
-        Cmd::Rm { key } => rm(quartz, key),
-        Cmd::Ls => ls(quartz),
+        Cmd::Get { key } => get(ctx, key),
+        Cmd::Set { header } => set(ctx, header),
+        Cmd::Rm { key } => rm(ctx, key),
+        Cmd::Ls => ls(ctx),
     }
 }
 
-pub fn get(quartz: Quartz, key: String) -> QuartzResult {
-    let handle = quartz.current_handle().unwrap();
-    let endpoint = handle.endpoint(&quartz).unwrap();
+pub fn get(ctx: Ctx, key: String) -> QuartzResult {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
     if let Some(header) = endpoint.headers.get(&key) {
         println!("{}", header);
     } else {
@@ -22,17 +22,17 @@ pub fn get(quartz: Quartz, key: String) -> QuartzResult {
     Ok(())
 }
 
-pub fn set(quartz: Quartz, header: String) -> QuartzResult {
-    let handle = quartz.current_handle().unwrap();
-    let mut endpoint = handle.endpoint(&quartz).unwrap();
+pub fn set(ctx: Ctx, header: String) -> QuartzResult {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
     endpoint.headers.set(&header)?;
     endpoint.write();
     Ok(())
 }
 
-pub fn rm(quartz: Quartz, keys: Vec<String>) -> QuartzResult {
-    let handle = quartz.current_handle().unwrap();
-    let mut endpoint = handle.endpoint(&quartz).unwrap();
+pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     for k in keys {
         if endpoint.headers.contains_key(&k) {
@@ -47,9 +47,9 @@ pub fn rm(quartz: Quartz, keys: Vec<String>) -> QuartzResult {
     Ok(())
 }
 
-pub fn ls(quartz: Quartz) -> QuartzResult {
-    let handle = quartz.current_handle().unwrap();
-    let endpoint = handle.endpoint(&quartz).unwrap();
+pub fn ls(ctx: Ctx) -> QuartzResult {
+    let handle = ctx.quartz.current_handle().unwrap();
+    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
 
     print!("{}", endpoint.headers);
     Ok(())

@@ -1,5 +1,5 @@
-use crate::cli::BodyCmd as Cmd;
-use quartz_core::{Quartz, QuartzError, QuartzResult};
+use crate::{cli::BodyCmd as Cmd, ctx::Ctx};
+use quartz_core::{QuartzError, QuartzResult};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -11,22 +11,22 @@ pub struct Args {
     command: crate::cli::BodyCmd,
 }
 
-pub fn cmd(quartz: Quartz, args: Args) -> QuartzResult {
+pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
     match args.command {
         Cmd::Show => {
-            print(quartz)?;
+            print(ctx)?;
         }
-        Cmd::Stdin => stdin(quartz),
-        Cmd::Edit => edit(quartz, args.format)?,
+        Cmd::Stdin => stdin(ctx),
+        Cmd::Edit => edit(ctx, args.format)?,
     };
 
     Ok(())
 }
 
-pub fn print(quartz: Quartz) -> QuartzResult {
-    let curr_handle = quartz.current_handle().ok_or(QuartzError::Internal)?;
+pub fn print(ctx: Ctx) -> QuartzResult {
+    let curr_handle = ctx.quartz.current_handle().ok_or(QuartzError::Internal)?;
     let mut curr_endpoint = curr_handle
-        .endpoint(&quartz)
+        .endpoint(&ctx.quartz)
         .ok_or(QuartzError::Internal)?;
 
     if let Some(body) = curr_endpoint.body() {
@@ -36,13 +36,13 @@ pub fn print(quartz: Quartz) -> QuartzResult {
     Ok(())
 }
 
-pub fn edit(quartz: Quartz, format: Option<String>) -> QuartzResult {
-    quartz.ctx.body_edit(format, &quartz)?;
+pub fn edit(ctx: Ctx, format: Option<String>) -> QuartzResult {
+    ctx.body_edit(format)?;
 
     Ok(())
 }
 
-pub fn stdin(quartz: Quartz) {
+pub fn stdin(ctx: Ctx) {
     let mut input = String::new();
     while let Ok(bytes) = std::io::stdin().read_line(&mut input) {
         if bytes == 0 {
@@ -50,5 +50,5 @@ pub fn stdin(quartz: Quartz) {
         }
     }
 
-    quartz.set_body(input).unwrap();
+    ctx.quartz.set_body(input).unwrap();
 }

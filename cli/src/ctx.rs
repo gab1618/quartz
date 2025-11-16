@@ -1,47 +1,18 @@
 use std::ffi::OsString;
-use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::ExitCode;
 
-use colored::Colorize;
-
-use crate::config::Config;
-use crate::state::State;
-use crate::{validator, Quartz, QuartzError, QuartzResult};
-
-pub struct CtxArgs {
-    pub from_handle: Option<String>,
-    pub early_apply_environment: bool,
-}
+use crate::{Quartz, QuartzError, QuartzResult};
+use quartz_core::{config::Config, validator};
 
 pub struct Ctx {
-    pub state: State,
-    path: PathBuf,
-    code: ExitCode,
+    pub quartz: Quartz,
 }
 
 impl Ctx {
-    pub fn new(mut dir: PathBuf) -> QuartzResult<Self> {
-        let state = State {
-            handle: None,
-            previous_handle: None,
-        };
-
-        loop {
-            if dir.join(".quartz").exists() {
-                break;
-            }
-
-            if !dir.pop() {
-                panic!("could not find a quartz project");
-            }
+    pub fn new(quartz: Quartz) -> Self {
+        Self {
+            quartz,
         }
-
-        Ok(Ctx {
-            state,
-            path: dir.join(".quartz"),
-            code: ExitCode::default(),
-        })
     }
 
     /// Opens an editor to modified the specified file at `path` in a temporary file.
@@ -84,7 +55,7 @@ impl Ctx {
     where
         F: FnOnce(&str) -> QuartzResult,
     {
-        let mut temp_path = self.path().join("user").join("EDIT");
+        let mut temp_path = self.quartz.path().join("user").join("EDIT");
 
         let extension: Option<OsString> = {
             if let Some(extension) = extension {
@@ -122,50 +93,22 @@ impl Ctx {
         Ok(())
     }
 
-    pub fn path(&self) -> &Path {
-        self.path.as_ref()
-    }
-
-    pub fn code(&mut self, value: ExitCode) {
-        self.code = value;
-    }
-
-    pub fn confirm(&self, message: &str) -> bool {
-        println!("{} {}", message, "(Y/n)".dimmed());
-
-        std::io::stdout().flush().unwrap();
-
-        let term = console::Term::stdout();
-        let ch = term.read_char().unwrap_or('n').to_ascii_lowercase();
-        if ch == '\n' {
-            return true;
-        }
-
-        ch == 'y'
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn exit_code(&self) -> &ExitCode {
-        &self.code
-    }
-
     pub fn edit_config(&self, editor: String, filepath: PathBuf) -> QuartzResult {
         self.edit(&filepath, editor, validator::toml_as::<Config>)?;
 
         Ok(())
     }
 
-    pub fn body_edit(&self, format: Option<String>, quartz: &Quartz) -> QuartzResult {
+    pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
-        let handle = quartz.current_handle().ok_or(QuartzError::Internal)?;
-        let path = handle.dir(quartz).join("body");
-        let editor = quartz.config().parse().preferences.editor();
+        let handle = self.quartz.current_handle().ok_or(QuartzError::Internal)?;
+        let path = handle.dir(&self.quartz).join("body");
+        let editor = self.quartz.config().parse().preferences.editor();
 
         let format = if format.is_some() {
             format
         } else {
-            let endpoint = handle.endpoint(quartz).ok_or(QuartzError::Internal)?;
+            let endpoint = handle.endpoint(&self.quartz).ok_or(QuartzError::Internal)?;
 
             if let Some(content) = endpoint.headers.get("content-type") {
                 let ext = POSSIBLE_EXT.iter().find_map(|ext| {
@@ -190,8 +133,7 @@ impl Ctx {
             //
             // n must be a number, so we don't wrap it in quotes. This JSON before variables is
             // invalid. A solution may or may not be done later.
-            self
-                .edit_with_extension(&path, Some(&format), editor, validator::infallible)?;
+            self.edit_with_extension(&path, Some(&format), editor, validator::infallible)?;
         } else {
             self.edit(&path, editor, validator::infallible)?;
         }
