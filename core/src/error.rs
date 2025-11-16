@@ -54,6 +54,8 @@ pub enum QuartzError {
     ReadHistoryEntry,
     #[error("Could not parse history entry")]
     ParseHistoryEntry,
+    #[error("Could not set value in the keymap")]
+    KeymapSet,
 }
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;

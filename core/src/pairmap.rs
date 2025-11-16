@@ -24,7 +24,7 @@ where
 
     /// Inserts key-value pair into map.
     fn set(&mut self, input: &'a str) -> QuartzResult {
-        let (key, value) = Self::pair(input).ok_or(QuartzError::Internal)?;
+        let (key, value) = Self::pair(input).ok_or(QuartzError::KeymapSet)?;
 
         self.map().insert(key, value);
 
