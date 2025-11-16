@@ -8,8 +8,32 @@ pub enum QuartzError {
     AlreadyInitialized,
     #[error("Could not setup quartz")]
     Setup,
+    #[error("No handle in use")]
+    NoHandleInUse,
+    #[error("Could not access handle body")]
+    AccessHandleBody(#[source] std::io::Error),
+    #[error("Handle is empty")]
+    EmptyHandle,
+    #[error("Handle name is empty")]
+    EmptyHandleName,
+    #[error("Handle already existing")]
+    AlreadyExistingHandle,
+    #[error("Not found handle: {0}")]
+    HandleNotFound(String),
+    #[error("Could not parse header")]
+    ParseHeader,
+    #[error("Error making the request")]
+    RequestFailure,
     #[error("Env already exists")]
     AlreadyExistingEnv,
+    #[error("Could not get envs: {0}")]
+    GetEnvs(#[source] std::io::Error),
+    #[error("Could not parse env filename")]
+    ParseEnvName,
+    #[error("Could not proceed. Env {0} is in use")]
+    EnvInUse(String),
+    #[error("Could not delete env: {0}")]
+    DeleteEnv(#[source] std::io::Error),
     #[error("Env not found")]
     EnvNotFound,
     #[error("Could not create env dir: {0}")]

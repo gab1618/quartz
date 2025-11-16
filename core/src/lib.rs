@@ -96,7 +96,7 @@ impl Quartz {
         })
     }
     pub fn make_handle_empty(&self) -> QuartzResult {
-        let handle = self.handle().ok_or(QuartzError::Internal)?;
+        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
         handle.make_empty(&self);
 
         Ok(())
@@ -131,13 +131,15 @@ impl Quartz {
         Ok(())
     }
     pub fn get_envs(&self) -> QuartzResult<Vec<String>> {
-        let entries =
-            std::fs::read_dir(self.path().join("env")).map_err(|_| QuartzError::Internal)?;
+        let entries = std::fs::read_dir(self.path().join("env")).map_err(QuartzError::GetEnvs)?;
         let env_names = entries
             .map(|entry| {
-                let ok_dir_entry = entry.map_err(|_| QuartzError::Internal)?;
+                let ok_dir_entry = entry.map_err(QuartzError::GetEnvs)?;
                 let filename = ok_dir_entry.file_name();
-                let str_filename = filename.to_str().ok_or(QuartzError::Internal)?.to_owned();
+                let str_filename = filename
+                    .to_str()
+                    .ok_or(QuartzError::ParseEnvName)?
+                    .to_owned();
                 Ok(str_filename)
             })
             .collect::<QuartzResult<Vec<String>>>()?;
@@ -145,14 +147,8 @@ impl Quartz {
         Ok(env_names)
     }
     pub fn switch_env(&self, name: &str) -> QuartzResult<Env> {
-        let requested_env =
-            Env::parse(self.path().to_path_buf(), name).map_err(|_| QuartzError::Internal)?;
-        if !requested_env.exists() {
-            return Err(QuartzError::Internal);
-        }
-        StateField::Env
-            .set(self, name)
-            .map_err(|_| QuartzError::Internal)?;
+        let requested_env = Env::parse(self.path().to_path_buf(), name)?;
+        StateField::Env.set(self, name)?;
 
         Ok(requested_env)
     }
@@ -160,20 +156,20 @@ impl Quartz {
         let env = Env::new(name, self.path().to_path_buf());
 
         if !env.exists() {
-            return Err(QuartzError::Internal);
+            return Err(QuartzError::EnvNotFound);
         }
         let curr_env = self.env()?;
         if env.name == curr_env.name {
-            return Err(QuartzError::Internal);
+            return Err(QuartzError::EnvInUse(env.name));
         }
 
-        std::fs::remove_dir_all(env.dir()).map_err(|_| QuartzError::Internal)?;
+        std::fs::remove_dir_all(env.dir()).map_err(QuartzError::DeleteEnv)?;
 
         Ok(())
     }
 
     pub fn cp_env(&self, src: &str, dest: &str) -> QuartzResult<Env> {
-        let src = Env::parse(self.path().to_path_buf(), src).map_err(|_| QuartzError::Internal)?;
+        let src = Env::parse(self.path().to_path_buf(), src)?;
         let mut dest = Env::parse(self.path().to_path_buf(), dest)
             .unwrap_or(Env::new(dest, self.path().to_path_buf()));
 
@@ -186,9 +182,9 @@ impl Quartz {
         }
 
         if dest.exists() {
-            dest.update().map_err(|_| QuartzError::Internal)?;
+            dest.update()?;
         } else {
-            dest.write().map_err(|_| QuartzError::Internal)?;
+            dest.write()?;
         }
 
         Ok(dest)
@@ -198,13 +194,13 @@ impl Quartz {
     }
     pub fn handle_create(&self, handle: &str) -> QuartzResult<Endpoint> {
         if handle.is_empty() {
-            return Err(QuartzError::Internal);
+            return Err(QuartzError::EmptyHandleName);
         }
 
         let handle = EndpointHandle::from(handle);
 
         if handle.exists(&self) {
-            return Err(QuartzError::Internal);
+            return Err(QuartzError::AlreadyExistingHandle);
         }
 
         let mut endpoint = Endpoint::default();
@@ -225,14 +221,14 @@ impl Quartz {
         let handle = EndpointHandle::from(handle);
 
         if !handle.exists(&self) {
-            return Err(QuartzError::Internal);
+            return Err(QuartzError::HandleNotFound(handle.head()));
         }
 
         let previous = StateField::Endpoint.get(self);
         StateField::Endpoint.set(self, &handle.path.join("/"))?;
 
         if let Ok(prev) = previous {
-            let _ = StateField::PreviousEndpoint.set(self, &prev);
+            StateField::PreviousEndpoint.set(self, &prev)?;
         }
 
         Ok(handle)
@@ -381,8 +377,8 @@ impl Quartz {
         cookies: Vec<String>,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
-        let handle = self.handle().ok_or(QuartzError::Internal)?;
-        let mut endpoint = handle.endpoint(self).ok_or(QuartzError::Internal)?;
+        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
+        let mut endpoint = handle.endpoint(self).ok_or(QuartzError::EmptyHandle)?;
         let mut env = self.env()?;
         for var in variables {
             env.variables.set(&var)?;
@@ -447,8 +443,8 @@ impl Quartz {
             for (key, val) in env.headers.iter() {
                 if !endpoint.headers.contains_key(key) {
                     req.headers_mut().insert(
-                        HeaderName::from_str(key).map_err(|_| QuartzError::Internal)?,
-                        HeaderValue::from_str(val).map_err(|_| QuartzError::Internal)?,
+                        HeaderName::from_str(key).map_err(|_| QuartzError::ParseHeader)?,
+                        HeaderValue::from_str(val).map_err(|_| QuartzError::ParseHeader)?,
                     );
                 }
             }
@@ -466,7 +462,7 @@ impl Quartz {
             res = client
                 .request(req)
                 .await
-                .map_err(|_| QuartzError::Internal)?;
+                .map_err(|_| QuartzError::RequestFailure)?;
 
             entry.message(&res);
 
@@ -530,29 +526,29 @@ impl Quartz {
         Ok(h)
     }
     pub fn set_body(&self, input: String) -> QuartzResult {
-        let handle = self.handle().ok_or(QuartzError::Internal)?;
+        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
 
         let mut f = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
             .open(handle.dir(&self).join("body"))
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::AccessHandleBody)?;
 
         f.write_all(input.as_bytes())
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::AccessHandleBody)?;
 
         Ok(())
     }
     pub fn get_body(&self) -> QuartzResult<String> {
-        let handle = self.handle().ok_or(QuartzError::Internal)?;
+        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
         let mut f = std::fs::OpenOptions::new()
             .read(true)
             .open(handle.dir(&self).join("body"))
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::AccessHandleBody)?;
         let mut body_content = String::new();
         f.read_to_string(&mut body_content)
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::AccessHandleBody)?;
 
         Ok(body_content)
     }
