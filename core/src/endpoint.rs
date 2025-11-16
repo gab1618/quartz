@@ -235,7 +235,6 @@ impl EndpointHandle {
 
     pub fn exists(&self, quartz: &Quartz) -> bool {
         let path = self.dir(quartz);
-        println!("PATH: {}", path.display());
         path.exists()
     }
 
