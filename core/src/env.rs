@@ -46,14 +46,14 @@ impl PairMap<'_> for Variables {
 }
 
 impl Variables {
-    pub fn parse(file_content: &str) -> Self {
+    pub fn parse(file_content: &str) -> QuartzResult<Self> {
         let mut variables = Variables::default();
 
         for var in file_content.split('\n').filter(|line| !line.is_empty()) {
-            variables.set(var).unwrap();
+            variables.set(var)?;
         }
 
-        variables
+        Ok(variables)
     }
 }
 
@@ -136,7 +136,7 @@ impl Env {
         }
 
         if let Ok(var_contents) = std::fs::read_to_string(env.dir().join("variables")) {
-            env.variables = Variables::parse(&var_contents);
+            env.variables = Variables::parse(&var_contents)?;
         }
         if let Ok(header_contents) = std::fs::read_to_string(env.dir().join("headers")) {
             env.headers = Headers::parse(&header_contents)?;
