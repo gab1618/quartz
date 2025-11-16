@@ -48,7 +48,7 @@ pub fn edit(ctx: Ctx) -> QuartzResult {
     let env = ctx.quartz.env()?;
     let editor = ctx.quartz.config().parse().preferences.editor();
     ctx.edit(&env.dir().join("variables"), editor, |c| {
-        Variables::parse(c);
+        Variables::parse(c)?;
         Ok(())
     })?;
 
