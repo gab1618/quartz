@@ -24,9 +24,10 @@ impl StateField {
     }
 
     pub fn get(&self, quartz: &Quartz) -> QuartzResult<String> {
-        let bytes = std::fs::read(self.file_path(quartz)).map_err(|_| QuartzError::Internal)?;
+        let file_content =
+            std::fs::read_to_string(self.file_path(quartz)).map_err(QuartzError::GetState)?;
 
-        Ok(String::from_utf8(bytes).map_err(|_| QuartzError::Internal)?)
+        Ok(file_content)
     }
 
     pub fn set(&self, quartz: &Quartz, value: &str) -> QuartzResult {
@@ -35,10 +36,10 @@ impl StateField {
             .create(true)
             .write(true)
             .open(self.file_path(quartz))
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(QuartzError::SetState)?;
 
         file.write_all(value.as_bytes())
-            .map_err(|_| QuartzError::Internal)
+            .map_err(QuartzError::SetState)
     }
 }
 

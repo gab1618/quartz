@@ -56,6 +56,10 @@ pub enum QuartzError {
     ParseHistoryEntry,
     #[error("Could not set value in the keymap")]
     KeymapSet,
+    #[error("Could not read state")]
+    GetState(#[source] std::io::Error),
+    #[error("Could not set state")]
+    SetState(#[source] std::io::Error),
 }
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;
