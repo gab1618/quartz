@@ -90,6 +90,8 @@ pub enum QuartzError {
     ParseCookie,
     #[error("Could not parse location header")]
     ParseLocationHeader,
+    #[error("Could not save cookie: {0}")]
+    SaveCookie(#[source] std::io::Error),
 }
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;

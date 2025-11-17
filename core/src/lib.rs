@@ -505,10 +505,9 @@ impl Quartz {
         }
 
         match aditional_cookie_jar {
-            Some(path) => cookie_jar
-                .write_at(&path)
-                .map_err(|_| QuartzError::Internal)?,
-            None => cookie_jar.write().map_err(|_| QuartzError::Internal)?,
+            Some(path) => cookie_jar.write_at(&path)?,
+
+            None => cookie_jar.write()?,
         };
 
         let mut bytes = Bytes::new();
@@ -519,7 +518,9 @@ impl Quartz {
             }
         }
 
-        entry.message_raw(String::from_utf8(bytes.to_vec()).map_err(|_| QuartzError::Internal)?);
+        entry.message_raw(
+            String::from_utf8(bytes.to_vec()).map_err(|_| QuartzError::SerializeHistory)?,
+        );
 
         let h = self.history()?;
         h.write(entry.build()?)?;

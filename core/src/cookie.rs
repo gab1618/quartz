@@ -525,13 +525,13 @@ impl CookieJar {
     }
 
     /// Write cookie jar contents to environment cookie jar in Netspace HTTP Cookie file format.
-    pub fn write(&self) -> std::io::Result<()> {
+    pub fn write(&self) -> QuartzResult {
         self.write_at(&self.path)
     }
 
     /// Write cookie jar contents to `path` in Netspace HTTP Cookie file format.
-    pub fn write_at(&self, path: &Path) -> std::io::Result<()> {
-        std::fs::write(path, self.to_string())
+    pub fn write_at(&self, path: &Path) -> QuartzResult {
+        std::fs::write(path, self.to_string()).map_err(QuartzError::SaveCookie)
     }
 }
 
