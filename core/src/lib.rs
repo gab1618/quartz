@@ -467,11 +467,13 @@ impl Quartz {
             entry.message(&res);
 
             if let Some(cookie_header) = res.headers().get("Set-Cookie") {
-                let url = endpoint.full_url().map_err(|_| QuartzError::Internal)?;
+                let url = endpoint.full_url().map_err(|_| QuartzError::ParseUrl)?;
 
                 cookie_jar.set(
                     url.host().unwrap(),
-                    cookie_header.to_str().map_err(|_| QuartzError::Internal)?,
+                    cookie_header
+                        .to_str()
+                        .map_err(|_| QuartzError::ParseCookie)?,
                 );
             }
 
@@ -480,17 +482,21 @@ impl Quartz {
             }
 
             if let Some(location) = res.headers().get("Location") {
-                let location = location.to_str().map_err(|_| QuartzError::Internal)?;
+                let location = location
+                    .to_str()
+                    .map_err(|_| QuartzError::ParseLocationHeader)?;
 
                 if location.starts_with('/') {
-                    let url = endpoint.full_url().map_err(|_| QuartzError::Internal)?;
+                    let url = endpoint
+                        .full_url()
+                        .map_err(|_| QuartzError::ParseLocationHeader)?;
                     // This is awful
                     endpoint.url = Uri::builder()
                         .authority(url.authority().unwrap().as_str())
                         .scheme(url.scheme().unwrap().as_str())
                         .path_and_query(location)
                         .build()
-                        .map_err(|_| QuartzError::Internal)?
+                        .map_err(|_| QuartzError::ParseLocationHeader)?
                         .to_string();
                 } else if Uri::from_str(location).is_ok() {
                     endpoint.url = location.to_string();

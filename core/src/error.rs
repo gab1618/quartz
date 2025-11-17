@@ -84,6 +84,12 @@ pub enum QuartzError {
     GetState(#[source] std::io::Error),
     #[error("Could not set state")]
     SetState(#[source] std::io::Error),
+    #[error("Could not parse full url")]
+    ParseUrl,
+    #[error("Could not parse cookie")]
+    ParseCookie,
+    #[error("Could not parse location header")]
+    ParseLocationHeader,
 }
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;
