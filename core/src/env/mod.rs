@@ -171,8 +171,8 @@ impl Env {
             .to_owned();
         Ok(value)
     }
-    pub fn var_set(&mut self, var: &str) -> QuartzResult {
-        self.variables.set(var)?;
+    pub fn var_set(&mut self, key: String, value: String) -> QuartzResult {
+        self.variables.0.insert(key, value);
         self.update()?;
 
         Ok(())

@@ -8,8 +8,10 @@ pub struct GetArgs {
 
 #[derive(clap::Args, Debug)]
 pub struct SetArgs {
-    #[arg(name = "VARIABLE", required = true)]
-    variables: Vec<String>,
+    #[arg(name = "key", required = true)]
+    key: String,
+    #[arg(name = "value", required = true)]
+    value: String,
 }
 
 #[derive(clap::Args, Debug)]
@@ -28,9 +30,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
             }
         }
         Cmd::Set(args) => {
-            for variable in args.variables {
-                curr_env.var_set(&variable)?;
-            }
+            curr_env.var_set(args.key, args.value)?;
         }
         Cmd::Rm(args) => {
             curr_env.var_rm(args.keys)?;
