@@ -42,6 +42,9 @@ async fn main() -> QuartzResult {
     let curr_dir = current_dir().map_err(|_| QuartzError::Internal)?;
 
     let quartz = Quartz::new(curr_dir, home_dir)?;
+    if let Some(handle) = args.from_handle {
+        quartz.handle_switch(handle)?;
+    }
     colored::control::set_override(quartz.config().parse().ui.colors());
 
     let ctx = Ctx::new(quartz);
