@@ -559,4 +559,33 @@ impl Quartz {
 
         Ok(body_content)
     }
+    pub fn body_file_path(&self) -> QuartzResult<PathBuf> {
+        const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
+        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
+        let mut path = handle.dir(&self).join("body");
+
+        let format = {
+            let endpoint = handle.endpoint(&self).ok_or(QuartzError::EmptyEndpoint)?;
+
+            if let Some(content) = endpoint.headers.get("content-type") {
+                let ext = POSSIBLE_EXT.iter().find_map(|ext| {
+                    if content.contains(*ext) {
+                        Some(ext.to_string())
+                    } else {
+                        None
+                    }
+                });
+
+                ext
+            } else {
+                None
+            }
+        };
+
+        if let Some(format) = format {
+            path.set_extension(format);
+        }
+
+        Ok(path)
+    }
 }

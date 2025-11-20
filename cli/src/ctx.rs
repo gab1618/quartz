@@ -10,9 +10,7 @@ pub struct Ctx {
 
 impl Ctx {
     pub fn new(quartz: Quartz) -> Self {
-        Self {
-            quartz,
-        }
+        Self { quartz }
     }
 
     /// Opens an editor to modified the specified file at `path` in a temporary file.
@@ -100,43 +98,14 @@ impl Ctx {
     }
 
     pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
-        const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
-        let handle = self.quartz.handle().ok_or(QuartzError::Internal)?;
-        let path = handle.dir(&self.quartz).join("body");
         let editor = self.quartz.config().parse().preferences.editor();
-
-        let format = if format.is_some() {
-            format
-        } else {
-            let endpoint = handle.endpoint(&self.quartz).ok_or(QuartzError::Internal)?;
-
-            if let Some(content) = endpoint.headers.get("content-type") {
-                let ext = POSSIBLE_EXT.iter().find_map(|ext| {
-                    if content.contains(*ext) {
-                        Some(ext.to_string())
-                    } else {
-                        None
-                    }
-                });
-
-                ext
-            } else {
-                None
-            }
-        };
+        let mut file_path = self.quartz.body_file_path()?;
 
         if let Some(format) = format {
-            // We cannot validate json for now. If we do so, variable notation will fail because it can
-            // generate invalid JSON. For exemple:
-            //
-            // { "value": {{n}} }
-            //
-            // n must be a number, so we don't wrap it in quotes. This JSON before variables is
-            // invalid. A solution may or may not be done later.
-            self.edit_with_extension(&path, Some(&format), editor, validator::infallible)?;
-        } else {
-            self.edit(&path, editor, validator::infallible)?;
+            file_path.set_extension(format);
         }
+
+        self.edit(&file_path, editor, validator::infallible)?;
 
         Ok(())
     }

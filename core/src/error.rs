@@ -10,6 +10,8 @@ pub enum QuartzError {
     Setup,
     #[error("No handle in use")]
     NoHandleInUse,
+    #[error("Endpoint is empty")]
+    EmptyEndpoint,
     #[error("Could not access handle body")]
     AccessHandleBody(#[source] std::io::Error),
     #[error("Handle is empty")]
