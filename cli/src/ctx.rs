@@ -1,7 +1,8 @@
 use std::path::Path;
+use crate::validator;
 
 use crate::{Quartz, QuartzError, QuartzResult};
-use quartz_core::{config::Config, validator};
+use quartz_core::config::Config;
 
 pub struct Ctx {
     pub quartz: Quartz,

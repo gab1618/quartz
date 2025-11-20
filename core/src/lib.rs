@@ -8,7 +8,6 @@ pub mod pairmap;
 pub mod snippet;
 pub mod state;
 pub mod tree;
-pub mod validator;
 
 #[cfg(test)]
 mod tests;

@@ -1,6 +1,7 @@
 mod action;
 mod cli;
 mod ctx;
+mod validator;
 
 use std::env::current_dir;
 
