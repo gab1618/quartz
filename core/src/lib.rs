@@ -565,7 +565,7 @@ impl Quartz {
         let mut path = handle.dir(&self).join("body");
 
         let format = {
-            let endpoint = handle.endpoint(&self).ok_or(QuartzError::EmptyEndpoint)?;
+            let endpoint = handle.endpoint(&self).ok_or(QuartzError::EmptyHandle)?;
 
             if let Some(content) = endpoint.headers.get("content-type") {
                 let ext = POSSIBLE_EXT.iter().find_map(|ext| {
