@@ -1,4 +1,3 @@
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use crate::{Quartz, QuartzError, QuartzResult};
@@ -28,40 +27,9 @@ impl Ctx {
     where
         F: FnOnce(&str) -> QuartzResult,
     {
-        self.edit_with_extension::<F>(path, None, editor, validate)
-    }
-
-    /// Opens an editor to modified the specified file at `path` with `extension` in a temporary file.
-    ///
-    /// After the program exits, `validate` function is ran on temporary file before moving it to
-    /// the original file, effectively commiting the edits.
-    ///
-    /// If `validate` returns [`Err`], the temporary file is deleted while original file is preserved as is.
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - A path slice to a file
-    /// * `extension` - Which extension to create temporary file with
-    /// * `validate` - Validator method to ensure the edit can be saved without errors
-    pub fn edit_with_extension<F>(
-        &self,
-        path: &Path,
-        extension: Option<&str>,
-        editor: String,
-        validate: F,
-    ) -> QuartzResult
-    where
-        F: FnOnce(&str) -> QuartzResult,
-    {
         let mut temp_path = self.quartz.path().join("user").join("EDIT");
 
-        let extension: Option<OsString> = {
-            if let Some(extension) = extension {
-                Some(OsString::from(extension))
-            } else {
-                path.extension().map(|extension| extension.to_os_string())
-            }
-        };
+        let extension = path.extension().map(|extension| extension.to_os_string());
 
         if let Some(extension) = extension {
             temp_path.set_extension(extension);
