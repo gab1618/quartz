@@ -38,8 +38,8 @@ async fn main() -> QuartzResult {
         return Ok(());
     }
 
-    let home_dir = std::env::home_dir().unwrap();
-    let curr_dir = current_dir().map_err(|_| QuartzError::Internal)?;
+    let home_dir = std::env::home_dir().expect("Could not get home dir");
+    let curr_dir = current_dir().expect("Could not get current");
 
     let quartz = Quartz::new(curr_dir, home_dir)?;
     if let Some(handle) = args.from_handle {
