@@ -1,6 +1,3 @@
-use serde_json;
-use toml::Value as TomlValue;
-
 use crate::{QuartzError, QuartzResult};
 
 /// Validator for files that don't have to do any checks. It is
@@ -21,59 +18,6 @@ use crate::{QuartzError, QuartzResult};
 /// ```
 pub fn infallible(_input: &str) -> QuartzResult {
     Ok(())
-}
-
-/// Checks if a string is valid TOML.
-///
-/// Alias for `toml_as::<toml::Value>()`.
-///
-/// # Examples
-///
-/// ```
-/// use quartz_core::validator;
-///
-/// let input = r#"
-/// {
-///     "value": 10
-/// }
-/// "#;
-///
-/// assert!(validator::json(input).is_ok());
-///
-/// let input = r#"
-/// {
-///     "value": 10,
-/// }
-/// "#;
-///
-/// assert!(validator::json(input).is_err());
-/// ```
-pub fn json(input: &str) -> QuartzResult {
-    serde_json::from_str::<serde_json::Value>(input).map_err(|_| QuartzError::Internal)?;
-
-    Ok(())
-}
-
-/// Checks if a string is valid TOML.
-///
-/// Alias for `toml_as::<toml::Value>()`.
-///
-/// # Examples
-///
-/// ```
-/// use quartz_core::validator;
-///
-/// let input = r#"
-///     title = 'TOML Example'
-///
-///     [owner]
-///     name = 'Lisa'
-/// "#;
-///
-/// assert!(validator::toml(input).is_ok());
-/// ```
-pub fn toml(input: &str) -> QuartzResult {
-    toml_as::<TomlValue>(input)
 }
 
 /// Checks if a string is valid TOML for `T`.
