@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::{Quartz, QuartzError, QuartzResult};
 use quartz_core::{config::Config, validator};
@@ -59,8 +59,11 @@ impl Ctx {
         Ok(())
     }
 
-    pub fn edit_config(&self, editor: String, filepath: PathBuf) -> QuartzResult {
-        self.edit(&filepath, editor, validator::toml_as::<Config>)?;
+    pub fn edit_config(&self) -> QuartzResult {
+        let config = self.quartz.config();
+        let config_path = config.file_path();
+        let editor = config.parse().preferences.editor();
+        self.edit(&config_path, editor, validator::toml_as::<Config>)?;
 
         Ok(())
     }

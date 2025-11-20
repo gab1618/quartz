@@ -58,6 +58,9 @@ impl ConfigManager {
     pub fn path(&self) -> &PathBuf {
         &self.mount_path
     }
+    pub fn file_path(&self) -> PathBuf {
+        Config::filepath(&self.path())
+    }
 }
 
 #[derive(Default, Serialize, Deserialize)]
