@@ -8,12 +8,15 @@ use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
+use crate::headers::Headers;
 use crate::Quartz;
+use crate::endpoint::error::{EndpointError, EndpointResult};
 use crate::env::{Env, Variables};
-use crate::error::{QuartzError, QuartzResult};
 use crate::pairmap::PairMap;
 use crate::state::StateField;
 use crate::tree::Tree;
+
+pub mod error;
 
 #[derive(Default, Debug, Serialize, Deserialize, Clone)]
 pub struct Query(pub HashMap<String, String>);
@@ -50,57 +53,6 @@ impl PairMap<'_> for Query {
     }
 }
 
-#[derive(Default, Debug, Serialize, Deserialize, Clone)]
-pub struct Headers(pub HashMap<String, String>);
-
-impl Headers {
-    pub fn parse(file_content: &str) -> QuartzResult<Self> {
-        let mut headers = Headers::default();
-        for header in file_content.lines().filter(|line| !line.is_empty()) {
-            headers.set(header)?;
-        }
-        Ok(headers)
-    }
-}
-
-impl Deref for Headers {
-    type Target = HashMap<String, String>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Headers {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl Display for Headers {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (key, value) in self.iter() {
-            writeln!(f, "{key}: {value}")?;
-        }
-
-        Ok(())
-    }
-}
-
-impl PairMap<'_> for Headers {
-    const NAME: &'static str = "header";
-    const EXPECTED: &'static str = "<key>: [value]";
-
-    fn map(&mut self) -> &mut HashMap<String, String> {
-        &mut self.0
-    }
-
-    fn pair(input: &str) -> Option<(String, String)> {
-        let (key, value) = input.split_once(": ")?;
-
-        Some((key.to_string(), value.to_string()))
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct EndpointHandle {
@@ -240,25 +192,25 @@ impl EndpointHandle {
     }
 
     /// Records files to build this endpoint with `parse` methods.
-    pub fn write(&self, quartz: &Quartz) -> QuartzResult {
+    pub fn write(&self, quartz: &Quartz) -> EndpointResult {
         let mut dir = quartz.path().join("endpoints");
         for entry in &self.path {
             dir = dir.join(Endpoint::name_to_dir(entry));
 
-            std::fs::create_dir_all(&dir).map_err(QuartzError::SaveHandle)?;
+            std::fs::create_dir_all(&dir).map_err(EndpointError::SaveHandle)?;
 
             let mut file = std::fs::OpenOptions::new()
                 .write(true)
                 .truncate(true)
                 .create(true)
                 .open(dir.join("spec"))
-                .map_err(QuartzError::SaveHandle)?;
+                .map_err(EndpointError::SaveHandle)?;
 
             file.write_all(entry.as_bytes())
-                .map_err(QuartzError::SaveHandle)?;
+                .map_err(EndpointError::SaveHandle)?;
         }
 
-        std::fs::create_dir_all(self.dir(quartz)).map_err(QuartzError::SaveHandle)?;
+        std::fs::create_dir_all(self.dir(quartz)).map_err(EndpointError::SaveHandle)?;
 
         Ok(())
     }
@@ -275,8 +227,9 @@ impl EndpointHandle {
         self.path.len()
     }
 
-    pub fn children(&self, quartz: &Quartz) -> QuartzResult<Vec<EndpointHandle>> {
-        let paths = std::fs::read_dir(self.dir(quartz)).map_err(QuartzError::GetHandleChildren)?;
+    pub fn children(&self, quartz: &Quartz) -> EndpointResult<Vec<EndpointHandle>> {
+        let paths =
+            std::fs::read_dir(self.dir(quartz)).map_err(EndpointError::GetHandleChildren)?;
         let valid_paths = paths
             .filter(|entry| entry.is_ok())
             .map(|entry| entry.unwrap().path())
@@ -286,15 +239,15 @@ impl EndpointHandle {
             .map(|path| {
                 let spec_file_path = path.join("spec");
                 let raw_spec_content =
-                    std::fs::read(spec_file_path).map_err(QuartzError::GetHandleChildren)?;
+                    std::fs::read(spec_file_path).map_err(EndpointError::GetHandleChildren)?;
                 let spec = String::from_utf8(raw_spec_content)
-                    .map_err(|_| QuartzError::ParseHandleSpec)?;
+                    .map_err(|_| EndpointError::ParseHandleSpec)?;
 
                 let mut path = self.path.clone();
                 path.push(spec);
                 Ok(EndpointHandle::new(path))
             })
-            .collect::<QuartzResult<Vec<_>>>()?;
+            .collect::<EndpointResult<Vec<_>>>()?;
 
         Ok(list)
     }
@@ -309,7 +262,7 @@ impl EndpointHandle {
         self.path = EndpointHandle::from(handle).path;
     }
 
-    pub fn tree(self, quartz: &Quartz) -> QuartzResult<Tree<Self>> {
+    pub fn tree(self, quartz: &Quartz) -> EndpointResult<Tree<Self>> {
         let mut tree = Tree::new(self);
 
         for child in tree.root.value.children(quartz)? {
@@ -322,7 +275,7 @@ impl EndpointHandle {
 }
 
 impl TryFrom<&mut EndpointPatch> for Endpoint {
-    type Error = QuartzError;
+    type Error = EndpointError;
 
     fn try_from(value: &mut EndpointPatch) -> Result<Self, Self::Error> {
         let mut endpoint = Self::default();
@@ -355,7 +308,7 @@ impl Endpoint {
         Ok(endpoint)
     }
 
-    pub fn update(&mut self, src: &mut EndpointPatch) -> QuartzResult {
+    pub fn update(&mut self, src: &mut EndpointPatch) -> EndpointResult {
         if let Some(method) = &mut src.method {
             std::mem::swap(&mut self.method, method);
         }
@@ -365,15 +318,21 @@ impl Endpoint {
         }
 
         for input in &src.query {
-            self.query.set(input)?;
+            self.query
+                .set(input)
+                .map_err(|_| EndpointError::NoHandleInUse)?; // Just a temp workaround
         }
 
         for input in &src.headers {
-            self.headers.set(input)?;
+            self.headers
+                .set(input)
+                .map_err(|_| EndpointError::NoHandleInUse)?; // Just a temp workaround;
         }
 
         for input in &src.query {
-            self.query.set(input)?;
+            self.query
+                .set(input)
+                .map_err(|_| EndpointError::NoHandleInUse)?; // Just a temp workaround;
         }
 
         if let Some(data) = &src.data {
@@ -392,8 +351,8 @@ impl Endpoint {
         Ok(())
     }
 
-    pub fn to_toml(&self) -> QuartzResult<String> {
-        toml::to_string(&self).map_err(QuartzError::SerializeEndpoint)
+    pub fn to_toml(&self) -> EndpointResult<String> {
+        toml::to_string(&self).map_err(EndpointError::SerializeEndpoint)
     }
 
     pub fn load_body(&mut self) -> Option<&String> {
@@ -564,7 +523,7 @@ impl Endpoint {
         result.join("&")
     }
 
-    pub fn write(&mut self) -> QuartzResult {
+    pub fn write(&mut self) -> EndpointResult {
         let toml_content = self.to_toml()?;
 
         let mut file = std::fs::OpenOptions::new()
@@ -572,10 +531,10 @@ impl Endpoint {
             .create(true)
             .truncate(true)
             .open(self.path.join("endpoint.toml"))
-            .map_err(QuartzError::SaveEndpoint)?;
+            .map_err(EndpointError::SaveEndpoint)?;
 
         file.write_all(toml_content.as_bytes())
-            .map_err(QuartzError::SaveEndpoint)?;
+            .map_err(EndpointError::SaveEndpoint)?;
 
         Ok(())
     }

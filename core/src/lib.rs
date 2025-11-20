@@ -3,6 +3,7 @@ pub mod cookie;
 pub mod endpoint;
 pub mod env;
 pub mod error;
+pub mod headers;
 pub mod history;
 pub mod pairmap;
 pub mod snippet;
@@ -25,6 +26,7 @@ use hyper::{Body, Client, Uri};
 
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
+use crate::endpoint::error::EndpointError;
 use crate::error::{QuartzError, QuartzResult};
 use crate::history::History;
 use crate::pairmap::PairMap;
@@ -95,7 +97,9 @@ impl Quartz {
         })
     }
     pub fn make_handle_empty(&self) -> QuartzResult {
-        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
+        let handle = self
+            .handle()
+            .ok_or(EndpointError::NoHandleInUse)?;
         handle.make_empty(&self);
 
         Ok(())
@@ -193,13 +197,13 @@ impl Quartz {
     }
     pub fn handle_create(&self, handle: &str) -> QuartzResult<Endpoint> {
         if handle.is_empty() {
-            return Err(QuartzError::EmptyHandleName);
+            return Err(EndpointError::EmptyHandle.into());
         }
 
         let handle = EndpointHandle::from(handle);
 
         if handle.exists(&self) {
-            return Err(QuartzError::AlreadyExistingHandle);
+            return Err(EndpointError::AlreadyExistingHandle.into());
         }
 
         let mut endpoint = Endpoint::default();
@@ -220,7 +224,7 @@ impl Quartz {
         let handle = EndpointHandle::from(handle);
 
         if !handle.exists(&self) {
-            return Err(QuartzError::HandleNotFound(handle.head()));
+            return Err(EndpointError::HandleNotFound(handle.head()).into());
         }
 
         let previous = StateField::Endpoint.get(self);
@@ -358,7 +362,8 @@ impl Quartz {
                 let handle = EndpointHandle::from(name);
                 handle.tree(&self)
             })
-            .unwrap_or(EndpointHandle::QUARTZ.tree(&self));
+            .unwrap_or(EndpointHandle::QUARTZ.tree(&self))
+            .map_err(|e| e.into());
         tree_base
     }
 
@@ -376,8 +381,10 @@ impl Quartz {
         cookies: Vec<String>,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
-        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
-        let mut endpoint = handle.endpoint(self).ok_or(QuartzError::EmptyHandle)?;
+        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
+        let mut endpoint = handle
+            .endpoint(self)
+            .ok_or(EndpointError::EmptyHandle)?;
         let mut env = self.env()?;
         for var in variables {
             env.variables.set(&var)?;
@@ -532,39 +539,39 @@ impl Quartz {
         Ok(h)
     }
     pub fn set_body(&self, input: String) -> QuartzResult {
-        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
+        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
 
         let mut f = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
             .open(handle.dir(&self).join("body"))
-            .map_err(QuartzError::AccessHandleBody)?;
+            .map_err(EndpointError::AccessHandleBody)?;
 
         f.write_all(input.as_bytes())
-            .map_err(QuartzError::AccessHandleBody)?;
+            .map_err(EndpointError::AccessHandleBody)?;
 
         Ok(())
     }
     pub fn get_body(&self) -> QuartzResult<String> {
-        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
+        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
         let mut f = std::fs::OpenOptions::new()
             .read(true)
             .open(handle.dir(&self).join("body"))
-            .map_err(QuartzError::AccessHandleBody)?;
+            .map_err(EndpointError::AccessHandleBody)?;
         let mut body_content = String::new();
         f.read_to_string(&mut body_content)
-            .map_err(QuartzError::AccessHandleBody)?;
+            .map_err(EndpointError::AccessHandleBody)?;
 
         Ok(body_content)
     }
     pub fn body_file_path(&self) -> QuartzResult<PathBuf> {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
-        let handle = self.handle().ok_or(QuartzError::NoHandleInUse)?;
+        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
         let mut path = handle.dir(&self).join("body");
 
         let format = {
-            let endpoint = handle.endpoint(&self).ok_or(QuartzError::EmptyHandle)?;
+            let endpoint = handle.endpoint(&self).ok_or(EndpointError::EmptyHandle)?;
 
             if let Some(content) = endpoint.headers.get("content-type") {
                 let ext = POSSIBLE_EXT.iter().find_map(|ext| {

@@ -61,9 +61,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
                 .ok_or(QuartzError::Internal)?;
 
             ctx.edit(&endpoint_path, validator::toml_as::<Endpoint>)?;
-
-            Ok(())
-        }?,
+        },
         Cmd::Cp(args) => {
             ctx.quartz.handle_cp(args.recursive, args.src, args.dest)?;
         }
