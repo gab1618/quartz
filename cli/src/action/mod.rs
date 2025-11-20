@@ -1,5 +1,5 @@
-use quartz_core::error::QuartzError;
 use quartz_core::endpoint::Endpoint;
+use quartz_core::error::QuartzError;
 use quartz_core::validator;
 
 use crate::QuartzResult;
@@ -59,9 +59,8 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
                 .quartz
                 .handle_endpoint_file_path()
                 .ok_or(QuartzError::Internal)?;
-            let editor = ctx.quartz.config().parse().preferences.editor();
 
-            ctx.edit(&endpoint_path, editor, validator::toml_as::<Endpoint>)?;
+            ctx.edit(&endpoint_path, validator::toml_as::<Endpoint>)?;
 
             Ok(())
         }?,

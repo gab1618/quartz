@@ -23,7 +23,7 @@ impl Ctx {
     ///
     /// * `path` - A path slice to a file
     /// * `validate` - Validator method to ensure the edit can be saved without errors
-    pub fn edit<F>(&self, path: &Path, editor: String, validate: F) -> QuartzResult
+    pub fn edit<F>(&self, path: &Path, validate: F) -> QuartzResult
     where
         F: FnOnce(&str) -> QuartzResult,
     {
@@ -40,6 +40,7 @@ impl Ctx {
         }
 
         std::fs::copy(path, &temp_path).map_err(|_| QuartzError::Internal)?;
+        let editor = self.quartz.config().parse().preferences.editor();
 
         let _ = std::process::Command::new(&editor)
             .arg(&temp_path)
@@ -62,21 +63,19 @@ impl Ctx {
     pub fn edit_config(&self) -> QuartzResult {
         let config = self.quartz.config();
         let config_path = config.file_path();
-        let editor = config.parse().preferences.editor();
-        self.edit(&config_path, editor, validator::toml_as::<Config>)?;
+        self.edit(&config_path, validator::toml_as::<Config>)?;
 
         Ok(())
     }
 
     pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
-        let editor = self.quartz.config().parse().preferences.editor();
         let mut file_path = self.quartz.body_file_path()?;
 
         if let Some(format) = format {
             file_path.set_extension(format);
         }
 
-        self.edit(&file_path, editor, validator::infallible)?;
+        self.edit(&file_path, validator::infallible)?;
 
         Ok(())
     }
