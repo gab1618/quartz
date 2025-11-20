@@ -139,8 +139,8 @@ pub enum HeaderCmd {
     /// Print a header value
     Get { key: String },
 
-    /// Add new or existent header. Expects "key: value" format
-    Set { header: String },
+    /// Add new or existent header.
+    Set { name: String, value: String },
 
     /// Remove a header
     #[command(name = "rm", alias = "remove")]

@@ -4,7 +4,7 @@ use crate::utils::*;
 fn it_adds_new_header() -> TestResult {
     let quartz = Quartz::preset_using_sample_endpoint()?;
 
-    let set_output = quartz.cmd(&["header", "set", "Content-type: application/json"])?;
+    let set_output = quartz.cmd(&["header", "set", "Content-type", "application/json"])?;
     let output = quartz.cmd(&["header", "get", "Content-type"])?;
 
     assert!(set_output.status.success(), "{}", set_output.stderr);
@@ -17,14 +17,10 @@ fn it_adds_new_header() -> TestResult {
 fn it_overwrites_existing_headers() -> TestResult {
     let quartz = Quartz::preset_using_sample_endpoint()?;
 
-    quartz.cmd(&[
-        "header",
-        "set",
-        "Content-type: application/json",
-        "Accept: application/json",
-    ])?;
+    quartz.cmd(&["header", "set", "Content-type", "application/json"])?;
+    quartz.cmd(&["header", "set", "Accept", "application/json"])?;
 
-    let edit_output = quartz.cmd(&["header", "set", "Content-type: plain/text"])?;
+    let edit_output = quartz.cmd(&["header", "set", "Content-type", "plain/text"])?;
     let output = quartz.cmd(&["header", "ls"])?;
 
     assert!(edit_output.status.success(), "{}", edit_output.stdout);
@@ -45,9 +41,9 @@ fn it_overwrites_existing_headers() -> TestResult {
 fn it_removes_header_by_key() -> TestResult {
     let quartz = Quartz::preset_using_sample_endpoint()?;
 
-    quartz.cmd(&["header", "set", "Content-type: application/json"])?;
+    quartz.cmd(&["header", "set", "Content-type", "application/json"])?;
 
-    quartz.cmd(&["header", "set", "Accept: form"])?;
+    quartz.cmd(&["header", "set", "Accept", "form"])?;
 
     let remove_output = quartz.cmd(&["header", "rm", "Content-type"])?;
     assert!(remove_output.status.success(), "{}", remove_output.stderr);
@@ -60,31 +56,6 @@ fn it_removes_header_by_key() -> TestResult {
     assert!(
         list_output.stdout.contains("Accept"),
         "removed specified header, but unrelated header is missing"
-    );
-
-    Ok(())
-}
-
-#[test]
-fn it_does_not_allow_invalid_header_format() -> TestResult {
-    let quartz = Quartz::preset_using_sample_endpoint()?;
-
-    let output = quartz.cmd(&["header", "set", "Content-type"])?;
-    assert!(
-        !output.status.success(),
-        "allowed header without value separation"
-    );
-
-    let output = quartz.cmd(&["header", "set", "Content-type = application/json"])?;
-    assert!(
-        !output.status.success(),
-        "allowed header with incorrect key-value separation"
-    );
-
-    let output = quartz.cmd(&["headers", "set", "Content-type:application/json"])?;
-    assert!(
-        !output.status.success(),
-        "allowed header without proper spacing between key and value"
     );
 
     Ok(())

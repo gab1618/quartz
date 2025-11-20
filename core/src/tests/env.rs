@@ -48,8 +48,12 @@ fn remove_env() {
 fn add_header_to_env() {
     let test_quartz = TestQuartz::empty().unwrap();
     let mut curr_env = test_quartz.env().unwrap();
-    curr_env.header_set("Header1: value1").unwrap();
-    curr_env.header_set("Header2: value2").unwrap();
+    curr_env
+        .header_set("Header1".to_owned(), "value1".to_owned())
+        .unwrap();
+    curr_env
+        .header_set("Header2".to_owned(), "value2".to_owned())
+        .unwrap();
 
     let found_header = curr_env.header_get("Header1").unwrap();
     assert_eq!(found_header, "value1".to_owned());
@@ -70,7 +74,7 @@ fn copy_env() {
     test_quartz.inner.switch_env("dev").unwrap();
 
     let mut curr_env = test_quartz.env().unwrap();
-    curr_env.header_set("Header1: value1").unwrap();
+    curr_env.header_set("Header1".to_owned(), "value1".to_owned()).unwrap();
     let retrieved_header = curr_env.header_get("Header1").unwrap();
     assert_eq!(&retrieved_header, "value1");
 

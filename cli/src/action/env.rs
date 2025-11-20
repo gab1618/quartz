@@ -44,8 +44,9 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Header { command } => {
             let mut curr_env = ctx.quartz.env().unwrap();
             match command {
-                HeaderCmd::Set { header } => {
-                    curr_env.header_set(&header)?;
+                HeaderCmd::Set { name, value } => {
+                    println!("Setting {} to {}", name, value);
+                    curr_env.header_set(name, value)?;
                 }
                 HeaderCmd::Ls => {
                     println!("{}", curr_env.headers);

@@ -153,8 +153,8 @@ impl Env {
 
         jar
     }
-    pub fn header_set(&mut self, header: &str) -> QuartzResult {
-        self.headers.set(header)?;
+    pub fn header_set(&mut self, name: String, value: String) -> QuartzResult {
+        self.headers.0.insert(name, value);
         self.update()?;
         Ok(())
     }

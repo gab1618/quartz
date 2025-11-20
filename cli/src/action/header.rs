@@ -1,10 +1,10 @@
 use crate::{cli::HeaderCmd as Cmd, ctx::Ctx};
-use quartz_core::{error::QuartzResult, pairmap::PairMap};
+use quartz_core::error::QuartzResult;
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
         Cmd::Get { key } => get(ctx, key),
-        Cmd::Set { header } => set(ctx, header),
+        Cmd::Set { name, value } => set(ctx, name, value),
         Cmd::Rm { key } => rm(ctx, key),
         Cmd::Ls => ls(ctx),
     }
@@ -22,10 +22,10 @@ pub fn get(ctx: Ctx, key: String) -> QuartzResult {
     Ok(())
 }
 
-pub fn set(ctx: Ctx, header: String) -> QuartzResult {
+pub fn set(ctx: Ctx, name: String, value: String) -> QuartzResult {
     let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
-    endpoint.headers.set(&header)?;
+    endpoint.headers.0.insert(name, value);
     endpoint.write()?;
     Ok(())
 }
