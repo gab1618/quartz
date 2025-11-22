@@ -24,4 +24,8 @@ pub enum EndpointError {
     SaveEndpoint(#[source] std::io::Error),
     #[error("Could not get handle in entrybuilder")]
     GetEntryBuilderHandle,
+    #[error("Must use recursive mode to remove handles that have children")]
+    RemoveChildrenOnNonRecursiveMode,
+    #[error("Could not remove handle files: {0}")]
+    RemoveHandleFiles(#[source] std::io::Error),
 }

@@ -61,15 +61,20 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
                 .ok_or(QuartzError::Internal)?;
 
             ctx.edit(&endpoint_path, validator::toml_as::<Endpoint>)?;
-        },
+        }
         Cmd::Cp(args) => {
-            ctx.quartz.handle_cp(args.recursive, &args.src, &args.dest)?;
+            ctx.quartz
+                .handle_cp(args.recursive, &args.src, &args.dest)?;
         }
         Cmd::Mv(args) => {
             ctx.quartz.handle_mv(args.handles)?;
         }
         Cmd::Rm(args) => {
-            ctx.quartz.handle_rm(args.recursive, args.handles)?;
+            for handle in args.handles {
+                if let Err(fail) = ctx.quartz.handle_rm(args.recursive, &handle) {
+                    eprintln!("{}", fail);
+                }
+            }
         }
         Cmd::Query { command } => action::query::cmd(ctx, command)?,
         Cmd::Header { command } => action::header::cmd(ctx, command)?,

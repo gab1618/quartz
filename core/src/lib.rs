@@ -276,29 +276,18 @@ impl Quartz {
         Ok(())
     }
 
-    pub fn handle_rm(&self, recursive: bool, handles: Vec<String>) -> QuartzResult {
-        for name in handles {
-            let handle = EndpointHandle::from(&name);
+    pub fn handle_rm(&self, recursive: bool, name: &str) -> QuartzResult {
+        let handle = EndpointHandle::from(&name);
 
-            if !handle.exists(&self) {
-                eprintln!("no such handle: {name}");
-                continue;
-            }
-
-            if !handle.children(&self)?.is_empty() && !recursive {
-                eprintln!(
-                    "{} has child handles. Use -r option to confirm",
-                    handle.handle(),
-                );
-                continue;
-            }
-
-            if std::fs::remove_dir_all(handle.dir(&self)).is_ok() {
-                println!("Deleted endpoint {}", handle.handle());
-            } else {
-                eprintln!("failed to delete endpoint {}", handle.handle());
-            }
+        if !handle.exists(&self) {
+            return Err(EndpointError::HandleNotFound(name.to_owned()).into());
         }
+
+        if !handle.children(self)?.is_empty() && !recursive {
+            return Err(EndpointError::RemoveChildrenOnNonRecursiveMode.into());
+        }
+
+        std::fs::remove_dir_all(handle.dir(&self)).map_err(EndpointError::RemoveHandleFiles)?;
 
         Ok(())
     }
