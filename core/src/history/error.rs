@@ -16,5 +16,3 @@ pub enum HistoryError {
     #[error("Could not parse history entry")]
     ParseEntry,
 }
-
-pub type HistoryResult<T = ()> = Result<T, HistoryError>;

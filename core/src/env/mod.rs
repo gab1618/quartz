@@ -9,10 +9,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    QuartzError, QuartzResult,
-    cookie::CookieJar,
-    env::error::{EnvError, EnvResult},
-    headers::Headers,
+    QuartzError, QuartzResult, cookie::CookieJar, env::error::EnvError, headers::Headers,
     pairmap::PairMap,
 };
 
@@ -93,7 +90,7 @@ impl Env {
         self.mount_path.join("env").join(&self.name)
     }
 
-    pub fn write(&self) -> EnvResult {
+    pub fn write(&self) -> QuartzResult {
         let dir = self.dir();
 
         std::fs::create_dir(dir).map_err(EnvError::CreateEnvDir)?;
@@ -103,7 +100,7 @@ impl Env {
         Ok(())
     }
 
-    pub fn update(&self) -> EnvResult {
+    pub fn update(&self) -> QuartzResult {
         let mut var_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)

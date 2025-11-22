@@ -27,7 +27,7 @@ use hyper::{Body, Client, Uri};
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
 use crate::endpoint::error::EndpointError;
-use crate::env::error::{EnvError, EnvResult};
+use crate::env::error::EnvError;
 use crate::error::{QuartzError, QuartzResult};
 use crate::history::History;
 use crate::history::error::HistoryError;
@@ -123,11 +123,11 @@ impl Quartz {
         let env = Env::parse(self.path.clone(), name).ok();
         env
     }
-    pub fn create_env(&self, name: &str) -> EnvResult {
+    pub fn create_env(&self, name: &str) -> QuartzResult {
         let new_env = Env::new(name, self.path().to_path_buf());
 
         if new_env.exists() {
-            return Err(EnvError::AlreadyExistingEnv);
+            return Err(EnvError::AlreadyExistingEnv.into());
         }
         new_env.write()?;
 

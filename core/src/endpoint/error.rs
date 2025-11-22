@@ -25,5 +25,3 @@ pub enum EndpointError {
     #[error("Could not get handle in entrybuilder")]
     GetEntryBuilderHandle,
 }
-
-pub type EndpointResult<T = ()> = Result<T, EndpointError>;

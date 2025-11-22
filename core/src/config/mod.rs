@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::config::error::{ConfigError, ConfigResult};
+use crate::{config::error::ConfigError, error::QuartzResult};
 
 pub mod error;
 
@@ -21,19 +21,19 @@ impl ConfigManager {
         let parsed = Config::parse(&self.mount_path);
         parsed
     }
-    pub fn save(&self, conf: Config) -> ConfigResult {
+    pub fn save(&self, conf: Config) -> QuartzResult {
         let save_filepath = Config::filepath(&self.mount_path);
         conf.write(save_filepath)?;
         Ok(())
     }
-    pub fn set(&self, key: &str, value: &str) -> ConfigResult {
+    pub fn set(&self, key: &str, value: &str) -> QuartzResult {
         let mut curr_config = self.parse();
         match key {
             "preferences.editor" => curr_config.preferences.set_editor(value),
             "preferences.pager" => curr_config.preferences.set_pager(value),
             "ui.colors" => curr_config.ui.set_colors(matches!(value, "true")),
             _ => {
-                return Err(ConfigError::InvalidConfigKey(key.to_string()));
+                return Err(ConfigError::InvalidConfigKey(key.to_string()).into());
             }
         };
 
@@ -41,7 +41,7 @@ impl ConfigManager {
 
         Ok(())
     }
-    pub fn get(&self, key: &str) -> ConfigResult<String> {
+    pub fn get(&self, key: &str) -> QuartzResult<String> {
         let value = match key {
             "preferences.editor" => Some(self.parse().preferences.editor()),
             "preferences.pager" => Some(self.parse().preferences.pager()),
@@ -52,7 +52,7 @@ impl ConfigManager {
 
         Ok(value)
     }
-    pub fn raw_configs(&self) -> ConfigResult<String> {
+    pub fn raw_configs(&self) -> QuartzResult<String> {
         let content = toml::to_string(&self.parse()).map_err(ConfigError::SerializeConfig)?;
 
         Ok(content)
@@ -90,7 +90,7 @@ impl Config {
         Config::default()
     }
 
-    pub fn write(mut self, file_path: PathBuf) -> ConfigResult {
+    pub fn write(mut self, file_path: PathBuf) -> QuartzResult {
         let content = toml::to_string(&mut self).map_err(ConfigError::SerializeConfig)?;
 
         if !file_path.exists() {

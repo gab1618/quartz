@@ -7,5 +7,3 @@ pub enum ConfigError {
     #[error("Could not save config: {0}")]
     SaveConfig(#[source] std::io::Error),
 }
-
-pub type ConfigResult<T = ()> = Result<T, ConfigError>;

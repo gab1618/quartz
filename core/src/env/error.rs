@@ -19,5 +19,3 @@ pub enum EnvError {
     #[error("Could not update headers file: {0}")]
     UpdateHeadersFile(#[source] std::io::Error),
 }
-
-pub type EnvResult<T = ()> = Result<T, EnvError>;

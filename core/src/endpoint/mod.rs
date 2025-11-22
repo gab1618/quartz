@@ -8,10 +8,11 @@ use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
-use crate::headers::Headers;
+use crate::error::{QuartzError, QuartzResult};
 use crate::Quartz;
-use crate::endpoint::error::{EndpointError, EndpointResult};
+use crate::endpoint::error::EndpointError;
 use crate::env::{Env, Variables};
+use crate::headers::Headers;
 use crate::pairmap::PairMap;
 use crate::state::StateField;
 use crate::tree::Tree;
@@ -52,7 +53,6 @@ impl PairMap<'_> for Query {
         &mut self.0
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct EndpointHandle {
@@ -192,7 +192,7 @@ impl EndpointHandle {
     }
 
     /// Records files to build this endpoint with `parse` methods.
-    pub fn write(&self, quartz: &Quartz) -> EndpointResult {
+    pub fn write(&self, quartz: &Quartz) -> QuartzResult {
         let mut dir = quartz.path().join("endpoints");
         for entry in &self.path {
             dir = dir.join(Endpoint::name_to_dir(entry));
@@ -227,7 +227,7 @@ impl EndpointHandle {
         self.path.len()
     }
 
-    pub fn children(&self, quartz: &Quartz) -> EndpointResult<Vec<EndpointHandle>> {
+    pub fn children(&self, quartz: &Quartz) -> QuartzResult<Vec<EndpointHandle>> {
         let paths =
             std::fs::read_dir(self.dir(quartz)).map_err(EndpointError::GetHandleChildren)?;
         let valid_paths = paths
@@ -247,7 +247,7 @@ impl EndpointHandle {
                 path.push(spec);
                 Ok(EndpointHandle::new(path))
             })
-            .collect::<EndpointResult<Vec<_>>>()?;
+            .collect::<QuartzResult<Vec<_>>>()?;
 
         Ok(list)
     }
@@ -262,7 +262,7 @@ impl EndpointHandle {
         self.path = EndpointHandle::from(handle).path;
     }
 
-    pub fn tree(self, quartz: &Quartz) -> EndpointResult<Tree<Self>> {
+    pub fn tree(self, quartz: &Quartz) -> QuartzResult<Tree<Self>> {
         let mut tree = Tree::new(self);
 
         for child in tree.root.value.children(quartz)? {
@@ -275,7 +275,7 @@ impl EndpointHandle {
 }
 
 impl TryFrom<&mut EndpointPatch> for Endpoint {
-    type Error = EndpointError;
+    type Error = QuartzError;
 
     fn try_from(value: &mut EndpointPatch) -> Result<Self, Self::Error> {
         let mut endpoint = Self::default();
@@ -308,7 +308,7 @@ impl Endpoint {
         Ok(endpoint)
     }
 
-    pub fn update(&mut self, src: &mut EndpointPatch) -> EndpointResult {
+    pub fn update(&mut self, src: &mut EndpointPatch) -> QuartzResult {
         if let Some(method) = &mut src.method {
             std::mem::swap(&mut self.method, method);
         }
@@ -351,8 +351,9 @@ impl Endpoint {
         Ok(())
     }
 
-    pub fn to_toml(&self) -> EndpointResult<String> {
-        toml::to_string(&self).map_err(EndpointError::SerializeEndpoint)
+    pub fn to_toml(&self) -> QuartzResult<String> {
+        let result = toml::to_string(&self).map_err(EndpointError::SerializeEndpoint)?;
+        Ok(result)
     }
 
     pub fn load_body(&mut self) -> Option<&String> {
@@ -523,7 +524,7 @@ impl Endpoint {
         result.join("&")
     }
 
-    pub fn write(&mut self) -> EndpointResult {
+    pub fn write(&mut self) -> QuartzResult {
         let toml_content = self.to_toml()?;
 
         let mut file = std::fs::OpenOptions::new()
