@@ -353,13 +353,16 @@ impl Quartz {
 
         Ok(())
     }
+    pub fn root_handle() -> EndpointHandle {
+        EndpointHandle::new(vec![])
+    }
     pub fn handle_tree(&self, handle: Option<String>) -> QuartzResult<Tree<EndpointHandle>> {
         let tree_base = handle
             .map(|name| {
                 let handle = EndpointHandle::from(name);
                 handle.tree(&self)
             })
-            .unwrap_or(EndpointHandle::QUARTZ.tree(&self))
+            .unwrap_or(Self::root_handle().tree(&self))
             .map_err(|e| e.into());
         tree_base
     }

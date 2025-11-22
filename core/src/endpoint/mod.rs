@@ -144,12 +144,6 @@ where
 }
 
 impl EndpointHandle {
-    /// Points to top-level quartz folder.
-    ///
-    /// This constant can be used to traverse through all handles starting
-    /// from the top one.
-    pub const QUARTZ: Self = Self { path: vec![] };
-
     pub fn new(path: Vec<String>) -> Self {
         Self { path }
     }
