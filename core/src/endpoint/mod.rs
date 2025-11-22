@@ -8,10 +8,10 @@ use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
-use crate::error::{QuartzError, QuartzResult};
 use crate::Quartz;
 use crate::endpoint::error::EndpointError;
 use crate::env::{Env, Variables};
+use crate::error::{QuartzError, QuartzResult};
 use crate::headers::Headers;
 use crate::pairmap::PairMap;
 use crate::state::StateField;
@@ -54,7 +54,7 @@ impl PairMap<'_> for Query {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct EndpointHandle {
     /// List of ordered parent names
     pub path: Vec<String>,
