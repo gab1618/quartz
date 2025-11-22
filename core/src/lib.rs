@@ -246,7 +246,7 @@ impl Quartz {
     pub fn handle_cp(&self, recursive: bool, src: &str, dest: &str) -> QuartzResult {
         let src_handle = EndpointHandle::from(&src);
         if !src_handle.exists(&self) {
-            panic!("no such handle: {}", src_handle.handle());
+            return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
         let dest_handle = EndpointHandle::from(&dest);
         dest_handle.write(self)?;
