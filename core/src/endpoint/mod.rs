@@ -18,6 +18,9 @@ use crate::state::StateField;
 
 pub mod error;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Default, Debug, Serialize, Deserialize, Clone)]
 pub struct Query(pub HashMap<String, String>);
 

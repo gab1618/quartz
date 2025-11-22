@@ -243,30 +243,29 @@ impl Quartz {
         Ok(())
     }
 
-    pub fn handle_cp(&self, recursive: bool, src: String, dest: String) -> QuartzResult {
+    pub fn handle_cp(&self, recursive: bool, src: &str, dest: &str) -> QuartzResult {
         let src_handle = EndpointHandle::from(&src);
         if !src_handle.exists(&self) {
             panic!("no such handle: {}", src_handle.handle());
         }
+        let dest_handle = EndpointHandle::from(&dest);
+        dest_handle.write(self)?;
 
-        let mut queue = VecDeque::<EndpointHandle>::new();
-        queue.push_back(src_handle);
+        if recursive {
+            for child in src_handle.children(self)? {
+                let child_name = child.handle();
+                let mut new_handle = EndpointHandle::new(child.path.clone());
 
-        while let Some(mut src_handle) = queue.pop_front() {
-            let endpoint = src_handle.endpoint(&self);
+                // Replace original prefix with the dest one
+                let dest_handle_prefix = dest_handle
+                    .path
+                    .iter()
+                    .next()
+                    .expect("Unreachable")
+                    .to_owned();
+                let _ = std::mem::replace(&mut new_handle.path[0], dest_handle_prefix);
 
-            if recursive {
-                for child in src_handle.children(&self)? {
-                    queue.push_back(child.clone());
-                }
-            }
-
-            src_handle.replace(&src, &dest);
-            src_handle.write(&self)?;
-
-            if let Some(mut endpoint) = endpoint {
-                endpoint.set_handle(&self, &src_handle);
-                endpoint.write()?;
+                self.handle_cp(true, &child_name, &new_handle.handle())?;
             }
         }
 
