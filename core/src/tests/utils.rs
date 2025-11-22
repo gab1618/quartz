@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use tempfile::{TempDir, tempdir};
 
-use crate::{Quartz, QuartzError, QuartzResult};
+use crate::Quartz;
 
 pub struct TestQuartz {
     pub inner: Quartz,
@@ -13,19 +13,19 @@ pub struct TestQuartz {
 }
 
 impl TestQuartz {
-    pub fn empty() -> QuartzResult<Self> {
-        let dir = tempdir().map_err(|_| QuartzError::Internal)?;
-        let config_dir = tempdir().map_err(|_| QuartzError::Internal)?;
+    pub fn empty() -> Self {
+        let dir = tempdir().unwrap();
+        let config_dir = tempdir().unwrap();
 
         let dir_buf_path = dir.path().to_path_buf();
         let config_dir_path = config_dir.path().to_path_buf();
-        let qz = Quartz::init(dir_buf_path, config_dir_path).map_err(|_| QuartzError::Internal)?;
+        let qz = Quartz::init(dir_buf_path, config_dir_path).unwrap();
 
-        Ok(Self {
+        Self {
             inner: qz,
             dir,
             config_dir,
-        })
+        }
     }
 }
 

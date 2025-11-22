@@ -2,7 +2,7 @@ use crate::{endpoint::EndpointHandle, tests::utils::TestQuartz};
 
 #[test]
 fn test_simple_cp_handle() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     quartz.handle_create("testing").unwrap();
     quartz.handle_cp(false, "testing", "testing-copy").unwrap();
 
@@ -12,7 +12,7 @@ fn test_simple_cp_handle() {
 
 #[test]
 fn test_recursive_cp_handle() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     quartz.handle_create("testing").unwrap();
     quartz.handle_create("testing/ex").unwrap();
     quartz.handle_create("testing/ex2").unwrap();
@@ -27,7 +27,7 @@ fn test_recursive_cp_handle() {
 
 #[test]
 fn test_non_recursive_cp_handle() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     quartz.handle_create("testing").unwrap();
     quartz.handle_create("testing/ex").unwrap();
     quartz.handle_create("testing/ex2").unwrap();
@@ -42,7 +42,7 @@ fn test_non_recursive_cp_handle() {
 
 #[test]
 fn test_cp_endpoint_spec() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     quartz.handle_create("testing").unwrap();
     quartz.handle_create("testing/ex2").unwrap();
     let mut created_endpoint = quartz.handle_create("testing/ex2/sub").unwrap();
@@ -64,7 +64,7 @@ fn test_cp_endpoint_spec() {
 
 #[test]
 fn test_endpoint_removal() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     quartz.handle_create("testing").unwrap();
     quartz.handle_create("testing/ex2").unwrap();
     quartz.handle_rm(false, "testing/ex2").unwrap();
@@ -74,7 +74,7 @@ fn test_endpoint_removal() {
 
 #[test]
 fn test_recursive_endpoint_removal() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     quartz.handle_create("testing").unwrap();
     quartz.handle_create("testing/ex2").unwrap();
     quartz.handle_rm(true, "testing").unwrap();
@@ -84,7 +84,7 @@ fn test_recursive_endpoint_removal() {
 
 #[test]
 fn test_non_recursive_endpoint_removal() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     quartz.handle_create("testing").unwrap();
     quartz.handle_create("testing/ex2").unwrap();
 
@@ -96,7 +96,7 @@ fn test_non_recursive_endpoint_removal() {
 
 #[test]
 fn test_mv_handle() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     quartz.handle_create("testing").unwrap();
 
     quartz.handle_mv("testing", "new").unwrap();
@@ -106,7 +106,7 @@ fn test_mv_handle() {
 
 #[test]
 fn test_mv_handle_overwrite() {
-    let quartz = TestQuartz::empty().unwrap();
+    let quartz = TestQuartz::empty();
     let mut first_endpoint = quartz.handle_create("testing").unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
     first_endpoint.write().unwrap();
