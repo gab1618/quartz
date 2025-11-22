@@ -8,7 +8,6 @@ pub mod history;
 pub mod pairmap;
 pub mod snippet;
 pub mod state;
-pub mod tree;
 
 #[cfg(test)]
 mod tests;
@@ -32,7 +31,6 @@ use crate::error::{QuartzError, QuartzResult};
 use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
-use crate::tree::Tree;
 use crate::{
     endpoint::{EndpointHandle, EndpointPatch},
     env::Env,
@@ -356,17 +354,6 @@ impl Quartz {
     pub fn root_handle() -> EndpointHandle {
         EndpointHandle::new(vec![])
     }
-    pub fn handle_tree(&self, handle: Option<String>) -> QuartzResult<Tree<EndpointHandle>> {
-        let tree_base = handle
-            .map(|name| {
-                let handle = EndpointHandle::from(name);
-                handle.tree(&self)
-            })
-            .unwrap_or(Self::root_handle().tree(&self))
-            .map_err(|e| e.into());
-        tree_base
-    }
-
     pub fn handle_endpoint_file_path(&self) -> Option<PathBuf> {
         let handle = self.handle();
         let dir = handle.map(|inner| inner.dir(&self).join("endpoint.toml"));

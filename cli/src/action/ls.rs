@@ -1,4 +1,4 @@
-use quartz_core::{error::QuartzResult, endpoint::EndpointHandle, state::StateField, tree::Node};
+use quartz_core::{Quartz, endpoint::EndpointHandle, error::QuartzResult, state::StateField};
 
 use crate::ctx::Ctx;
 
@@ -13,16 +13,17 @@ pub struct Args {
 }
 
 pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
-    let tree_root = ctx.quartz.handle_tree(args.handle)?;
+    let parsed_arg_handle = args.handle.map(|handle| EndpointHandle::from(handle));
+    let base_handle = parsed_arg_handle.unwrap_or(Quartz::root_handle());
     let current_handle = StateField::Endpoint.get(&ctx.quartz).ok();
-    output_tree(tree_root.root, current_handle, 0);
+    output_tree(&ctx, base_handle, current_handle, 0);
 
     Ok(())
 }
 
-fn output_tree(tree: Node<EndpointHandle>, current_handle: Option<String>, padding: usize) {
-    let is_root = tree.value.handle().is_empty();
-    let handle_str = tree.value.handle();
+fn output_tree(ctx: &Ctx, base: EndpointHandle, current_handle: Option<String>, padding: usize) {
+    let is_root = base.handle().is_empty();
+    let handle_str = base.handle();
     let is_in_use = current_handle
         .clone()
         .map(|inner| inner.eq(&handle_str))
@@ -30,13 +31,18 @@ fn output_tree(tree: Node<EndpointHandle>, current_handle: Option<String>, paddi
     // Dont apply padding to direct children of the root
     let aditional_padding = if is_root { 0 } else { 2 };
 
-    let handle_str = tree.value.handle();
+    let handle_str = base.handle();
     let padding_str = " ".repeat(padding);
 
     let handle_marker = if is_in_use { "*" } else { "" };
 
     println!("{}{}{}", padding_str, handle_marker, handle_str);
-    for child in tree.children {
-        output_tree(child, current_handle.clone(), padding + aditional_padding);
+    for child in base.children(&ctx.quartz).unwrap() {
+        output_tree(
+            ctx,
+            child,
+            current_handle.clone(),
+            padding + aditional_padding,
+        );
     }
 }

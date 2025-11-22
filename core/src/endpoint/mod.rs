@@ -15,7 +15,6 @@ use crate::error::{QuartzError, QuartzResult};
 use crate::headers::Headers;
 use crate::pairmap::PairMap;
 use crate::state::StateField;
-use crate::tree::Tree;
 
 pub mod error;
 
@@ -254,17 +253,6 @@ impl EndpointHandle {
     pub fn replace(&mut self, from: &str, to: &str) {
         let handle = self.handle().replace(from, to);
         self.path = EndpointHandle::from(handle).path;
-    }
-
-    pub fn tree(self, quartz: &Quartz) -> QuartzResult<Tree<Self>> {
-        let mut tree = Tree::new(self);
-
-        for child in tree.root.value.children(quartz)? {
-            let child_tree = child.tree(quartz)?;
-            tree.root.children.push(child_tree.root);
-        }
-
-        Ok(tree)
     }
 }
 
