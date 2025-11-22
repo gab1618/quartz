@@ -27,6 +27,7 @@ use hyper::{Body, Client, Uri};
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
 use crate::endpoint::error::EndpointError;
+use crate::env::error::{EnvError, EnvResult};
 use crate::error::{QuartzError, QuartzResult};
 use crate::history::History;
 use crate::pairmap::PairMap;
@@ -97,9 +98,7 @@ impl Quartz {
         })
     }
     pub fn make_handle_empty(&self) -> QuartzResult {
-        let handle = self
-            .handle()
-            .ok_or(EndpointError::NoHandleInUse)?;
+        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
         handle.make_empty(&self);
 
         Ok(())
@@ -123,26 +122,23 @@ impl Quartz {
         let env = Env::parse(self.path.clone(), name).ok();
         env
     }
-    pub fn create_env(&self, name: &str) -> QuartzResult {
+    pub fn create_env(&self, name: &str) -> EnvResult {
         let new_env = Env::new(name, self.path().to_path_buf());
 
         if new_env.exists() {
-            return Err(QuartzError::AlreadyExistingEnv);
+            return Err(EnvError::AlreadyExistingEnv);
         }
         new_env.write()?;
 
         Ok(())
     }
     pub fn get_envs(&self) -> QuartzResult<Vec<String>> {
-        let entries = std::fs::read_dir(self.path().join("env")).map_err(QuartzError::GetEnvs)?;
+        let entries = std::fs::read_dir(self.path().join("env")).map_err(EnvError::GetEnvs)?;
         let env_names = entries
             .map(|entry| {
-                let ok_dir_entry = entry.map_err(QuartzError::GetEnvs)?;
+                let ok_dir_entry = entry.map_err(EnvError::GetEnvs)?;
                 let filename = ok_dir_entry.file_name();
-                let str_filename = filename
-                    .to_str()
-                    .ok_or(QuartzError::ParseEnvName)?
-                    .to_owned();
+                let str_filename = filename.to_str().ok_or(EnvError::ParseEnvName)?.to_owned();
                 Ok(str_filename)
             })
             .collect::<QuartzResult<Vec<String>>>()?;
@@ -159,14 +155,14 @@ impl Quartz {
         let env = Env::new(name, self.path().to_path_buf());
 
         if !env.exists() {
-            return Err(QuartzError::EnvNotFound);
+            return Err(EnvError::NotFound.into());
         }
         let curr_env = self.env()?;
         if env.name == curr_env.name {
-            return Err(QuartzError::EnvInUse(env.name));
+            return Err(EnvError::EnvInUse(env.name).into());
         }
 
-        std::fs::remove_dir_all(env.dir()).map_err(QuartzError::DeleteEnv)?;
+        std::fs::remove_dir_all(env.dir()).map_err(EnvError::DeleteEnv)?;
 
         Ok(())
     }
@@ -382,9 +378,7 @@ impl Quartz {
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
         let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
-        let mut endpoint = handle
-            .endpoint(self)
-            .ok_or(EndpointError::EmptyHandle)?;
+        let mut endpoint = handle.endpoint(self).ok_or(EndpointError::EmptyHandle)?;
         let mut env = self.env()?;
         for var in variables {
             env.variables.set(&var)?;

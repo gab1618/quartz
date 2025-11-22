@@ -8,7 +8,15 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{QuartzError, QuartzResult, cookie::CookieJar, headers::Headers, pairmap::PairMap};
+use crate::{
+    QuartzError, QuartzResult,
+    cookie::CookieJar,
+    env::error::{EnvError, EnvResult},
+    headers::Headers,
+    pairmap::PairMap,
+};
+
+pub mod error;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Variables(pub HashMap<String, String>);
@@ -85,39 +93,39 @@ impl Env {
         self.mount_path.join("env").join(&self.name)
     }
 
-    pub fn write(&self) -> QuartzResult {
+    pub fn write(&self) -> EnvResult {
         let dir = self.dir();
 
-        std::fs::create_dir(dir).map_err(QuartzError::CreateEnvDir)?;
+        std::fs::create_dir(dir).map_err(EnvError::CreateEnvDir)?;
 
         self.update()?;
 
         Ok(())
     }
 
-    pub fn update(&self) -> QuartzResult {
+    pub fn update(&self) -> EnvResult {
         let mut var_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
             .open(self.dir().join("variables"))
-            .map_err(QuartzError::UpdateVariablesFile)?;
+            .map_err(EnvError::UpdateVariablesFile)?;
         let mut headers_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
             .open(self.dir().join("headers"))
-            .map_err(QuartzError::UpdateHeadersFile)?;
+            .map_err(EnvError::UpdateHeadersFile)?;
 
         if !self.variables.is_empty() {
             var_file
                 .write_all(format!("{}", self.variables).as_bytes())
-                .map_err(QuartzError::UpdateVariablesFile)?;
+                .map_err(EnvError::UpdateVariablesFile)?;
         }
         if !self.headers.0.is_empty() {
             headers_file
                 .write_all(format!("{}", self.headers).as_bytes())
-                .map_err(QuartzError::UpdateHeadersFile)?;
+                .map_err(EnvError::UpdateHeadersFile)?;
         }
 
         Ok(())
@@ -132,7 +140,7 @@ impl Env {
         let mut env = Self::new(name, mount_path);
 
         if !env.exists() {
-            return Err(QuartzError::EnvNotFound);
+            return Err(EnvError::NotFound.into());
         }
 
         if let Ok(var_contents) = std::fs::read_to_string(env.dir().join("variables")) {
