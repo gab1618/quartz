@@ -12,7 +12,6 @@ pub mod state;
 #[cfg(test)]
 mod tests;
 
-use std::collections::VecDeque;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -292,54 +291,15 @@ impl Quartz {
         Ok(())
     }
 
-    pub fn handle_mv(&self, mut handles: Vec<String>) -> QuartzResult {
-        if handles.is_empty() {
-            panic!("no handles specified");
+    pub fn handle_mv(&self, src: &str, dest: &str) -> QuartzResult {
+        let src_handle = EndpointHandle::from(src);
+        if !src_handle.exists(self) {
+            return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
 
-        if handles.len() == 1 {
-            panic!("missing target handle");
-        }
-
-        let dest = EndpointHandle::from(handles.pop().unwrap());
-        let mut original_handles = Vec::<EndpointHandle>::new();
-        let mut queue = VecDeque::<(&str, EndpointHandle)>::new();
-
-        for arg in &handles {
-            let handle = EndpointHandle::from(arg);
-            if !handle.exists(&self) {
-                eprintln!("no such handle: {arg}");
-                continue;
-            }
-
-            original_handles.push(handle);
-            queue.push_back((arg, EndpointHandle::from(arg)));
-        }
-
-        while let Some((src, mut handle)) = queue.pop_front() {
-            let mut dest = EndpointHandle::from(dest.handle()); // copy
-            for child in handle.children(&self)? {
-                queue.push_back((src, child));
-            }
-
-            let maybe_endpoint = handle.endpoint(&self);
-
-            if handles.len() >= 2 {
-                dest.path.push(handle.path.last().unwrap().to_string());
-            }
-
-            handle.replace(src, &dest.handle());
-            handle.write(&self)?;
-
-            if let Some(mut endpoint) = maybe_endpoint {
-                endpoint.set_handle(&self, &handle);
-                endpoint.write()?;
-            }
-        }
-
-        for handle in original_handles {
-            let _ = std::fs::remove_dir_all(handle.dir(&self));
-        }
+        // TODO: this might be one of the lazyest solutions so far
+        self.handle_cp(true, src, dest)?;
+        self.handle_rm(true, src)?;
 
         Ok(())
     }

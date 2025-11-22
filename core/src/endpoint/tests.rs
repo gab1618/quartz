@@ -93,3 +93,36 @@ fn test_non_recursive_endpoint_removal() {
     assert!(EndpointHandle::from("testing/ex2").exists(&quartz.inner));
     assert!(EndpointHandle::from("testing").exists(&quartz.inner));
 }
+
+#[test]
+fn test_mv_handle() {
+    let quartz = TestQuartz::empty().unwrap();
+    quartz.handle_create("testing").unwrap();
+
+    quartz.handle_mv("testing", "new").unwrap();
+    assert!(EndpointHandle::from("new").exists(&quartz.inner));
+    assert!(!EndpointHandle::from("testing").exists(&quartz.inner));
+}
+
+#[test]
+fn test_mv_handle_overwrite() {
+    let quartz = TestQuartz::empty().unwrap();
+    let mut first_endpoint = quartz.handle_create("testing").unwrap();
+    first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
+    first_endpoint.write().unwrap();
+    let mut second_endpoint = quartz.handle_create("new").unwrap();
+    second_endpoint.url = "https://jsonplaceholder.typicode.com/todos/2".to_owned();
+    second_endpoint.write().unwrap();
+
+    quartz.handle_mv("testing", "new").unwrap();
+
+    let overwritten_handle = EndpointHandle::from("new");
+    assert!(overwritten_handle.exists(&quartz.inner));
+    assert!(!EndpointHandle::from("testing").exists(&quartz.inner));
+
+    let overwritten_endpoint = overwritten_handle.endpoint(&quartz.inner).unwrap();
+    assert_eq!(
+        overwritten_endpoint.url,
+        "https://jsonplaceholder.typicode.com/todos/1"
+    );
+}

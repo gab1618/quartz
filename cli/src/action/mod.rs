@@ -67,7 +67,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
                 .handle_cp(args.recursive, &args.src, &args.dest)?;
         }
         Cmd::Mv(args) => {
-            ctx.quartz.handle_mv(args.handles)?;
+            ctx.quartz.handle_mv(&args.src, &args.dest)?;
         }
         Cmd::Rm(args) => {
             for handle in args.handles {

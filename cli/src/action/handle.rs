@@ -36,7 +36,8 @@ pub struct CpArgs {
 
 #[derive(clap::Args, Debug)]
 pub struct MvArgs {
-    pub handles: Vec<String>,
+    pub src: String,
+    pub dest: String,
 }
 
 #[derive(clap::Args, Debug)]
