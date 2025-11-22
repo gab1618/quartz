@@ -39,3 +39,25 @@ fn test_non_recursive_cp_handle() {
     assert!(!EndpointHandle::from("testing-copy/ex2").exists(&quartz.inner));
     assert!(!EndpointHandle::from("testing-copy/ex2/sub").exists(&quartz.inner));
 }
+
+#[test]
+fn test_cp_endpoint_spec() {
+    let quartz = TestQuartz::empty().unwrap();
+    quartz.handle_create("testing").unwrap();
+    quartz.handle_create("testing/ex2").unwrap();
+    let mut created_endpoint = quartz.handle_create("testing/ex2/sub").unwrap();
+    let example_url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
+    created_endpoint.url = example_url.clone();
+    created_endpoint.write().unwrap();
+    quartz.handle_cp(true, "testing", "testing-copy").unwrap();
+
+    let found_handle = EndpointHandle::from("testing-copy/ex2/sub");
+    assert!(found_handle.exists(&quartz.inner));
+    let found_endpoint = found_handle.endpoint(&quartz.inner).unwrap();
+    assert_eq!(found_endpoint.url, example_url);
+
+    // Check if the original endpoint was somehow affected
+    let original_handle = EndpointHandle::from("testing/ex2/sub");
+    let original_endpoint = original_handle.endpoint(&quartz.inner).unwrap();
+    assert_eq!(original_endpoint.url, example_url)
+}

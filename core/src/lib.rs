@@ -250,6 +250,10 @@ impl Quartz {
         }
         let dest_handle = EndpointHandle::from(&dest);
         dest_handle.write(self)?;
+        if let Some(mut endpoint) = src_handle.endpoint(self) {
+            endpoint.set_handle(self, &dest_handle);
+            endpoint.write()?;
+        }
 
         if recursive {
             for child in src_handle.children(self)? {
