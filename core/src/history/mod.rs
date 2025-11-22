@@ -1,9 +1,12 @@
-use crate::{QuartzError, QuartzResult, snippet};
+use crate::history::error::HistoryError;
+use crate::{QuartzResult, snippet};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+
+pub mod error;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Entry {
@@ -31,16 +34,16 @@ impl History {
     }
 
     pub fn entries(&self) -> QuartzResult<Vec<Entry>> {
-        let paths = std::fs::read_dir(self.dir()).map_err(|_| QuartzError::ReadHistoryEntries)?;
+        let paths = std::fs::read_dir(self.dir()).map_err(|_| HistoryError::ReadEntries)?;
         let mut timestamps = paths
             .map(|path| {
                 let timestamp = path
-                    .map_err(|_| QuartzError::ReadHistoryEntries)?
+                    .map_err(|_| HistoryError::ReadEntries)?
                     .file_name()
                     .to_str()
-                    .ok_or(QuartzError::ReadHistoryEntries)?
+                    .ok_or(HistoryError::ReadEntries)?
                     .parse::<i64>()
-                    .map_err(|_| QuartzError::ReadHistoryEntries)?;
+                    .map_err(|_| HistoryError::ReadEntries)?;
 
                 Ok(timestamp)
             })
@@ -67,15 +70,15 @@ impl History {
     }
 
     pub fn write(&self, entry: Entry) -> QuartzResult {
-        let content = toml::to_string(&entry).map_err(|_| QuartzError::SerializeHistory)?;
+        let content = toml::to_string(&entry).map_err(|_| HistoryError::Serialize)?;
 
         std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .open(self.dir().join(entry.timestemp.to_string()))
-            .map_err(|_| QuartzError::SaveHistory)?
+            .map_err(HistoryError::Save)?
             .write_all(content.as_bytes())
-            .map_err(|_| QuartzError::SaveHistory)?;
+            .map_err(HistoryError::Save)?;
 
         Ok(())
     }
@@ -110,10 +113,10 @@ impl EntryBuilder {
     }
 
     pub fn build(self) -> QuartzResult<Entry> {
-        let handle = self.handle.ok_or(QuartzError::GetEntryBuilderHandle)?;
+        let handle = self.handle.ok_or(HistoryError::GetEntryBuilderHandle)?;
 
         if self.timestemp == 0 || self.messages.is_empty() {
-            return Err(QuartzError::EmptyHistory);
+            return Err(HistoryError::Empty.into());
         }
 
         Ok(Entry {
@@ -138,9 +141,9 @@ impl Entry {
     }
 
     pub fn read(path: &Path) -> QuartzResult<Self> {
-        let content = std::fs::read_to_string(path).map_err(|_| QuartzError::ReadHistoryEntry)?;
+        let content = std::fs::read_to_string(path).map_err(|_| HistoryError::ReadEntry)?;
 
-        Ok(toml::from_str(&content).map_err(|_| QuartzError::ParseHistoryEntry)?)
+        Ok(toml::from_str(&content).map_err(|_| HistoryError::ParseEntry)?)
     }
 }
 

@@ -30,6 +30,7 @@ use crate::endpoint::error::EndpointError;
 use crate::env::error::{EnvError, EnvResult};
 use crate::error::{QuartzError, QuartzResult};
 use crate::history::History;
+use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
 use crate::tree::Tree;
 use crate::{
@@ -518,9 +519,7 @@ impl Quartz {
             }
         }
 
-        entry.message_raw(
-            String::from_utf8(bytes.to_vec()).map_err(|_| QuartzError::SerializeHistory)?,
-        );
+        entry.message_raw(String::from_utf8(bytes.to_vec()).map_err(|_| HistoryError::Serialize)?);
 
         let h = self.history()?;
         h.write(entry.build()?)?;

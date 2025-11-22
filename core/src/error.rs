@@ -1,9 +1,11 @@
-use crate::{config::error::ConfigError, endpoint::error::EndpointError, env::error::EnvError};
+use crate::{config::error::ConfigError, endpoint::error::EndpointError, env::error::EnvError, history::error::HistoryError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum QuartzError {
     #[error(transparent)]
     EndpointError(#[from] EndpointError),
+    #[error(transparent)]
+    HistoryError(#[from] HistoryError),
     #[error(transparent)]
     EnvError(#[from] EnvError),
     #[error("Unknown error")]
@@ -26,20 +28,6 @@ pub enum QuartzError {
     ConfigErr(#[from] ConfigError),
     #[error("Could not read cookies: {0}")]
     ReadCookies(#[source] std::io::Error),
-    #[error("Could not read history entries")]
-    ReadHistoryEntries,
-    #[error("Could not serialize history")]
-    SerializeHistory,
-    #[error("Could not save history")]
-    SaveHistory,
-    #[error("Could not get handle in entrybuilder")]
-    GetEntryBuilderHandle,
-    #[error("Empty history")]
-    EmptyHistory,
-    #[error("Could not read history entry")]
-    ReadHistoryEntry,
-    #[error("Could not parse history entry")]
-    ParseHistoryEntry,
     #[error("Could not set value in the keymap")]
     KeymapSet,
     #[error("Could not read state")]
