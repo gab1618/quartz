@@ -61,3 +61,35 @@ fn test_cp_endpoint_spec() {
     let original_endpoint = original_handle.endpoint(&quartz.inner).unwrap();
     assert_eq!(original_endpoint.url, example_url)
 }
+
+#[test]
+fn test_endpoint_removal() {
+    let quartz = TestQuartz::empty().unwrap();
+    quartz.handle_create("testing").unwrap();
+    quartz.handle_create("testing/ex2").unwrap();
+    quartz.handle_rm(false, "testing/ex2").unwrap();
+    assert!(!EndpointHandle::from("testing/ex2").exists(&quartz.inner));
+    assert!(EndpointHandle::from("testing").exists(&quartz.inner));
+}
+
+#[test]
+fn test_recursive_endpoint_removal() {
+    let quartz = TestQuartz::empty().unwrap();
+    quartz.handle_create("testing").unwrap();
+    quartz.handle_create("testing/ex2").unwrap();
+    quartz.handle_rm(true, "testing").unwrap();
+    assert!(!EndpointHandle::from("testing/ex2").exists(&quartz.inner));
+    assert!(!EndpointHandle::from("testing").exists(&quartz.inner));
+}
+
+#[test]
+fn test_non_recursive_endpoint_removal() {
+    let quartz = TestQuartz::empty().unwrap();
+    quartz.handle_create("testing").unwrap();
+    quartz.handle_create("testing/ex2").unwrap();
+
+    assert!(quartz.handle_rm(false, "testing").is_err());
+
+    assert!(EndpointHandle::from("testing/ex2").exists(&quartz.inner));
+    assert!(EndpointHandle::from("testing").exists(&quartz.inner));
+}
