@@ -1,5 +1,6 @@
 [workspace]
 members = ["cli", "core"]
+resolver = "3"
 
 [workspace.dependencies]
 quartz-core = {path = "./core"}
