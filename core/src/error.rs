@@ -42,6 +42,8 @@ pub enum QuartzError {
     ParseLocationHeader,
     #[error("Could not save cookie: {0}")]
     SaveCookie(#[source] std::io::Error),
+    #[error("Could write snippet: {0}")]
+    WriteSnippet(#[source] std::io::Error),
 }
 
 pub type QuartzResult<T = ()> = Result<T, QuartzError>;

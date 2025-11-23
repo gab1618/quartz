@@ -1,3 +1,5 @@
+use std::io::stdout;
+
 use crate::{cli::SnippetCmd as Cmd, ctx::Ctx};
 use quartz_core::{endpoint::EndpointPatch, error::QuartzResult, pairmap::PairMap, snippet};
 
@@ -26,9 +28,10 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> QuartzResult {
     endpoint.update(&mut args.patch)?;
     endpoint.apply_env(&env);
 
+    let mut stdout = stdout();
     match args.command {
-        Cmd::Curl(curl) => curl.print(&mut endpoint)?,
-        Cmd::Http => snippet::Http::print(&mut endpoint)?,
+        Cmd::Curl(curl) => curl.write(&mut stdout, &mut endpoint)?,
+        Cmd::Http => snippet::Http::write(&mut stdout, &mut endpoint)?,
     };
 
     Ok(())
