@@ -8,9 +8,10 @@ use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
+use crate::env::env::Variables;
 use crate::Quartz;
 use crate::endpoint::error::EndpointError;
-use crate::env::{Env, Variables};
+use crate::env::EnvRef;
 use crate::error::{QuartzError, QuartzResult};
 use crate::headers::Headers;
 use crate::pairmap::PairMap;
@@ -404,7 +405,7 @@ impl Endpoint {
         }
     }
 
-    pub fn apply_env(&mut self, env: &Env) {
+    pub fn apply_env(&mut self, env: &EnvRef) {
         self.resolve_url();
 
         for (key, value) in env.variables.iter() {

@@ -32,7 +32,7 @@ use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
 use crate::{
     endpoint::{EndpointHandle, EndpointPatch},
-    env::Env,
+    env::EnvRef,
     state::StateField,
 };
 
@@ -110,23 +110,20 @@ impl Quartz {
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
-    pub fn env(&self) -> QuartzResult<Env<'_>> {
+    pub fn env(&self) -> QuartzResult<EnvRef<'_>> {
         let curr_env_name = StateField::Env.get(&self).unwrap_or("default".into());
 
-        let parsed_env = Env::parse(self, &curr_env_name)?;
+        let parsed_env = EnvRef::new(self, curr_env_name)?;
         Ok(parsed_env)
     }
-    pub fn get_env(&self, name: &str) -> Option<Env<'_>> {
-        let env = Env::parse(self, name).ok();
+    pub fn get_env(&self, name: String) -> Option<EnvRef<'_>> {
+        let env = EnvRef::new(self, name).ok();
         env
     }
-    pub fn create_env(&self, name: &str) -> QuartzResult {
-        let new_env = Env::new(name, self);
+    pub fn create_env(&self, name: String) -> QuartzResult {
+        let new_env = EnvRef::new(self, name)?;
 
-        if new_env.exists() {
-            return Err(EnvError::AlreadyExistingEnv.into());
-        }
-        new_env.write()?;
+        new_env.save()?;
 
         Ok(())
     }
@@ -143,14 +140,17 @@ impl Quartz {
 
         Ok(env_names)
     }
-    pub fn switch_env(&self, name: &str) -> QuartzResult<Env<'_>> {
-        let requested_env = Env::parse(&self, name)?;
-        StateField::Env.set(self, name)?;
+    pub fn switch_env(&self, name: String) -> QuartzResult<EnvRef<'_>> {
+        let requested_env = EnvRef::new(&self, name)?;
+        if !requested_env.exists() {
+            return Err(EnvError::NotFound.into());
+        }
+        StateField::Env.set(self, &requested_env.name)?;
 
         Ok(requested_env)
     }
-    pub fn remove_env(&self, name: &str) -> QuartzResult {
-        let env = Env::new(name, &self);
+    pub fn remove_env(&self, name: String) -> QuartzResult {
+        let env = EnvRef::new(&self, name)?;
 
         if !env.exists() {
             return Err(EnvError::NotFound.into());
@@ -159,16 +159,16 @@ impl Quartz {
         if env.name == curr_env.name {
             return Err(EnvError::EnvInUse(env.name).into());
         }
-
-        std::fs::remove_dir_all(env.dir()).map_err(EnvError::DeleteEnv)?;
+        env.clean()?;
 
         Ok(())
     }
 
-    pub fn cp_env(&self, src: &str, dest: &str) -> QuartzResult<Env<'_>> {
-        let src = Env::parse(&self, src)?;
-        let mut dest = Env::parse(&self, dest)
-            .unwrap_or(Env::new(dest, &self));
+    pub fn cp_env(&self, src: String, dest: String) -> QuartzResult<EnvRef<'_>> {
+        let src = EnvRef::new(&self, src)?;
+        let mut dest = EnvRef::new(&self, dest)?;
+
+        println!("{:?}", src.variables.0.keys());
 
         for (key, value) in src.variables.iter() {
             dest.variables.insert(key.to_string(), value.to_string());
@@ -178,11 +178,7 @@ impl Quartz {
             dest.headers.insert(key.to_string(), value.to_string());
         }
 
-        if dest.exists() {
-            dest.update()?;
-        } else {
-            dest.write()?;
-        }
+        dest.save()?;
 
         Ok(dest)
     }

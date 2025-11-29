@@ -27,12 +27,12 @@ pub struct RmArgs {
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
-        Cmd::Create(args) => ctx.quartz.create_env(&args.name)?,
+        Cmd::Create(args) => ctx.quartz.create_env(args.name)?,
         Cmd::Cp(args) => {
-            ctx.quartz.cp_env(&args.src, &args.dest)?;
+            ctx.quartz.cp_env(args.src, args.dest)?;
         }
         Cmd::Use(args) => {
-            ctx.quartz.switch_env(&args.env)?;
+            ctx.quartz.switch_env(args.env)?;
         }
         Cmd::Ls => {
             let envs = ctx.quartz.get_envs()?;
@@ -40,20 +40,22 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
                 println!("{env}");
             }
         }
-        Cmd::Rm(args) => ctx.quartz.remove_env(&args.env)?,
+        Cmd::Rm(args) => ctx.quartz.remove_env(args.env)?,
         Cmd::Header { command } => {
             let mut curr_env = ctx.quartz.env().unwrap();
             match command {
                 HeaderCmd::Set { name, value } => {
                     println!("Setting {} to {}", name, value);
                     curr_env.header_set(name, value)?;
+                    curr_env.save()?;
                 }
                 HeaderCmd::Ls => {
                     println!("{}", curr_env.headers);
                 }
                 HeaderCmd::Rm { key } => {
                     for header in key {
-                        curr_env.header_rm(&header)?
+                        curr_env.header_rm(&header)?;
+                        curr_env.save()?;
                     }
                 }
                 HeaderCmd::Get { key } => {

@@ -11,37 +11,35 @@ fn get_default_env() {
 #[test]
 fn create_env() {
     let test_quartz = TestQuartz::empty();
-    test_quartz.inner.create_env("dev").unwrap();
+    test_quartz.inner.create_env("dev".into()).unwrap();
     let envs = test_quartz.inner.get_envs().unwrap();
     let has_new_env = envs.into_iter().any(|entry| entry == "dev".to_string());
     assert!(has_new_env);
-
-    test_quartz.inner.create_env("dev").unwrap_err();
 }
 
 #[test]
 fn switch_env() {
     let test_quartz = TestQuartz::empty();
-    test_quartz.inner.create_env("dev").unwrap();
-    test_quartz.inner.switch_env("dev").unwrap();
-    test_quartz.inner.switch_env("default").unwrap();
-    assert!(test_quartz.inner.switch_env("invalid").is_err());
+    test_quartz.inner.create_env("dev".into()).unwrap();
+    test_quartz.inner.switch_env("dev".into()).unwrap();
+    test_quartz.inner.switch_env("default".into()).unwrap();
+    assert!(test_quartz.inner.switch_env("invalid".into()).is_err());
 
     assert_eq!(test_quartz.inner.env().unwrap().name, "default");
-    test_quartz.inner.switch_env("dev").unwrap();
+    test_quartz.inner.switch_env("dev".into()).unwrap();
     assert_eq!(test_quartz.inner.env().unwrap().name, "dev");
 }
 
 #[test]
 fn remove_env() {
     let test_quartz = TestQuartz::empty();
-    test_quartz.inner.create_env("dev").unwrap();
+    test_quartz.inner.create_env("dev".into()).unwrap();
 
-    test_quartz.inner.remove_env("dev").unwrap();
-    test_quartz.inner.create_env("dev").unwrap();
+    test_quartz.inner.remove_env("dev".into()).unwrap();
+    test_quartz.inner.create_env("dev".into()).unwrap();
 
-    test_quartz.inner.switch_env("dev").unwrap();
-    test_quartz.inner.remove_env("dev").unwrap_err();
+    test_quartz.inner.switch_env("dev".into()).unwrap();
+    test_quartz.inner.remove_env("dev".into()).unwrap_err();
 }
 
 #[test]
@@ -58,10 +56,10 @@ fn add_header_to_env() {
     let found_header = curr_env.header_get("Header1").unwrap();
     assert_eq!(found_header, "value1".to_owned());
 
-    test_quartz.inner.create_env("dev").unwrap();
-    let curr_env = test_quartz.inner.switch_env("dev").unwrap();
+    test_quartz.inner.create_env("dev".into()).unwrap();
+    let curr_env = test_quartz.inner.switch_env("dev".into()).unwrap();
     curr_env.header_get("Header1").unwrap_err();
-    let mut curr_env = test_quartz.inner.switch_env("default").unwrap();
+    let mut curr_env = test_quartz.inner.switch_env("default".into()).unwrap();
 
     curr_env.header_rm("Header1").unwrap();
     curr_env.header_get("Header1").unwrap_err();
@@ -70,21 +68,25 @@ fn add_header_to_env() {
 #[test]
 fn copy_env() {
     let test_quartz = TestQuartz::empty();
-    test_quartz.inner.create_env("dev").unwrap();
-    test_quartz.inner.switch_env("dev").unwrap();
+    test_quartz.inner.create_env("dev".into()).unwrap();
+    test_quartz.inner.switch_env("dev".into()).unwrap();
 
     let mut curr_env = test_quartz.env().unwrap();
     curr_env
         .header_set("Header1".to_owned(), "value1".to_owned())
         .unwrap();
+    curr_env.save().unwrap();
     let retrieved_header = curr_env.header_get("Header1").unwrap();
     assert_eq!(&retrieved_header, "value1");
 
-    let new_env = test_quartz.inner.cp_env("dev", "dev-copy").unwrap();
+    let new_env = test_quartz
+        .inner
+        .cp_env("dev".into(), "dev-copy".into())
+        .unwrap();
     let cloned_header = new_env.header_get("Header1").unwrap();
     assert_eq!(retrieved_header, cloned_header);
 
-    let curr_env = test_quartz.switch_env("dev-copy").unwrap();
+    let curr_env = test_quartz.switch_env("dev-copy".into()).unwrap();
     let cloned_header = curr_env.header_get("Header1").unwrap();
     assert_eq!(retrieved_header, cloned_header);
 }

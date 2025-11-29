@@ -1,117 +1,83 @@
 use std::{
-    collections::HashMap,
-    fmt::Display,
     io::Write,
     ops::{Deref, DerefMut},
     path::PathBuf,
 };
 
-use serde::{Deserialize, Serialize};
-
 use crate::{
-    Quartz, QuartzError, QuartzResult, cookie::CookieJar, env::error::EnvError, headers::Headers,
-    pairmap::PairMap,
+    Quartz, QuartzResult,
+    cookie::CookieJar,
+    env::{
+        env::{Env, Variables},
+        error::EnvError,
+    },
+    headers::Headers,
 };
 
+pub mod env;
 pub mod error;
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct Variables(pub HashMap<String, String>);
+#[derive(Clone)]
+pub struct EnvRef<'a> {
+    pub name: String,
+    quartz: &'a Quartz,
+    env: Env,
+}
 
-impl Deref for Variables {
-    type Target = HashMap<String, String>;
+impl<'a> Deref for EnvRef<'a> {
+    type Target = Env;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.env
     }
 }
 
-impl DerefMut for Variables {
+impl<'a> DerefMut for EnvRef<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        &mut self.env
     }
 }
 
-impl Display for Variables {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (key, value) in self.iter() {
-            writeln!(f, "{key}={value}")?;
-        }
-
-        Ok(())
-    }
-}
-
-impl PairMap<'_> for Variables {
-    const NAME: &'static str = "variable";
-
-    fn map(&mut self) -> &mut HashMap<String, String> {
-        &mut self.0
-    }
-}
-
-impl Variables {
-    pub fn parse(file_content: &str) -> QuartzResult<Self> {
-        let mut variables = Variables::default();
-
-        for var in file_content.split('\n').filter(|line| !line.is_empty()) {
-            variables.set(var)?;
-        }
-
-        Ok(variables)
-    }
-}
-
-#[derive(Clone)]
-pub struct Env<'a> {
-    quartz: &'a Quartz,
-    pub name: String,
-    pub variables: Variables,
-    pub headers: Headers,
-}
-
-impl<'a> Env<'a> {
-    pub fn new(name: &str, quartz: &'a Quartz) -> Self {
-        Self {
-            name: name.to_string(),
-            ..Self::default(quartz)
-        }
-    }
-    fn default(quartz: &'a Quartz) -> Self {
-        Self {
+impl<'a> EnvRef<'a> {
+    pub fn new(quartz: &'a Quartz, name: String) -> QuartzResult<Self> {
+        let mut env = Self {
             quartz,
-            name: String::from("default"),
-            variables: Variables::default(),
-            headers: Headers::default(),
+            name,
+            env: Env::default(),
+        };
+
+        if let Ok(var_contents) = std::fs::read_to_string(env.dir().join("variables")) {
+            env.variables = Variables::parse(&var_contents)?;
         }
+        if let Ok(header_contents) = std::fs::read_to_string(env.dir().join("headers")) {
+            env.headers = Headers::parse(&header_contents)?;
+        }
+        Ok(env)
+    }
+    pub fn exists(&self) -> bool {
+        self.dir().exists()
     }
 
     pub fn dir(&self) -> PathBuf {
         self.quartz.path.join("env").join(&self.name)
     }
 
-    pub fn write(&self) -> QuartzResult {
+    pub fn save(&self) -> QuartzResult {
         let dir = self.dir();
-
-        std::fs::create_dir(dir).map_err(EnvError::CreateEnvDir)?;
-
-        self.update()?;
-
-        Ok(())
-    }
-
-    pub fn update(&self) -> QuartzResult {
+        if !dir.exists() {
+            std::fs::create_dir(&dir).map_err(EnvError::CreateEnvDir)?;
+        }
         let mut var_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(self.dir().join("variables"))
+            .open(dir.join("variables"))
             .map_err(EnvError::UpdateVariablesFile)?;
         let mut headers_file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(self.dir().join("headers"))
+            .open(dir.join("headers"))
             .map_err(EnvError::UpdateHeadersFile)?;
 
         if !self.variables.is_empty() {
@@ -127,27 +93,9 @@ impl<'a> Env<'a> {
 
         Ok(())
     }
-
-    /// Returns `true` if this environment already exists on the quartz project.
-    pub fn exists(&self) -> bool {
-        self.dir().exists()
-    }
-
-    pub fn parse(quartz: &'a Quartz, name: &str) -> QuartzResult<Self> {
-        let mut env = Self::new(name, quartz);
-
-        if !env.exists() {
-            return Err(EnvError::NotFound.into());
-        }
-
-        if let Ok(var_contents) = std::fs::read_to_string(env.dir().join("variables")) {
-            env.variables = Variables::parse(&var_contents)?;
-        }
-        if let Ok(header_contents) = std::fs::read_to_string(env.dir().join("headers")) {
-            env.headers = Headers::parse(&header_contents)?;
-        }
-
-        Ok(env)
+    pub fn clean(&self) -> QuartzResult {
+        std::fs::remove_dir_all(self.dir()).map_err(EnvError::DeleteEnv)?;
+        Ok(())
     }
 
     pub fn cookie_jar(&self) -> CookieJar {
@@ -157,53 +105,5 @@ impl<'a> Env<'a> {
         jar.path = path;
 
         jar
-    }
-    pub fn header_set(&mut self, name: String, value: String) -> QuartzResult {
-        self.headers.0.insert(name, value);
-        self.update()?;
-        Ok(())
-    }
-    pub fn header_rm(&mut self, header: &str) -> QuartzResult {
-        self.headers.remove(header);
-        self.update()?;
-        Ok(())
-    }
-    pub fn header_get(&self, key: &str) -> QuartzResult<String> {
-        let value = self
-            .headers
-            .get(key)
-            .ok_or(QuartzError::HeaderNotFound)?
-            .to_owned();
-        Ok(value)
-    }
-    pub fn var_set(&mut self, key: String, value: String) -> QuartzResult {
-        self.variables.0.insert(key, value);
-        self.update()?;
-
-        Ok(())
-    }
-    pub fn var_get(&self, name: &str) -> Option<String> {
-        let v = self
-            .variables
-            .get(name)
-            .map(|inner| inner.to_owned())
-            .to_owned();
-
-        v
-    }
-    pub fn vars(&self) -> Variables {
-        let vars = self.variables.clone();
-
-        vars
-    }
-    pub fn var_rm(&mut self, keys: Vec<String>) -> QuartzResult {
-        for key in keys {
-            self.variables
-                .remove(&key)
-                .ok_or(QuartzError::RemoveHeader)?;
-        }
-
-        self.update()?;
-        Ok(())
     }
 }
