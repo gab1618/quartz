@@ -9,7 +9,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    QuartzError, QuartzResult, cookie::CookieJar, env::error::EnvError, headers::Headers,
+    Quartz, QuartzError, QuartzResult, cookie::CookieJar, env::error::EnvError, headers::Headers,
     pairmap::PairMap,
 };
 
@@ -62,24 +62,24 @@ impl Variables {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Env {
-    mount_path: PathBuf,
+#[derive(Clone)]
+pub struct Env<'a> {
+    quartz: &'a Quartz,
     pub name: String,
     pub variables: Variables,
     pub headers: Headers,
 }
 
-impl Env {
-    pub fn new(name: &str, mount_path: PathBuf) -> Self {
+impl<'a> Env<'a> {
+    pub fn new(name: &str, quartz: &'a Quartz) -> Self {
         Self {
             name: name.to_string(),
-            ..Self::default(mount_path)
+            ..Self::default(quartz)
         }
     }
-    fn default(mount_path: PathBuf) -> Self {
+    fn default(quartz: &'a Quartz) -> Self {
         Self {
-            mount_path,
+            quartz,
             name: String::from("default"),
             variables: Variables::default(),
             headers: Headers::default(),
@@ -87,7 +87,7 @@ impl Env {
     }
 
     pub fn dir(&self) -> PathBuf {
-        self.mount_path.join("env").join(&self.name)
+        self.quartz.path.join("env").join(&self.name)
     }
 
     pub fn write(&self) -> QuartzResult {
@@ -133,8 +133,8 @@ impl Env {
         self.dir().exists()
     }
 
-    pub fn parse(mount_path: PathBuf, name: &str) -> QuartzResult<Self> {
-        let mut env = Self::new(name, mount_path);
+    pub fn parse(quartz: &'a Quartz, name: &str) -> QuartzResult<Self> {
+        let mut env = Self::new(name, quartz);
 
         if !env.exists() {
             return Err(EnvError::NotFound.into());

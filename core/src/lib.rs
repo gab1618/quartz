@@ -110,18 +110,18 @@ impl Quartz {
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
-    pub fn env(&self) -> QuartzResult<Env> {
+    pub fn env(&self) -> QuartzResult<Env<'_>> {
         let curr_env_name = StateField::Env.get(&self).unwrap_or("default".into());
 
-        let parsed_env = Env::parse(self.path().to_path_buf(), &curr_env_name)?;
+        let parsed_env = Env::parse(self, &curr_env_name)?;
         Ok(parsed_env)
     }
-    pub fn get_env(&self, name: &str) -> Option<Env> {
-        let env = Env::parse(self.path.clone(), name).ok();
+    pub fn get_env(&self, name: &str) -> Option<Env<'_>> {
+        let env = Env::parse(self, name).ok();
         env
     }
     pub fn create_env(&self, name: &str) -> QuartzResult {
-        let new_env = Env::new(name, self.path().to_path_buf());
+        let new_env = Env::new(name, self);
 
         if new_env.exists() {
             return Err(EnvError::AlreadyExistingEnv.into());
@@ -143,14 +143,14 @@ impl Quartz {
 
         Ok(env_names)
     }
-    pub fn switch_env(&self, name: &str) -> QuartzResult<Env> {
-        let requested_env = Env::parse(self.path().to_path_buf(), name)?;
+    pub fn switch_env(&self, name: &str) -> QuartzResult<Env<'_>> {
+        let requested_env = Env::parse(&self, name)?;
         StateField::Env.set(self, name)?;
 
         Ok(requested_env)
     }
     pub fn remove_env(&self, name: &str) -> QuartzResult {
-        let env = Env::new(name, self.path().to_path_buf());
+        let env = Env::new(name, &self);
 
         if !env.exists() {
             return Err(EnvError::NotFound.into());
@@ -165,10 +165,10 @@ impl Quartz {
         Ok(())
     }
 
-    pub fn cp_env(&self, src: &str, dest: &str) -> QuartzResult<Env> {
-        let src = Env::parse(self.path().to_path_buf(), src)?;
-        let mut dest = Env::parse(self.path().to_path_buf(), dest)
-            .unwrap_or(Env::new(dest, self.path().to_path_buf()));
+    pub fn cp_env(&self, src: &str, dest: &str) -> QuartzResult<Env<'_>> {
+        let src = Env::parse(&self, src)?;
+        let mut dest = Env::parse(&self, dest)
+            .unwrap_or(Env::new(dest, &self));
 
         for (key, value) in src.variables.iter() {
             dest.variables.insert(key.to_string(), value.to_string());
