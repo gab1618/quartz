@@ -24,6 +24,7 @@ use hyper::{Body, Client, Uri};
 
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
+use crate::endpoint::EndpointHandlePath;
 use crate::endpoint::error::EndpointError;
 use crate::env::error::EnvError;
 use crate::error::{QuartzError, QuartzResult};
@@ -97,14 +98,15 @@ impl Quartz {
     }
     pub fn make_handle_empty(&self) -> QuartzResult {
         let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
-        handle.make_empty(&self);
+        handle.make_empty();
 
         Ok(())
     }
-    pub fn handle(&self) -> Option<EndpointHandle> {
+    pub fn handle(&self) -> Option<EndpointHandle<'_>> {
         let curr_endpoint_name = StateField::Endpoint.get(self).ok();
 
-        let parsed = curr_endpoint_name.map(|handle_name| EndpointHandle::from(handle_name));
+        let parsed =
+            curr_endpoint_name.map(|handle_name| EndpointHandle::new(self, handle_name.into()));
         parsed
     }
     pub fn path(&self) -> &PathBuf {
@@ -190,14 +192,14 @@ impl Quartz {
             return Err(EndpointError::EmptyHandle.into());
         }
 
-        let handle = EndpointHandle::from(handle);
+        let handle = EndpointHandle::new(self, handle.into());
 
-        if handle.exists(&self) {
+        if handle.exists() {
             return Err(EndpointError::AlreadyExistingHandle.into());
         }
 
         let mut endpoint = Endpoint::default();
-        endpoint.set_handle(&self, &handle);
+        endpoint.set_handle(&handle);
 
         handle.write(&self)?;
         endpoint.write()?;
@@ -205,15 +207,15 @@ impl Quartz {
         Ok(endpoint)
     }
 
-    pub fn handle_switch(&self, mut handle: String) -> QuartzResult<EndpointHandle> {
+    pub fn handle_switch(&self, mut handle: String) -> QuartzResult<EndpointHandle<'_>> {
         if handle == "-" {
             let previous_handle = StateField::PreviousEndpoint.get(self)?;
             handle = previous_handle;
         }
 
-        let handle = EndpointHandle::from(handle);
+        let handle = EndpointHandle::new(self, handle.into());
 
-        if !handle.exists(&self) {
+        if !handle.exists() {
             return Err(EndpointError::HandleNotFound(handle.head()).into());
         }
 
@@ -239,21 +241,21 @@ impl Quartz {
     }
 
     pub fn handle_cp(&self, recursive: bool, src: &str, dest: &str) -> QuartzResult {
-        let src_handle = EndpointHandle::from(&src);
-        if !src_handle.exists(&self) {
+        let src_handle = EndpointHandle::new(self, src.into());
+        if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
-        let dest_handle = EndpointHandle::from(&dest);
+        let dest_handle = EndpointHandle::new(self, dest.into());
         dest_handle.write(self)?;
-        if let Some(mut endpoint) = src_handle.endpoint(self) {
-            endpoint.set_handle(self, &dest_handle);
+        if let Some(mut endpoint) = src_handle.endpoint() {
+            endpoint.set_handle(&dest_handle);
             endpoint.write()?;
         }
 
         if recursive {
-            for child in src_handle.children(self)? {
+            for child in src_handle.children()? {
                 let child_name = child.handle();
-                let mut new_handle = EndpointHandle::new(child.path.clone());
+                let mut new_handle = EndpointHandle::new(self, child.path.clone());
 
                 // Replace original prefix with the dest one
                 let dest_handle_prefix = dest_handle
@@ -272,24 +274,24 @@ impl Quartz {
     }
 
     pub fn handle_rm(&self, recursive: bool, name: &str) -> QuartzResult {
-        let handle = EndpointHandle::from(&name);
+        let handle = EndpointHandle::new(self, name.into());
 
-        if !handle.exists(&self) {
+        if !handle.exists() {
             return Err(EndpointError::HandleNotFound(name.to_owned()).into());
         }
 
-        if !handle.children(self)?.is_empty() && !recursive {
+        if !handle.children()?.is_empty() && !recursive {
             return Err(EndpointError::RemoveChildrenOnNonRecursiveMode.into());
         }
 
-        std::fs::remove_dir_all(handle.dir(&self)).map_err(EndpointError::RemoveHandleFiles)?;
+        std::fs::remove_dir_all(handle.dir()).map_err(EndpointError::RemoveHandleFiles)?;
 
         Ok(())
     }
 
     pub fn handle_mv(&self, src: &str, dest: &str) -> QuartzResult {
-        let src_handle = EndpointHandle::from(src);
-        if !src_handle.exists(self) {
+        let src_handle = EndpointHandle::new(self, src.into());
+        if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
 
@@ -299,12 +301,12 @@ impl Quartz {
 
         Ok(())
     }
-    pub fn root_handle() -> EndpointHandle {
-        EndpointHandle::new(vec![])
+    pub fn root_handle(&self) -> EndpointHandle<'_> {
+        EndpointHandle::new(self, EndpointHandlePath(vec![]))
     }
     pub fn handle_endpoint_file_path(&self) -> Option<PathBuf> {
         let handle = self.handle();
-        let dir = handle.map(|inner| inner.dir(&self).join("endpoint.toml"));
+        let dir = handle.map(|inner| inner.dir().join("endpoint.toml"));
         dir
     }
 
@@ -317,7 +319,7 @@ impl Quartz {
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
         let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
-        let mut endpoint = handle.endpoint(self).ok_or(EndpointError::EmptyHandle)?;
+        let mut endpoint = handle.endpoint().ok_or(EndpointError::EmptyHandle)?;
         let mut env = self.env()?;
         for var in variables {
             env.variables.set(&var)?;
@@ -476,7 +478,7 @@ impl Quartz {
             .create(true)
             .write(true)
             .truncate(true)
-            .open(handle.dir(&self).join("body"))
+            .open(handle.dir().join("body"))
             .map_err(EndpointError::AccessHandleBody)?;
 
         f.write_all(input.as_bytes())
@@ -488,7 +490,7 @@ impl Quartz {
         let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
         let mut f = std::fs::OpenOptions::new()
             .read(true)
-            .open(handle.dir(&self).join("body"))
+            .open(handle.dir().join("body"))
             .map_err(EndpointError::AccessHandleBody)?;
         let mut body_content = String::new();
         f.read_to_string(&mut body_content)
@@ -499,10 +501,10 @@ impl Quartz {
     pub fn body_file_path(&self) -> QuartzResult<PathBuf> {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];
         let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
-        let mut path = handle.dir(&self).join("body");
+        let mut path = handle.dir().join("body");
 
         let format = {
-            let endpoint = handle.endpoint(&self).ok_or(EndpointError::EmptyHandle)?;
+            let endpoint = handle.endpoint().ok_or(EndpointError::EmptyHandle)?;
 
             if let Some(content) = endpoint.headers.get("content-type") {
                 let ext = POSSIBLE_EXT.iter().find_map(|ext| {

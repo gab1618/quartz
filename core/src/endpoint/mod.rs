@@ -8,10 +8,10 @@ use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
-use crate::env::env::Variables;
 use crate::Quartz;
 use crate::endpoint::error::EndpointError;
 use crate::env::EnvRef;
+use crate::env::env::Variables;
 use crate::error::{QuartzError, QuartzResult};
 use crate::headers::Headers;
 use crate::pairmap::PairMap;
@@ -58,9 +58,43 @@ impl PairMap<'_> for Query {
 }
 
 #[derive(Clone)]
-pub struct EndpointHandle {
+pub struct EndpointHandlePath(pub Vec<String>);
+
+impl Deref for EndpointHandlePath {
+    type Target = Vec<String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for EndpointHandlePath {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T> From<T> for EndpointHandlePath
+where
+    T: AsRef<str>,
+{
+    fn from(value: T) -> Self {
+        let path: Vec<String> = value
+            .as_ref()
+            .trim_matches('/')
+            .split('/')
+            .map(|s| s.to_string())
+            .collect();
+
+        Self(path)
+    }
+}
+
+
+#[derive(Clone)]
+pub struct EndpointHandle<'a> {
+    quartz: &'a Quartz,
     /// List of ordered parent names
-    pub path: Vec<String>,
+    pub path: EndpointHandlePath,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -130,34 +164,18 @@ impl EndpointPatch {
     }
 }
 
-impl<T> From<T> for EndpointHandle
-where
-    T: AsRef<str>,
-{
-    fn from(value: T) -> Self {
-        let path: Vec<String> = value
-            .as_ref()
-            .trim_matches('/')
-            .split('/')
-            .map(|s| s.to_string())
-            .collect();
-
-        Self::new(path)
-    }
-}
-
-impl EndpointHandle {
-    pub fn new(path: Vec<String>) -> Self {
-        Self { path }
+impl<'a> EndpointHandle<'a> {
+    pub fn new(quartz: &'a Quartz, path: EndpointHandlePath) -> Self {
+        Self { quartz, path }
     }
 
-    pub fn from_state(quartz: &Quartz) -> Option<Self> {
+    pub fn from_state(quartz: &'a Quartz) -> Option<Self> {
         if let Ok(handle) = StateField::Endpoint.get(quartz) {
             if handle.is_empty() {
                 return None;
             }
 
-            return Some(EndpointHandle::from(handle));
+            return Some(EndpointHandle::new(quartz, handle.into()));
         }
 
         None
@@ -167,10 +185,10 @@ impl EndpointHandle {
         self.path.last().unwrap_or(&String::new()).clone()
     }
 
-    pub fn dir(&self, quartz: &Quartz) -> PathBuf {
-        let mut result = quartz.path().join("endpoints");
+    pub fn dir(&self) -> PathBuf {
+        let mut result = self.quartz.path().join("endpoints");
 
-        for parent in &self.path {
+        for parent in self.path.iter() {
             let name = Endpoint::name_to_dir(parent);
 
             result = result.join(name);
@@ -183,15 +201,15 @@ impl EndpointHandle {
         self.path.join("/")
     }
 
-    pub fn exists(&self, quartz: &Quartz) -> bool {
-        let path = self.dir(quartz);
+    pub fn exists(&self) -> bool {
+        let path = self.dir();
         path.exists()
     }
 
     /// Records files to build this endpoint with `parse` methods.
     pub fn write(&self, quartz: &Quartz) -> QuartzResult {
         let mut dir = quartz.path().join("endpoints");
-        for entry in &self.path {
+        for entry in self.path.iter() {
             dir = dir.join(Endpoint::name_to_dir(entry));
 
             std::fs::create_dir_all(&dir).map_err(EndpointError::SaveHandle)?;
@@ -207,16 +225,16 @@ impl EndpointHandle {
                 .map_err(EndpointError::SaveHandle)?;
         }
 
-        std::fs::create_dir_all(self.dir(quartz)).map_err(EndpointError::SaveHandle)?;
+        std::fs::create_dir_all(self.dir()).map_err(EndpointError::SaveHandle)?;
 
         Ok(())
     }
 
     /// Removes endpoint to make it an empty handle
-    pub fn make_empty(&self, quartz: &Quartz) {
-        if self.endpoint(quartz).is_some() {
-            let _ = std::fs::remove_file(self.dir(quartz).join("endpoint.toml"));
-            let _ = std::fs::remove_file(self.dir(quartz).join("body"));
+    pub fn make_empty(&self) {
+        if self.endpoint().is_some() {
+            let _ = std::fs::remove_file(self.dir().join("endpoint.toml"));
+            let _ = std::fs::remove_file(self.dir().join("body"));
         }
     }
 
@@ -224,9 +242,8 @@ impl EndpointHandle {
         self.path.len()
     }
 
-    pub fn children(&self, quartz: &Quartz) -> QuartzResult<Vec<EndpointHandle>> {
-        let paths =
-            std::fs::read_dir(self.dir(quartz)).map_err(EndpointError::GetHandleChildren)?;
+    pub fn children(&self) -> QuartzResult<Vec<EndpointHandle<'_>>> {
+        let paths = std::fs::read_dir(self.dir()).map_err(EndpointError::GetHandleChildren)?;
         let valid_paths = paths
             .filter(|entry| entry.is_ok())
             .map(|entry| entry.unwrap().path())
@@ -242,7 +259,7 @@ impl EndpointHandle {
 
                 let mut path = self.path.clone();
                 path.push(spec);
-                Ok(EndpointHandle::new(path))
+                Ok(EndpointHandle::new(self.quartz, path))
             })
             .collect::<QuartzResult<Vec<_>>>()?;
 
@@ -250,13 +267,13 @@ impl EndpointHandle {
     }
 
     #[must_use]
-    pub fn endpoint(&self, quartz: &Quartz) -> Option<Endpoint> {
-        Endpoint::from_dir(&self.dir(quartz)).ok()
+    pub fn endpoint(&self) -> Option<Endpoint> {
+        Endpoint::from_dir(&self.dir()).ok()
     }
 
     pub fn replace(&mut self, from: &str, to: &str) {
         let handle = self.handle().replace(from, to);
-        self.path = EndpointHandle::from(handle).path;
+        self.path = EndpointHandle::new(self.quartz, handle.into()).path;
     }
 }
 
@@ -370,8 +387,8 @@ impl Endpoint {
         }
     }
 
-    pub fn set_handle(&mut self, quartz: &Quartz, handle: &EndpointHandle) {
-        self.path = handle.dir(quartz).to_path_buf();
+    pub fn set_handle(&mut self, handle: &EndpointHandle) {
+        self.path = handle.dir().to_path_buf();
     }
 
     pub fn parent(&self) -> Option<Self> {

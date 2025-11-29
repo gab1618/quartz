@@ -1,4 +1,4 @@
-use quartz_core::{Quartz, endpoint::EndpointHandle, error::QuartzResult, state::StateField};
+use quartz_core::{endpoint::EndpointHandle, error::QuartzResult, state::StateField};
 
 use crate::ctx::Ctx;
 
@@ -13,8 +13,10 @@ pub struct Args {
 }
 
 pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
-    let parsed_arg_handle = args.handle.map(|handle| EndpointHandle::from(handle));
-    let base_handle = parsed_arg_handle.unwrap_or(Quartz::root_handle());
+    let parsed_arg_handle = args
+        .handle
+        .map(|handle| EndpointHandle::new(&ctx.quartz, handle.into()));
+    let base_handle = parsed_arg_handle.unwrap_or(ctx.quartz.root_handle());
     let current_handle = StateField::Endpoint.get(&ctx.quartz).ok();
     output_tree(&ctx, base_handle, current_handle, 0);
 
@@ -37,7 +39,7 @@ fn output_tree(ctx: &Ctx, base: EndpointHandle, current_handle: Option<String>, 
     let handle_marker = if is_in_use { "*" } else { "" };
 
     println!("{}{}{}", padding_str, handle_marker, handle_str);
-    for child in base.children(&ctx.quartz).unwrap() {
+    for child in base.children().unwrap() {
         output_tree(
             ctx,
             child,

@@ -41,7 +41,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
                 None => ctx.quartz.handle(),
             };
             let curr_endpoint = curr_handle
-                .map(|handle| handle.endpoint(&ctx.quartz))
+                .map(|handle| handle.endpoint())
                 .unwrap();
             if let Some(endpoint) = curr_endpoint {
                 ctx.quartz.apply_endpoint_patch(endpoint, args.patch)?;

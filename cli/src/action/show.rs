@@ -35,13 +35,13 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
 
 pub fn url(ctx: Ctx) {
     let handle = ctx.quartz.handle().unwrap();
-    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
+    let endpoint = handle.endpoint().unwrap();
     println!("{}", endpoint.url);
 }
 
 pub fn method(ctx: Ctx) {
     let handle = ctx.quartz.handle().unwrap();
-    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
+    let endpoint = handle.endpoint().unwrap();
     println!("{}", endpoint.method);
 }
 
@@ -52,7 +52,7 @@ pub fn handle(ctx: Ctx) {
 
 pub fn endpoint(ctx: Ctx) -> QuartzResult {
     let handle = ctx.quartz.handle().unwrap();
-    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
+    let endpoint = handle.endpoint().unwrap();
 
     println!("{}", endpoint.to_toml().map_err(|_| QuartzError::Internal)?);
     Ok(())

@@ -12,7 +12,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
 
 pub fn get(ctx: Ctx, key: String) -> QuartzResult {
     let handle = ctx.quartz.handle().unwrap();
-    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
+    let endpoint = handle.endpoint().unwrap();
     if let Some(header) = endpoint.headers.get(&key) {
         println!("{}", header);
     } else {
@@ -24,7 +24,7 @@ pub fn get(ctx: Ctx, key: String) -> QuartzResult {
 
 pub fn set(ctx: Ctx, name: String, value: String) -> QuartzResult {
     let handle = ctx.quartz.handle().unwrap();
-    let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
+    let mut endpoint = handle.endpoint().unwrap();
     endpoint.headers.0.insert(name, value);
     endpoint.write()?;
     Ok(())
@@ -32,7 +32,7 @@ pub fn set(ctx: Ctx, name: String, value: String) -> QuartzResult {
 
 pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
     let handle = ctx.quartz.handle().unwrap();
-    let mut endpoint = handle.endpoint(&ctx.quartz).unwrap();
+    let mut endpoint = handle.endpoint().unwrap();
 
     for k in keys {
         if endpoint.headers.contains_key(&k) {
@@ -49,7 +49,7 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
 
 pub fn ls(ctx: Ctx) -> QuartzResult {
     let handle = ctx.quartz.handle().unwrap();
-    let endpoint = handle.endpoint(&ctx.quartz).unwrap();
+    let endpoint = handle.endpoint().unwrap();
 
     print!("{}", endpoint.headers);
     Ok(())
