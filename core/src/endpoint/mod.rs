@@ -354,11 +354,15 @@ impl Endpoint {
         Ok(result)
     }
 
+    fn key_match_str(key: &str) -> String {
+        format!("{{{{{}}}}}", key)
+    }
+
     pub fn load_body(&mut self) -> Option<&String> {
         match std::fs::read_to_string(self.path.join("body")) {
             Ok(mut content) => {
                 for (key, value) in self.variables.iter() {
-                    let key_match = format!("{{{{{}}}}}", key);
+                    let key_match = Self::key_match_str(&key);
 
                     content = content.replace(&key_match, value);
                 }
@@ -402,20 +406,24 @@ impl Endpoint {
     }
     /// Inherits parent URL when it starts with "**".
     pub fn resolved_url(&self) -> String {
-        if !self.url.starts_with("**") {
-            return self.url.clone();
+        let mut full_url = self.url.clone();
+        if self.url.starts_with("**") {
+            full_url = self
+                .parent()
+                .map(|p| {
+                    let mut parent_resolved = p.resolved_url();
+                    if parent_resolved.ends_with('/') {
+                        parent_resolved.pop();
+                    }
+                    self.url.clone().replacen("**", &parent_resolved, 1).clone()
+                })
+                .unwrap_or(self.url.clone());
         }
 
-        let full_url = self
-            .parent()
-            .map(|p| {
-                let mut parent_resolved = p.resolved_url();
-                if parent_resolved.ends_with('/') {
-                    parent_resolved.pop();
-                }
-                self.url.clone().replacen("**", &parent_resolved, 1).clone()
-            })
-            .unwrap_or(self.url.clone());
+        for (key, value) in self.variables.iter() {
+            let key_match = Self::key_match_str(&key);
+            full_url = full_url.replace(&key_match, value);
+        }
         full_url
     }
 
@@ -423,7 +431,7 @@ impl Endpoint {
         self.resolve_url();
 
         for (key, value) in env.variables.iter() {
-            let key_match = format!("{{{{{}}}}}", key); // {{key}}
+            let key_match = Self::key_match_str(&key);
 
             self.url = self.url.replace(&key_match, value);
             self.method = self.method.replace(&key_match, value);
@@ -462,9 +470,8 @@ impl Endpoint {
             body: Default::default(),
         };
         for (key, value) in self.variables.iter() {
-            let key_match = format!("{{{{{}}}}}", key); // {{key}}
+            let key_match = Self::key_match_str(&key);
 
-            resolved.url = self.url.replace(&key_match, value);
             resolved.method = self.method.replace(&key_match, value);
 
             *resolved.headers = self

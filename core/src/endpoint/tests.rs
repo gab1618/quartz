@@ -128,7 +128,7 @@ fn test_mv_handle_overwrite() {
 }
 
 #[test]
-fn test_resolve_endpoint() {
+fn test_resolve_endpoint_url() {
     let quartz = TestQuartz::empty();
 
     let mut first_endpoint = quartz.handle_create("jsonplaceholder").unwrap();
@@ -141,4 +141,17 @@ fn test_resolve_endpoint() {
 
     let resolved = sub_endpoint.resolved_url();
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos");
+}
+
+#[test]
+fn test_resolve_endpoint_vars() {
+    let quartz = TestQuartz::empty();
+
+    let mut first_endpoint = quartz.handle_create("jsonplaceholder").unwrap();
+    first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/{{id}}".into();
+    first_endpoint.variables.insert("id".into(), "1".into());
+    first_endpoint.write().unwrap();
+
+    let resolved = first_endpoint.as_resolved();
+    assert_eq!(resolved.url, "https://jsonplaceholder.typicode.com/todos/1");
 }
