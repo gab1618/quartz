@@ -269,7 +269,7 @@ fn url_inheritance() -> TestResult {
     quartz.cmd(&["create", "myendpoint", "--url", "https://original/"])?;
     quartz.cmd(&["create", "myendpoint/child", "--url", "**/child"])?;
 
-    let output = quartz.cmd(&["-cx", "myendpoint/child", "show", "url"])?;
+    let output = quartz.cmd(&["-x", "myendpoint/child", "show", "url"])?;
     assert!(output.status.success(), "{}", output.stderr);
 
     assert_eq!(
@@ -289,7 +289,7 @@ fn url_inheritance_multilevel() -> TestResult {
     quartz.cmd(&["create", "myendpoint/child", "--url", "**/child"])?;
     quartz.cmd(&["create", "myendpoint/child/grand", "--url", "**/grand"])?;
 
-    let output = quartz.cmd(&["-cx", "myendpoint/child/grand", "show", "url"])?;
+    let output = quartz.cmd(&["-x", "myendpoint/child/grand", "show", "url"])?;
     assert!(output.status.success(), "{}", output.stderr);
 
     assert_eq!(

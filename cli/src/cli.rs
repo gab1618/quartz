@@ -11,11 +11,6 @@ pub struct Cli {
     #[arg(short = 'x', value_name = "HANDLE")]
     pub from_handle: Option<String>,
 
-    /// Apply environment on endpoint as soon as possible. Allows to get resolved information on
-    /// output
-    #[arg(short = 'c', long)]
-    pub apply_environment: bool,
-
     #[command(subcommand)]
     pub command: Cmd,
 }

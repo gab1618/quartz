@@ -9,7 +9,7 @@ date: March 9, 2024
 quartz - the command-line tool to build and test HTTP requests.
 
 # SYNOPSIS
-**quartz** [**-h**] [**\-x** *HANDLE*] [**\-c**, **\-\-apply-environment**] <*COMMAND*> [*OPTIONS*]...
+**quartz** [**-h**] [**\-x** *HANDLE*] <*COMMAND*> [*OPTIONS*]...
 
 **quartz** is a command-line tool alternative to build, design and test Rest APIs without relying on graphical interfaces.
 
@@ -19,17 +19,6 @@ The tool is organized across multiple configuration files to make it easy to int
 
 \-x <*HANDLE*>
 : Run quartz using a specific handle.
-
-\-c, \--apply-environment
-
-: Apply environment on endpoint as soon as possible.
-
-    For instance, if the current endpoint's URL is "https://{{baseUrl}}/get" and the variable "baseUrl" is correctly set to "httpbin.org", the following command would print the URL with the variable replaced:
-
-        $ quartz --apply-environment show url
-        https://httpbin.org/get
-
-    All commands allow for *\--apply-environment*, although some of then would already apply it anyways (e.g. *send*)
 
 # ENDPOINT HANDLE
 
@@ -85,7 +74,7 @@ When a handle is created as a child of another, it can inherit the parent's URL 
 
     $ quartz create local/users --url '**/users'
 
-The endpoint *local/users* will use *http://localhost:8080/users* when sending a request or using *\--apply-environment* with certain commands.
+The endpoint *local/users* will use *http://localhost:8080/users* when sending a request.
 
 # COMMANDS
 

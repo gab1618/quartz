@@ -60,18 +60,3 @@ fn it_removes_header_by_key() -> TestResult {
 
     Ok(())
 }
-
-#[test]
-fn compatible_with_apply_env_option() -> TestResult {
-    let quartz = Quartz::preset_using_sample_endpoint()?;
-
-    quartz.cmd(&["var", "set", "contentType=application/json"])?;
-    quartz.cmd(&["header", "set", "Content-type: {{contentType}}"])?;
-
-    let output = quartz.cmd(&["--apply-environment", "header", "get", "Content-type"])?;
-
-    assert!(output.status.success(), "{}", output.stderr);
-    assert_eq!(output.stdout.trim(), "application/json");
-
-    Ok(())
-}

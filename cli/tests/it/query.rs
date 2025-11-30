@@ -124,21 +124,3 @@ fn it_outputs_resolved_string() -> TestResult {
 
     Ok(())
 }
-
-#[test]
-fn compatible_with_apply_env_option() -> TestResult {
-    let quartz = Quartz::preset_using_sample_endpoint()?;
-
-    quartz.cmd(&["var", "set", "someQuery=yay"])?;
-    quartz.cmd(&["query", "set", "version={{someQuery}}"])?;
-
-    let output = quartz.cmd(&["--apply-environment", "query", "get", "version"])?;
-    assert!(output.status.success(), "{}", output.stderr);
-    assert_eq!(output.stdout.trim(), "yay");
-
-    let output = quartz.cmd(&["--apply-environment", "query", "ls"])?;
-    assert!(output.status.success(), "{}", output.stderr);
-    assert_eq!(output.stdout.trim(), "version=yay");
-
-    Ok(())
-}
