@@ -321,21 +321,15 @@ impl Endpoint {
         }
 
         for input in &src.query {
-            self.query
-                .set(input)
-                .map_err(|_| EndpointError::NoHandleInUse)?; // Just a temp workaround
+            self.query.set(input)?;
         }
 
         for input in &src.headers {
-            self.headers
-                .set(input)
-                .map_err(|_| EndpointError::NoHandleInUse)?; // Just a temp workaround;
+            self.headers.set(input)?;
         }
 
         for input in &src.query {
-            self.query
-                .set(input)
-                .map_err(|_| EndpointError::NoHandleInUse)?; // Just a temp workaround;
+            self.query.set(input)?;
         }
 
         if let Some(data) = &src.data {
