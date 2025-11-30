@@ -1,6 +1,7 @@
 mod action;
 mod cli;
 mod ctx;
+mod error;
 mod validator;
 
 use std::env::current_dir;
@@ -10,13 +11,14 @@ use clap::Parser;
 use crate::{
     cli::{Cli, Cmd},
     ctx::Ctx,
+    error::{QuartzCliError, QuartzCliResult},
 };
 use quartz_core::{
     Quartz,
     error::{QuartzError, QuartzResult},
 };
 
-async fn entrypoint() -> QuartzResult {
+async fn entrypoint() -> QuartzCliResult {
     let args = Cli::parse();
 
     // Has to run outside action flow because it cannot resolve `ctx`.
@@ -25,8 +27,8 @@ async fn entrypoint() -> QuartzResult {
         return Ok(());
     }
 
-    let home_dir = std::env::home_dir().expect("Could not get home dir");
-    let curr_dir = current_dir().expect("Could not get current");
+    let home_dir = std::env::home_dir().ok_or(QuartzCliError::GetHomeDir)?;
+    let curr_dir = current_dir().map_err(QuartzCliError::GetCurrentDir)?;
 
     let quartz = Quartz::new(curr_dir, home_dir)?;
     if let Some(handle) = args.from_handle {
