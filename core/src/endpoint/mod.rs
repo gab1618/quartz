@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use crate::Quartz;
 use crate::endpoint::error::EndpointError;
+use crate::endpoint::resolved_endpoint::ResolvedEndpoint;
 use crate::env::EnvRef;
 use crate::env::env::Variables;
 use crate::error::{QuartzError, QuartzResult};
@@ -18,6 +19,7 @@ use crate::pairmap::PairMap;
 use crate::state::StateField;
 
 pub mod error;
+pub mod resolved_endpoint;
 
 #[cfg(test)]
 mod tests;
@@ -88,7 +90,6 @@ where
         Self(path)
     }
 }
-
 
 #[derive(Clone)]
 pub struct EndpointHandle<'a> {
@@ -395,25 +396,27 @@ impl Endpoint {
         }
     }
 
-    /// Inherits parent URL when it starts with "**".
     pub fn resolve_url(&mut self) {
+        let resolved = self.resolved_url();
+        self.url = resolved;
+    }
+    /// Inherits parent URL when it starts with "**".
+    pub fn resolved_url(&self) -> String {
         if !self.url.starts_with("**") {
-            return;
+            return self.url.clone();
         }
 
-        if let Some(mut parent) = self.parent() {
-            parent.resolve_url();
-            if parent.url.ends_with('/') {
-                // Prevents "//" in the URL after merging
-                parent.url.pop();
-            }
-
-            if self.url.is_empty() {
-                self.url = parent.url;
-            } else {
-                self.url = self.url.replacen("**", &parent.url, 1);
-            }
-        }
+        let full_url = self
+            .parent()
+            .map(|p| {
+                let mut parent_resolved = p.resolved_url();
+                if parent_resolved.ends_with('/') {
+                    parent_resolved.pop();
+                }
+                self.url.clone().replacen("**", &parent_resolved, 1).clone()
+            })
+            .unwrap_or(self.url.clone());
+        full_url
     }
 
     pub fn apply_env(&mut self, env: &EnvRef) {
@@ -449,6 +452,34 @@ impl Endpoint {
         }
 
         self.variables = env.variables.clone();
+    }
+
+    pub fn as_resolved(&self) -> ResolvedEndpoint {
+        let mut resolved = ResolvedEndpoint {
+            url: self.resolved_url(),
+            method: Default::default(),
+            headers: Default::default(),
+            body: Default::default(),
+        };
+        for (key, value) in self.variables.iter() {
+            let key_match = format!("{{{{{}}}}}", key); // {{key}}
+
+            resolved.url = self.url.replace(&key_match, value);
+            resolved.method = self.method.replace(&key_match, value);
+
+            *resolved.headers = self
+                .headers
+                .iter()
+                .map(|(h_key, h_value)| {
+                    let h_key = &h_key.replace(&key_match, value);
+                    let h_value = &h_value.replace(&key_match, value);
+
+                    (h_key.clone(), h_value.clone())
+                })
+                .collect();
+        }
+
+        resolved
     }
 
     pub fn full_url(&self) -> Result<Uri, InvalidUri> {
