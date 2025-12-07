@@ -69,9 +69,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Rm(args) => {
             for handle in args.handles {
                 let handle = ctx.quartz.new_handle(&handle);
-                if let Err(fail) = handle.delete(args.recursive) {
-                    eprintln!("{}", fail);
-                }
+                handle.delete(args.recursive)?;
             }
         }
         Cmd::Query { command } => action::query::cmd(ctx, command)?,
