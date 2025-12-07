@@ -29,23 +29,20 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
 
         Cmd::Send(args) => action::send::cmd(ctx, args).await?,
         Cmd::Create(args) => {
-            let new_handle = ctx.quartz.handle_create(&args.handle)?;
+            let new_handle = ctx.quartz.endpoint_create(&args.handle)?;
             if args.switch {
                 ctx.quartz.handle_switch(args.handle)?;
             }
-            if let Some(endpoint) = new_handle.endpoint() {
-                ctx.quartz.apply_endpoint_patch(endpoint, args.patch)?;
-            }
+            let endpoint = new_handle.endpoint()?;
+            ctx.quartz.apply_endpoint_patch(endpoint, args.patch)?;
         }
         Cmd::Use(args) => {
             let curr_handle = match args.handle {
                 Some(handle) => Some(ctx.quartz.handle_switch(handle)?),
                 None => ctx.quartz.handle(),
             };
-            let curr_endpoint = curr_handle.map(|handle| handle.endpoint()).unwrap();
-            if let Some(endpoint) = curr_endpoint {
-                ctx.quartz.apply_endpoint_patch(endpoint, args.patch)?;
-            }
+            let curr_endpoint = curr_handle.map(|handle| handle.endpoint()).unwrap()?;
+            ctx.quartz.apply_endpoint_patch(curr_endpoint, args.patch)?;
             if args.empty {
                 ctx.quartz.make_handle_empty()?;
             }
@@ -71,7 +68,8 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         }
         Cmd::Rm(args) => {
             for handle in args.handles {
-                if let Err(fail) = ctx.quartz.handle_rm(args.recursive, &handle) {
+                let handle = ctx.quartz.new_handle(&handle);
+                if let Err(fail) = handle.delete(args.recursive) {
                     eprintln!("{}", fail);
                 }
             }

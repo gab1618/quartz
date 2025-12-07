@@ -3,7 +3,7 @@ use crate::{endpoint::EndpointHandle, tests::utils::TestQuartz};
 #[test]
 fn test_simple_cp_handle() {
     let quartz = TestQuartz::empty();
-    quartz.handle_create("testing").unwrap();
+    quartz.endpoint_create("testing").unwrap();
     quartz.handle_cp(false, "testing", "testing-copy").unwrap();
 
     let found_handle = EndpointHandle::new(&quartz, "testing-copy".into());
@@ -13,10 +13,10 @@ fn test_simple_cp_handle() {
 #[test]
 fn test_recursive_cp_handle() {
     let quartz = TestQuartz::empty();
-    quartz.handle_create("testing").unwrap();
-    quartz.handle_create("testing/ex").unwrap();
-    quartz.handle_create("testing/ex2").unwrap();
-    quartz.handle_create("testing/ex2/sub").unwrap();
+    quartz.endpoint_create("testing").unwrap();
+    quartz.endpoint_create("testing/ex").unwrap();
+    quartz.endpoint_create("testing/ex2").unwrap();
+    quartz.endpoint_create("testing/ex2/sub").unwrap();
     quartz.handle_cp(true, "testing", "testing-copy").unwrap();
 
     assert!(EndpointHandle::new(&quartz, "testing-copy".into()).exists());
@@ -28,10 +28,10 @@ fn test_recursive_cp_handle() {
 #[test]
 fn test_non_recursive_cp_handle() {
     let quartz = TestQuartz::empty();
-    quartz.handle_create("testing").unwrap();
-    quartz.handle_create("testing/ex").unwrap();
-    quartz.handle_create("testing/ex2").unwrap();
-    quartz.handle_create("testing/ex2/sub").unwrap();
+    quartz.endpoint_create("testing").unwrap();
+    quartz.endpoint_create("testing/ex").unwrap();
+    quartz.endpoint_create("testing/ex2").unwrap();
+    quartz.endpoint_create("testing/ex2/sub").unwrap();
     quartz.handle_cp(false, "testing", "testing-copy").unwrap();
 
     assert!(EndpointHandle::new(&quartz, "testing-copy".into()).exists());
@@ -43,9 +43,9 @@ fn test_non_recursive_cp_handle() {
 #[test]
 fn test_cp_endpoint_spec() {
     let quartz = TestQuartz::empty();
-    quartz.handle_create("testing").unwrap();
-    quartz.handle_create("testing/ex2").unwrap();
-    let created_handle = quartz.handle_create("testing/ex2/sub").unwrap();
+    quartz.endpoint_create("testing").unwrap();
+    quartz.endpoint_create("testing/ex2").unwrap();
+    let created_handle = quartz.endpoint_create("testing/ex2/sub").unwrap();
     let mut created_endpoint = created_handle.endpoint().unwrap();
     let example_url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
     created_endpoint.url = example_url.clone();
@@ -66,9 +66,9 @@ fn test_cp_endpoint_spec() {
 #[test]
 fn test_endpoint_removal() {
     let quartz = TestQuartz::empty();
-    quartz.handle_create("testing").unwrap();
-    quartz.handle_create("testing/ex2").unwrap();
-    quartz.handle_rm(false, "testing/ex2").unwrap();
+    quartz.endpoint_create("testing").unwrap();
+    let handle = quartz.endpoint_create("testing/ex2").unwrap();
+    handle.delete(false).unwrap();
     assert!(!EndpointHandle::new(&quartz, "testing/ex2".into()).exists());
     assert!(EndpointHandle::new(&quartz, "testing".into()).exists());
 }
@@ -76,9 +76,9 @@ fn test_endpoint_removal() {
 #[test]
 fn test_recursive_endpoint_removal() {
     let quartz = TestQuartz::empty();
-    quartz.handle_create("testing").unwrap();
-    quartz.handle_create("testing/ex2").unwrap();
-    quartz.handle_rm(true, "testing").unwrap();
+    let handle = quartz.endpoint_create("testing").unwrap();
+    quartz.endpoint_create("testing/ex2").unwrap();
+    handle.delete(true).unwrap();
     assert!(!EndpointHandle::new(&quartz, "testing/ex2".into()).exists());
     assert!(!EndpointHandle::new(&quartz, "testing".into()).exists());
 }
@@ -86,10 +86,10 @@ fn test_recursive_endpoint_removal() {
 #[test]
 fn test_non_recursive_endpoint_removal() {
     let quartz = TestQuartz::empty();
-    quartz.handle_create("testing").unwrap();
-    quartz.handle_create("testing/ex2").unwrap();
+    let handle = quartz.endpoint_create("testing").unwrap();
+    quartz.endpoint_create("testing/ex2").unwrap();
 
-    assert!(quartz.handle_rm(false, "testing").is_err());
+    assert!(handle.delete(false).is_err());
 
     assert!(EndpointHandle::new(&quartz, "testing/ex2".into()).exists());
     assert!(EndpointHandle::new(&quartz, "testing".into()).exists());
@@ -98,7 +98,7 @@ fn test_non_recursive_endpoint_removal() {
 #[test]
 fn test_mv_handle() {
     let quartz = TestQuartz::empty();
-    quartz.handle_create("testing").unwrap();
+    quartz.endpoint_create("testing").unwrap();
 
     quartz.handle_mv("testing", "new").unwrap();
     assert!(EndpointHandle::new(&quartz, "new".into()).exists());
@@ -108,11 +108,11 @@ fn test_mv_handle() {
 #[test]
 fn test_mv_handle_overwrite() {
     let quartz = TestQuartz::empty();
-    let first_handle = quartz.handle_create("testing").unwrap();
+    let first_handle = quartz.endpoint_create("testing").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
     first_endpoint.write().unwrap();
-    let second_handle = quartz.handle_create("new").unwrap();
+    let second_handle = quartz.endpoint_create("new").unwrap();
     let mut second_endpoint = second_handle.endpoint().unwrap();
     second_endpoint.url = "https://jsonplaceholder.typicode.com/todos/2".to_owned();
     second_endpoint.write().unwrap();
@@ -134,12 +134,12 @@ fn test_mv_handle_overwrite() {
 fn test_resolve_endpoint_url() {
     let quartz = TestQuartz::empty();
 
-    let first_handle = quartz.handle_create("jsonplaceholder").unwrap();
+    let first_handle = quartz.endpoint_create("jsonplaceholder").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com".into();
     first_endpoint.write().unwrap();
 
-    let sub_handle = quartz.handle_create("jsonplaceholder/todos").unwrap();
+    let sub_handle = quartz.endpoint_create("jsonplaceholder/todos").unwrap();
     let mut sub_endpoint = sub_handle.endpoint().unwrap();
     sub_endpoint.url = "**/todos".into();
     sub_endpoint.write().unwrap();
@@ -151,17 +151,17 @@ fn test_resolve_endpoint_url() {
 #[test]
 fn test_multilevel_inheritance() {
     let quartz = TestQuartz::empty();
-    let first_handle = quartz.handle_create("jsonplaceholder").unwrap();
+    let first_handle = quartz.endpoint_create("jsonplaceholder").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com".into();
     first_endpoint.write().unwrap();
 
-    let second_handle = quartz.handle_create("jsonplaceholder/todos").unwrap();
+    let second_handle = quartz.endpoint_create("jsonplaceholder/todos").unwrap();
     let mut second_endpoint = second_handle.endpoint().unwrap();
     second_endpoint.url = "**/todos".into();
     second_endpoint.write().unwrap();
 
-    let third_handle = quartz.handle_create("jsonplaceholder/todos/first").unwrap();
+    let third_handle = quartz.endpoint_create("jsonplaceholder/todos/first").unwrap();
     let mut third_endpoint = third_handle.endpoint().unwrap();
     third_endpoint.url = "**/1".into();
     third_endpoint.write().unwrap();
@@ -174,7 +174,7 @@ fn test_multilevel_inheritance() {
 fn test_resolve_endpoint_vars() {
     let quartz = TestQuartz::empty();
 
-    let first_handle = quartz.handle_create("jsonplaceholder").unwrap();
+    let first_handle = quartz.endpoint_create("jsonplaceholder").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/{{id}}".into();
     first_endpoint.variables.insert("id".into(), "1".into());

@@ -233,7 +233,7 @@ impl<'a> EndpointHandle<'a> {
 
     /// Removes endpoint to make it an empty handle
     pub fn make_empty(&self) {
-        if self.endpoint().is_some() {
+        if self.endpoint().is_ok() {
             let _ = std::fs::remove_file(self.dir().join("endpoint.toml"));
             let _ = std::fs::remove_file(self.dir().join("body"));
         }
@@ -268,13 +268,26 @@ impl<'a> EndpointHandle<'a> {
     }
 
     #[must_use]
-    pub fn endpoint(&self) -> Option<Endpoint> {
-        Endpoint::from_dir(&self.dir()).ok()
+    pub fn endpoint(&self) -> QuartzResult<Endpoint> {
+        Endpoint::from_dir(&self.dir())
     }
 
     pub fn replace(&mut self, from: &str, to: &str) {
         let handle = self.handle().replace(from, to);
         self.path = EndpointHandle::new(self.quartz, handle.into()).path;
+    }
+    pub fn delete(&self, recursive: bool) -> QuartzResult {
+        if !self.exists() {
+            return Err(EndpointError::HandleNotFound(self.handle()).into());
+        }
+
+        if !self.children()?.is_empty() && !recursive {
+            return Err(EndpointError::RemoveChildrenOnNonRecursiveMode.into());
+        }
+
+        std::fs::remove_dir_all(self.dir()).map_err(EndpointError::RemoveHandleFiles)?;
+
+        Ok(())
     }
 }
 
@@ -302,11 +315,11 @@ impl Endpoint {
         name.trim().replace(['/', '\\'], "-")
     }
 
-    pub fn from_dir(dir: &Path) -> Result<Self, Box<dyn std::error::Error>> {
-        let bytes = std::fs::read(dir.join("endpoint.toml"))?;
-        let content = String::from_utf8(bytes)?;
+    pub fn from_dir(dir: &Path) -> QuartzResult<Self> {
+        let bytes = std::fs::read(dir.join("endpoint.toml")).map_err(|_| QuartzError::Internal)?;
+        let content = String::from_utf8(bytes).map_err(|_| QuartzError::Internal)?;
 
-        let mut endpoint: Endpoint = toml::from_str(&content)?;
+        let mut endpoint: Endpoint = toml::from_str(&content).map_err(|_| QuartzError::Internal)?;
         endpoint.path = dir.to_path_buf();
 
         Ok(endpoint)

@@ -187,12 +187,16 @@ impl Quartz {
     pub fn config(&self) -> &ConfigManager {
         &self.config
     }
-    pub fn handle_create(&self, handle: &str) -> QuartzResult<EndpointHandle<'_>> {
+    pub fn new_handle(&self, name: &str) -> EndpointHandle<'_> {
+        let created = EndpointHandle::new(self, name.into());
+        created
+    }
+    pub fn endpoint_create(&self, handle: &str) -> QuartzResult<EndpointHandle<'_>> {
         if handle.is_empty() {
             return Err(EndpointError::EmptyHandle.into());
         }
 
-        let handle = EndpointHandle::new(self, handle.into());
+        let handle = self.new_handle(handle);
 
         if handle.exists() {
             return Err(EndpointError::AlreadyExistingHandle.into());
@@ -247,10 +251,9 @@ impl Quartz {
         }
         let dest_handle = EndpointHandle::new(self, dest.into());
         dest_handle.write(self)?;
-        if let Some(mut endpoint) = src_handle.endpoint() {
-            endpoint.set_handle(&dest_handle);
-            endpoint.write()?;
-        }
+        let mut endpoint = src_handle.endpoint()?;
+        endpoint.set_handle(&dest_handle);
+        endpoint.write()?;
 
         if recursive {
             for child in src_handle.children()? {
@@ -273,22 +276,6 @@ impl Quartz {
         Ok(())
     }
 
-    pub fn handle_rm(&self, recursive: bool, name: &str) -> QuartzResult {
-        let handle = EndpointHandle::new(self, name.into());
-
-        if !handle.exists() {
-            return Err(EndpointError::HandleNotFound(name.to_owned()).into());
-        }
-
-        if !handle.children()?.is_empty() && !recursive {
-            return Err(EndpointError::RemoveChildrenOnNonRecursiveMode.into());
-        }
-
-        std::fs::remove_dir_all(handle.dir()).map_err(EndpointError::RemoveHandleFiles)?;
-
-        Ok(())
-    }
-
     pub fn handle_mv(&self, src: &str, dest: &str) -> QuartzResult {
         let src_handle = EndpointHandle::new(self, src.into());
         if !src_handle.exists() {
@@ -297,7 +284,7 @@ impl Quartz {
 
         // TODO: this might be one of the lazyest solutions so far
         self.handle_cp(true, src, dest)?;
-        self.handle_rm(true, src)?;
+        src_handle.delete(true)?;
 
         Ok(())
     }
@@ -319,7 +306,7 @@ impl Quartz {
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
         let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
-        let mut endpoint = handle.endpoint().ok_or(EndpointError::EmptyHandle)?;
+        let mut endpoint = handle.endpoint()?;
         let mut env = self.env()?;
         for var in variables {
             env.variables.set(&var)?;
@@ -504,7 +491,7 @@ impl Quartz {
         let mut path = handle.dir().join("body");
 
         let format = {
-            let endpoint = handle.endpoint().ok_or(EndpointError::EmptyHandle)?;
+            let endpoint = handle.endpoint()?;
 
             if let Some(content) = endpoint.headers.get("content-type") {
                 let ext = POSSIBLE_EXT.iter().find_map(|ext| {
