@@ -144,6 +144,25 @@ fn test_resolve_endpoint_url() {
 }
 
 #[test]
+fn test_multilevel_inheritance() {
+    let quartz = TestQuartz::empty();
+    let mut first_endpoint = quartz.handle_create("jsonplaceholder").unwrap();
+    first_endpoint.url = "https://jsonplaceholder.typicode.com".into();
+    first_endpoint.write().unwrap();
+
+    let mut second_endpoint = quartz.handle_create("jsonplaceholder/todos").unwrap();
+    second_endpoint.url = "**/todos".into();
+    second_endpoint.write().unwrap();
+
+    let mut third_endpoint = quartz.handle_create("jsonplaceholder/todos/first").unwrap();
+    third_endpoint.url = "**/1".into();
+    third_endpoint.write().unwrap();
+
+    let resolved = third_endpoint.resolved_url();
+    assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos/1");
+}
+
+#[test]
 fn test_resolve_endpoint_vars() {
     let quartz = TestQuartz::empty();
 
