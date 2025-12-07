@@ -205,30 +205,6 @@ fn it_does_not_allow_create_duplicate() -> TestResult {
 }
 
 #[test]
-fn it_can_run_from_another_handle() -> TestResult {
-    let quartz = Quartz::preset_using_sample_endpoint()?;
-
-    quartz.cmd(&["create", "anotherendpoint"])?;
-
-    let output = quartz.cmd(&["-x", "anotherendpoint", "show", "handle"])?;
-    assert!(output.status.success(), "{}", output.stderr);
-    assert_eq!(
-        output.stdout.trim(),
-        "anotherendpoint",
-        "did not use desired handle"
-    );
-
-    let output = quartz.cmd(&["show", "handle"])?;
-    assert_ne!(
-        output.stdout.trim(),
-        "anotherendpoint",
-        "changed endpoint state instead of only running once"
-    );
-
-    Ok(())
-}
-
-#[test]
 fn use_can_set_properties() -> TestResult {
     let quartz = Quartz::preset_using_sample_endpoint()?;
 

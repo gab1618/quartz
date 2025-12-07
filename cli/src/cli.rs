@@ -7,10 +7,6 @@ use quartz_core::snippet::Curl;
 #[command(author = "Eduardo R. <contato@edurodrigues.dev>")]
 #[command(about = "Text-based API Client", long_about = None, version)]
 pub struct Cli {
-    /// Run command with given handle
-    #[arg(short = 'x', value_name = "HANDLE")]
-    pub from_handle: Option<String>,
-
     #[command(subcommand)]
     pub command: Cmd,
 }

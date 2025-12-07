@@ -31,9 +31,6 @@ async fn entrypoint() -> QuartzCliResult {
     let curr_dir = current_dir().map_err(QuartzCliError::GetCurrentDir)?;
 
     let quartz = Quartz::new(curr_dir, home_dir)?;
-    if let Some(handle) = args.from_handle {
-        quartz.handle_switch(handle)?;
-    }
 
     // When true, ensures pagers and/or grep keeps the output colored
     colored::control::set_override(quartz.config().parse().ui.colors());
