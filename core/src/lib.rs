@@ -187,7 +187,7 @@ impl Quartz {
     pub fn config(&self) -> &ConfigManager {
         &self.config
     }
-    pub fn handle_create(&self, handle: &str) -> QuartzResult<Endpoint> {
+    pub fn handle_create(&self, handle: &str) -> QuartzResult<EndpointHandle<'_>> {
         if handle.is_empty() {
             return Err(EndpointError::EmptyHandle.into());
         }
@@ -204,7 +204,7 @@ impl Quartz {
         handle.write(&self)?;
         endpoint.write()?;
 
-        Ok(endpoint)
+        Ok(handle)
     }
 
     pub fn handle_switch(&self, mut handle: String) -> QuartzResult<EndpointHandle<'_>> {
