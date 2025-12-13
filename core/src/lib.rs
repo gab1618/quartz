@@ -96,12 +96,6 @@ impl Quartz {
             config,
         })
     }
-    pub fn make_handle_empty(&self) -> QuartzResult {
-        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
-        handle.make_empty();
-
-        Ok(())
-    }
     pub fn handle(&self) -> Option<EndpointHandle<'_>> {
         let curr_endpoint_name = StateField::Endpoint.get(self).ok();
 

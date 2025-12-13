@@ -44,7 +44,8 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
             let curr_endpoint = curr_handle.map(|handle| handle.endpoint()).unwrap()?;
             ctx.quartz.apply_endpoint_patch(curr_endpoint, args.patch)?;
             if args.empty {
-                ctx.quartz.make_handle_empty()?;
+                let curr_handle = ctx.quartz.handle();
+                curr_handle.map(|handle| handle.make_empty());
             }
         }
         Cmd::Ls(args) => {
