@@ -6,7 +6,7 @@ fn test_simple_cp_handle() {
     quartz.endpoint_create("testing").unwrap();
     quartz.handle_cp(false, "testing", "testing-copy").unwrap();
 
-    let found_handle = EndpointHandle::new(&quartz, "testing-copy".into());
+    let found_handle = quartz.new_handle("testing-copy");
     assert!(found_handle.exists());
 }
 
@@ -19,10 +19,10 @@ fn test_recursive_cp_handle() {
     quartz.endpoint_create("testing/ex2/sub").unwrap();
     quartz.handle_cp(true, "testing", "testing-copy").unwrap();
 
-    assert!(EndpointHandle::new(&quartz, "testing-copy".into()).exists());
-    assert!(EndpointHandle::new(&quartz, "testing-copy/ex".into()).exists());
-    assert!(EndpointHandle::new(&quartz, "testing-copy/ex2".into()).exists());
-    assert!(EndpointHandle::new(&quartz, "testing-copy/ex2/sub".into()).exists());
+    assert!(quartz.new_handle("testing-copy").exists());
+    assert!(quartz.new_handle("testing-copy/ex").exists());
+    assert!(quartz.new_handle("testing-copy/ex2").exists());
+    assert!(quartz.new_handle("testing-copy/ex2/sub").exists());
 }
 
 #[test]
@@ -34,10 +34,10 @@ fn test_non_recursive_cp_handle() {
     quartz.endpoint_create("testing/ex2/sub").unwrap();
     quartz.handle_cp(false, "testing", "testing-copy").unwrap();
 
-    assert!(EndpointHandle::new(&quartz, "testing-copy".into()).exists());
-    assert!(!EndpointHandle::new(&quartz, "testing-copy/ex".into()).exists());
-    assert!(!EndpointHandle::new(&quartz, "testing-copy/ex2".into()).exists());
-    assert!(!EndpointHandle::new(&quartz, "testing-copy/ex2/sub".into()).exists());
+    assert!(quartz.new_handle("testing-copy").exists());
+    assert!(!quartz.new_handle("testing-copy/ex").exists());
+    assert!(!quartz.new_handle("testing-copy/ex2").exists());
+    assert!(!quartz.new_handle("testing-copy/ex2/sub").exists());
 }
 
 #[test]
@@ -52,13 +52,13 @@ fn test_cp_endpoint_spec() {
     created_endpoint.write().unwrap();
     quartz.handle_cp(true, "testing", "testing-copy").unwrap();
 
-    let found_handle = EndpointHandle::new(&quartz, "testing-copy/ex2/sub".into());
+    let found_handle = quartz.new_handle("testing-copy/ex2/sub");
     assert!(found_handle.exists());
     let found_endpoint = found_handle.endpoint().unwrap();
     assert_eq!(found_endpoint.url, example_url);
 
     // Check if the original endpoint was somehow affected
-    let original_handle = EndpointHandle::new(&quartz, "testing/ex2/sub".into());
+    let original_handle = quartz.new_handle("testing/ex2/sub");
     let original_endpoint = original_handle.endpoint().unwrap();
     assert_eq!(original_endpoint.url, example_url)
 }
@@ -69,8 +69,9 @@ fn test_endpoint_removal() {
     quartz.endpoint_create("testing").unwrap();
     let handle = quartz.endpoint_create("testing/ex2").unwrap();
     handle.delete(false).unwrap();
-    assert!(!EndpointHandle::new(&quartz, "testing/ex2".into()).exists());
-    assert!(EndpointHandle::new(&quartz, "testing".into()).exists());
+
+    assert!(!quartz.new_handle("testing/ex2").exists());
+    assert!(quartz.new_handle("testing").exists());
 }
 
 #[test]
@@ -79,8 +80,9 @@ fn test_recursive_endpoint_removal() {
     let handle = quartz.endpoint_create("testing").unwrap();
     quartz.endpoint_create("testing/ex2").unwrap();
     handle.delete(true).unwrap();
-    assert!(!EndpointHandle::new(&quartz, "testing/ex2".into()).exists());
-    assert!(!EndpointHandle::new(&quartz, "testing".into()).exists());
+
+    assert!(!quartz.new_handle("testing/ex2").exists());
+    assert!(!quartz.new_handle("testing").exists());
 }
 
 #[test]
@@ -91,8 +93,8 @@ fn test_non_recursive_endpoint_removal() {
 
     assert!(handle.delete(false).is_err());
 
-    assert!(EndpointHandle::new(&quartz, "testing/ex2".into()).exists());
-    assert!(EndpointHandle::new(&quartz, "testing".into()).exists());
+    assert!(quartz.new_handle("testing/ex2").exists());
+    assert!(quartz.new_handle("testing").exists());
 }
 
 #[test]
@@ -101,8 +103,9 @@ fn test_mv_handle() {
     quartz.endpoint_create("testing").unwrap();
 
     quartz.handle_mv("testing", "new").unwrap();
-    assert!(EndpointHandle::new(&quartz, "new".into()).exists());
-    assert!(!EndpointHandle::new(&quartz, "testing".into()).exists());
+
+    assert!(quartz.new_handle("new").exists());
+    assert!(!quartz.new_handle("testing").exists());
 }
 
 #[test]
@@ -161,7 +164,9 @@ fn test_multilevel_inheritance() {
     second_endpoint.url = "**/todos".into();
     second_endpoint.write().unwrap();
 
-    let third_handle = quartz.endpoint_create("jsonplaceholder/todos/first").unwrap();
+    let third_handle = quartz
+        .endpoint_create("jsonplaceholder/todos/first")
+        .unwrap();
     let mut third_endpoint = third_handle.endpoint().unwrap();
     third_endpoint.url = "**/1".into();
     third_endpoint.write().unwrap();
