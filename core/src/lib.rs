@@ -116,12 +116,12 @@ impl Quartz {
         let env = EnvRef::new(self, name).ok();
         env
     }
-    pub fn create_env(&self, name: String) -> QuartzResult {
+    pub fn create_env(&self, name: String) -> QuartzResult<EnvRef<'_>> {
         let new_env = EnvRef::new(self, name)?;
 
         new_env.save()?;
 
-        Ok(())
+        Ok(new_env)
     }
     pub fn get_envs(&self) -> QuartzResult<Vec<String>> {
         let entries = std::fs::read_dir(self.path().join("env")).map_err(EnvError::GetEnvs)?;
