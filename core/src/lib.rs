@@ -123,16 +123,14 @@ impl Quartz {
 
         Ok(new_env)
     }
-    pub fn get_envs(&self) -> QuartzResult<Vec<String>> {
+    pub fn get_envs(&self) -> QuartzResult<impl Iterator<Item = QuartzResult<String>>> {
         let entries = std::fs::read_dir(self.path().join("env")).map_err(EnvError::GetEnvs)?;
-        let env_names = entries
-            .map(|entry| {
-                let ok_dir_entry = entry.map_err(EnvError::GetEnvs)?;
-                let filename = ok_dir_entry.file_name();
-                let str_filename = filename.to_str().ok_or(EnvError::ParseEnvName)?.to_owned();
-                Ok(str_filename)
-            })
-            .collect::<QuartzResult<Vec<String>>>()?;
+        let env_names = entries.map(|entry| {
+            let ok_dir_entry = entry.map_err(EnvError::GetEnvs)?;
+            let filename = ok_dir_entry.file_name();
+            let str_filename = filename.to_str().ok_or(EnvError::ParseEnvName)?.to_owned();
+            Ok(str_filename)
+        });
 
         Ok(env_names)
     }

@@ -12,8 +12,12 @@ fn get_default_env() {
 fn create_env() {
     let test_quartz = TestQuartz::empty();
     test_quartz.inner.create_env("dev".into()).unwrap();
-    let envs = test_quartz.inner.get_envs().unwrap();
-    let has_new_env = envs.into_iter().any(|entry| entry == "dev".to_string());
+    let mut envs = test_quartz.inner.get_envs().unwrap();
+    let has_new_env = envs.any(|entry| {
+        entry
+            .map(|entry| entry == "dev".to_string())
+            .unwrap_or(false)
+    });
     assert!(has_new_env);
 }
 

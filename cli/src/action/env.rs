@@ -27,7 +27,9 @@ pub struct RmArgs {
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     match command {
-        Cmd::Create(args) => ctx.quartz.create_env(args.name)?,
+        Cmd::Create(args) => {
+            ctx.quartz.create_env(args.name)?;
+        }
         Cmd::Cp(args) => {
             ctx.quartz.cp_env(args.src, args.dest)?;
         }
@@ -37,7 +39,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         Cmd::Ls => {
             let envs = ctx.quartz.get_envs()?;
             for env in envs {
-                println!("{env}");
+                println!("{}", env?);
             }
         }
         Cmd::Rm(args) => ctx.quartz.remove_env(args.env)?,
