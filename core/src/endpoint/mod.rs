@@ -208,8 +208,8 @@ impl<'a> EndpointHandle<'a> {
     }
 
     /// Records files to build this endpoint with `parse` methods.
-    pub fn write(&self, quartz: &Quartz) -> QuartzResult {
-        let mut dir = quartz.path().join("endpoints");
+    pub fn write(&self) -> QuartzResult {
+        let mut dir = self.quartz.path().join("endpoints");
         for entry in self.path.iter() {
             dir = dir.join(Endpoint::name_to_dir(entry));
 

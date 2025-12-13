@@ -195,7 +195,7 @@ impl Quartz {
         let mut endpoint = Endpoint::default();
         endpoint.set_handle(&handle);
 
-        handle.write(&self)?;
+        handle.write()?;
         endpoint.write()?;
 
         Ok(handle)
@@ -240,7 +240,7 @@ impl Quartz {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
         let dest_handle = EndpointHandle::new(self, dest.into());
-        dest_handle.write(self)?;
+        dest_handle.write()?;
         let mut endpoint = src_handle.endpoint()?;
         endpoint.set_handle(&dest_handle);
         endpoint.write()?;
@@ -248,7 +248,7 @@ impl Quartz {
         if recursive {
             for child in src_handle.children()? {
                 let child_name = child.handle();
-                let mut new_handle = EndpointHandle::new(self, child.path.clone());
+                let mut new_handle = EndpointHandle::new(self, child.path);
 
                 // Replace original prefix with the dest one
                 let dest_handle_prefix = dest_handle
