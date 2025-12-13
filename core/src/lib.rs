@@ -162,8 +162,6 @@ impl Quartz {
         let src = EnvRef::new(&self, src)?;
         let mut dest = EnvRef::new(&self, dest)?;
 
-        println!("{:?}", src.variables.0.keys());
-
         for (key, value) in src.variables.iter() {
             dest.variables.insert(key.to_string(), value.to_string());
         }
