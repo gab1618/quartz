@@ -205,3 +205,21 @@ fn test_handle_parent() {
     let second_parent = second_handle.parent().unwrap();
     assert_eq!(second_parent.head(), "first");
 }
+
+#[test]
+fn test_resolve_body() {
+    let quartz = TestQuartz::empty();
+    let mut default_env = quartz.env().unwrap();
+
+    let first_handle = quartz.new_handle("first");
+    first_handle.write().unwrap();
+
+    assert_eq!(first_handle.body(), None);
+    first_handle.set_body("{{testing}}".into()).unwrap();
+
+    let raw_body = first_handle.body();
+    assert_eq!(raw_body, Some("{{testing}}".into()));
+
+    default_env.var_set("testing".into(), "1".into()).unwrap();
+    assert_eq!(first_handle.resolved_body(&default_env), Some("1".into()));
+}

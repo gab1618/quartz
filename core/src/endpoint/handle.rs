@@ -1,6 +1,17 @@
-use std::{io::Write, ops::{Deref, DerefMut}, path::PathBuf};
+use std::{
+    fs::OpenOptions,
+    io::Write,
+    ops::{Deref, DerefMut},
+    path::PathBuf,
+};
 
-use crate::{endpoint::{error::EndpointError, Endpoint}, error::{QuartzError, QuartzResult}, state::StateField, Quartz};
+use crate::{
+    Quartz,
+    endpoint::{Endpoint, error::EndpointError},
+    env::EnvRef,
+    error::{QuartzError, QuartzResult},
+    state::StateField,
+};
 
 #[derive(Clone)]
 pub struct EndpointHandlePath(pub Vec<String>);
@@ -168,6 +179,41 @@ impl<'a> EndpointHandle<'a> {
         }
 
         std::fs::remove_dir_all(self.dir()).map_err(EndpointError::RemoveHandleFiles)?;
+
+        Ok(())
+    }
+    fn body_file_path(&self) -> PathBuf {
+        self.dir().join("body")
+    }
+    pub fn body(&self) -> Option<String> {
+        let body_content = std::fs::read_to_string(self.body_file_path()).ok();
+
+        body_content
+    }
+
+    fn key_match_str(key: &str) -> String {
+        format!("{{{{{}}}}}", key)
+    }
+    pub fn resolved_body(&self, env: &EnvRef) -> Option<String> {
+        let raw_body = self.body();
+        let resolved = raw_body.map(|mut inner| {
+            for (key, value) in env.vars().iter() {
+                let key_match = Self::key_match_str(&key);
+                inner = inner.replace(&key_match, value);
+            }
+            inner
+        });
+        resolved
+    }
+    pub fn set_body(&self, body: String) -> QuartzResult {
+        let mut f = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(self.body_file_path())
+            .map_err(|_| QuartzError::Internal)?;
+        f.write_all(body.as_bytes())
+            .map_err(|_| QuartzError::Internal)?;
 
         Ok(())
     }

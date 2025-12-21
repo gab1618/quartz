@@ -12,7 +12,6 @@ use crate::endpoint::error::EndpointError;
 use crate::endpoint::handle::EndpointHandle;
 use crate::endpoint::resolved_endpoint::ResolvedEndpoint;
 use crate::env::EnvRef;
-use crate::env::env::Env;
 use crate::error::{QuartzError, QuartzResult};
 use crate::headers::Headers;
 use crate::pairmap::PairMap;
@@ -74,9 +73,6 @@ pub struct Endpoint {
 
     #[serde(skip_serializing, skip_deserializing)]
     pub path: PathBuf,
-
-    #[serde(skip_serializing, skip_deserializing)]
-    pub body: Option<String>,
 }
 
 #[derive(Debug, clap::Args)]
@@ -178,15 +174,9 @@ impl Endpoint {
         }
 
         if let Some(data) = &src.data {
-            if let Some(maybe_json) = &data.json {
+            if let Some(_maybe_json) = &data.json {
                 self.headers
                     .insert("Content-type".into(), "application/json".into());
-
-                if let Some(json) = maybe_json {
-                    self.body = Some(json.to_owned());
-                }
-            } else if let Some(raw) = &data.raw {
-                self.body = Some(raw.to_owned());
             }
         }
 
@@ -202,27 +192,7 @@ impl Endpoint {
         format!("{{{{{}}}}}", key)
     }
 
-    pub fn load_body(&mut self, env: &Env) -> Option<&String> {
-        match std::fs::read_to_string(self.path.join("body")) {
-            Ok(mut content) => {
-                for (key, value) in env.vars().iter() {
-                    let key_match = Self::key_match_str(&key);
-
-                    content = content.replace(&key_match, value);
-                }
-
-                if content.trim().is_empty() {
-                    return None;
-                }
-
-                self.body = Some(content.to_owned());
-                self.body.as_ref()
-            }
-            Err(_) => None,
-        }
-    }
-
-    pub fn body(&mut self) -> Option<String> {
+    pub fn body(&self) -> Option<String> {
         let raw_body = std::fs::read_to_string(self.path.join("body")).ok();
         raw_body
     }
@@ -352,7 +322,7 @@ impl Endpoint {
     }
 
     /// Returns the a [`Request`] consuming struct.
-    pub fn into_request(mut self) -> Result<Request<Body>, hyper::http::Error> {
+    pub fn into_request(self) -> Result<Request<Body>, hyper::http::Error> {
         let mut builder = hyper::Request::builder().uri(&self.full_url()?);
 
         if let Ok(method) = hyper::Method::from_bytes(self.method.as_bytes()) {
@@ -423,7 +393,6 @@ impl Default for Endpoint {
             headers: Default::default(),
             query: Default::default(),
             path: Default::default(),
-            body: Default::default(),
         }
     }
 }
