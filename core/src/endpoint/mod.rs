@@ -8,18 +8,18 @@ use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
-use crate::endpoint::handle::EndpointHandle;
 use crate::endpoint::error::EndpointError;
+use crate::endpoint::handle::EndpointHandle;
 use crate::endpoint::resolved_endpoint::ResolvedEndpoint;
 use crate::env::EnvRef;
-use crate::env::env::Variables;
+use crate::env::env::Env;
 use crate::error::{QuartzError, QuartzResult};
 use crate::headers::Headers;
 use crate::pairmap::PairMap;
 
 pub mod error;
-pub mod resolved_endpoint;
 pub mod handle;
+pub mod resolved_endpoint;
 
 #[cfg(test)]
 mod tests;
@@ -59,8 +59,6 @@ impl PairMap<'_> for Query {
     }
 }
 
-
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Endpoint {
     pub url: String,
@@ -73,10 +71,6 @@ pub struct Endpoint {
 
     /// List of (key, value) pairs.
     pub headers: Headers,
-
-    /// Variable values applied from a [`Env`]
-    #[serde(skip_serializing, skip_deserializing)]
-    pub variables: Variables,
 
     #[serde(skip_serializing, skip_deserializing)]
     pub path: PathBuf,
@@ -208,10 +202,10 @@ impl Endpoint {
         format!("{{{{{}}}}}", key)
     }
 
-    pub fn load_body(&mut self) -> Option<&String> {
+    pub fn load_body(&mut self, env: &Env) -> Option<&String> {
         match std::fs::read_to_string(self.path.join("body")) {
             Ok(mut content) => {
-                for (key, value) in self.variables.iter() {
+                for (key, value) in env.vars().iter() {
                     let key_match = Self::key_match_str(&key);
 
                     content = content.replace(&key_match, value);
@@ -228,12 +222,9 @@ impl Endpoint {
         }
     }
 
-    pub fn body(&mut self) -> Option<&String> {
-        if self.body.is_some() {
-            self.body.as_ref()
-        } else {
-            self.load_body()
-        }
+    pub fn body(&mut self) -> Option<String> {
+        let raw_body = std::fs::read_to_string(self.path.join("body")).ok();
+        raw_body
     }
 
     pub fn set_handle(&mut self, handle: &EndpointHandle) {
@@ -250,18 +241,18 @@ impl Endpoint {
         }
     }
 
-    pub fn resolve_url(&mut self) {
-        let resolved = self.resolved_url();
+    pub fn resolve_url(&mut self, env: &EnvRef) {
+        let resolved = self.resolved_url(env);
         self.url = resolved;
     }
     /// Inherits parent URL when it starts with "**".
-    pub fn resolved_url(&self) -> String {
+    pub fn resolved_url(&self, env: &EnvRef) -> String {
         let mut full_url = self.url.clone();
         if self.url.starts_with("**") {
             full_url = self
                 .parent()
                 .map(|p| {
-                    let mut parent_resolved = p.resolved_url();
+                    let mut parent_resolved = p.resolved_url(env);
                     if parent_resolved.ends_with('/') {
                         parent_resolved.pop();
                     }
@@ -270,7 +261,7 @@ impl Endpoint {
                 .unwrap_or(self.url.clone());
         }
 
-        for (key, value) in self.variables.iter() {
+        for (key, value) in env.vars().iter() {
             let key_match = Self::key_match_str(&key);
             full_url = full_url.replace(&key_match, value);
         }
@@ -278,7 +269,7 @@ impl Endpoint {
     }
 
     pub fn apply_env(&mut self, env: &EnvRef) {
-        self.resolve_url();
+        self.resolve_url(env);
 
         for (key, value) in env.variables.iter() {
             let key_match = Self::key_match_str(&key);
@@ -308,18 +299,16 @@ impl Endpoint {
                 })
                 .collect();
         }
-
-        self.variables = env.variables.clone();
     }
 
-    pub fn as_resolved(&self) -> ResolvedEndpoint {
+    pub fn as_resolved(&self, env: &EnvRef) -> ResolvedEndpoint {
         let mut resolved = ResolvedEndpoint {
-            url: self.resolved_url(),
+            url: self.resolved_url(env),
             method: Default::default(),
             headers: Default::default(),
             body: Default::default(),
         };
-        for (key, value) in self.variables.iter() {
+        for (key, value) in env.vars().iter() {
             let key_match = Self::key_match_str(&key);
 
             resolved.method = self.method.replace(&key_match, value);
@@ -432,7 +421,6 @@ impl Default for Endpoint {
             method: String::from("GET"),
             url: Default::default(),
             headers: Default::default(),
-            variables: Default::default(),
             query: Default::default(),
             path: Default::default(),
             body: Default::default(),

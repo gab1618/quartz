@@ -348,7 +348,7 @@ impl Quartz {
         endpoint.update(&mut patch)?;
         endpoint.apply_env(&env);
 
-        let body = endpoint.body().cloned();
+        let body = endpoint.body().clone();
 
         let mut res: hyper::Response<Body>;
 

@@ -136,6 +136,7 @@ fn test_mv_handle_overwrite() {
 #[test]
 fn test_resolve_endpoint_url() {
     let quartz = TestQuartz::empty();
+    let default_env = quartz.env().unwrap();
 
     let first_handle = quartz.endpoint_create("jsonplaceholder").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
@@ -147,13 +148,14 @@ fn test_resolve_endpoint_url() {
     sub_endpoint.url = "**/todos".into();
     sub_endpoint.write().unwrap();
 
-    let resolved = sub_endpoint.resolved_url();
+    let resolved = sub_endpoint.resolved_url(&default_env);
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos");
 }
 
 #[test]
 fn test_multilevel_inheritance() {
     let quartz = TestQuartz::empty();
+    let default_env = quartz.env().unwrap();
     let first_handle = quartz.endpoint_create("jsonplaceholder").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com".into();
@@ -171,21 +173,23 @@ fn test_multilevel_inheritance() {
     third_endpoint.url = "**/1".into();
     third_endpoint.write().unwrap();
 
-    let resolved = third_endpoint.resolved_url();
+    let resolved = third_endpoint.resolved_url(&default_env);
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos/1");
 }
 
 #[test]
 fn test_resolve_endpoint_vars() {
     let quartz = TestQuartz::empty();
+    let mut default_env = quartz.env().unwrap();
 
     let first_handle = quartz.endpoint_create("jsonplaceholder").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/{{id}}".into();
-    first_endpoint.variables.insert("id".into(), "1".into());
+    default_env.var_set("id".into(), "1".into()).unwrap();
+    default_env.save().unwrap();
     first_endpoint.write().unwrap();
 
-    let resolved = first_endpoint.as_resolved();
+    let resolved = first_endpoint.as_resolved(&default_env);
     assert_eq!(resolved.url, "https://jsonplaceholder.typicode.com/todos/1");
 }
 
