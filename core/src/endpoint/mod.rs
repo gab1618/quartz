@@ -197,6 +197,13 @@ impl<'a> EndpointHandle<'a> {
 
         result
     }
+    pub fn parent(&self) -> QuartzResult<Self> {
+        let mut parent_path = self.path.clone();
+        if parent_path.pop().is_none() {
+            return Err(QuartzError::Internal);
+        }
+        Ok(Self::new(self.quartz, parent_path))
+    }
 
     pub fn handle(&self) -> String {
         self.path.join("/")

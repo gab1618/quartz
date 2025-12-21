@@ -188,3 +188,16 @@ fn test_resolve_endpoint_vars() {
     let resolved = first_endpoint.as_resolved();
     assert_eq!(resolved.url, "https://jsonplaceholder.typicode.com/todos/1");
 }
+
+#[test]
+fn test_handle_parent() {
+    let quartz = TestQuartz::empty();
+
+    let first_handle = quartz.new_handle("first");
+    let second_handle = quartz.new_handle("first/sub");
+    assert_eq!(first_handle.head(), "first");
+    assert_eq!(second_handle.head(), "sub");
+
+    let second_parent = second_handle.parent().unwrap();
+    assert_eq!(second_parent.head(), "first");
+}
