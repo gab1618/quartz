@@ -12,6 +12,7 @@ pub mod state;
 #[cfg(test)]
 mod tests;
 
+use crate::endpoint::handle::EndpointHandlePath;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -24,7 +25,6 @@ use hyper::{Body, Client, Uri};
 
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
-use crate::endpoint::EndpointHandlePath;
 use crate::endpoint::error::EndpointError;
 use crate::env::error::EnvError;
 use crate::error::{QuartzError, QuartzResult};
@@ -32,7 +32,7 @@ use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
 use crate::{
-    endpoint::{EndpointHandle, EndpointPatch},
+    endpoint::{EndpointPatch, handle::EndpointHandle},
     env::EnvRef,
     state::StateField,
 };

@@ -1,0 +1,174 @@
+use std::{io::Write, ops::{Deref, DerefMut}, path::PathBuf};
+
+use crate::{endpoint::{error::EndpointError, Endpoint}, error::{QuartzError, QuartzResult}, state::StateField, Quartz};
+
+#[derive(Clone)]
+pub struct EndpointHandlePath(pub Vec<String>);
+
+impl Deref for EndpointHandlePath {
+    type Target = Vec<String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for EndpointHandlePath {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T> From<T> for EndpointHandlePath
+where
+    T: AsRef<str>,
+{
+    fn from(value: T) -> Self {
+        let path: Vec<String> = value
+            .as_ref()
+            .trim_matches('/')
+            .split('/')
+            .map(|s| s.to_string())
+            .collect();
+
+        Self(path)
+    }
+}
+
+#[derive(Clone)]
+pub struct EndpointHandle<'a> {
+    quartz: &'a Quartz,
+    /// List of ordered parent names
+    pub path: EndpointHandlePath,
+}
+impl<'a> EndpointHandle<'a> {
+    pub fn new(quartz: &'a Quartz, path: EndpointHandlePath) -> Self {
+        Self { quartz, path }
+    }
+
+    pub fn from_state(quartz: &'a Quartz) -> Option<Self> {
+        if let Ok(handle) = StateField::Endpoint.get(quartz) {
+            if handle.is_empty() {
+                return None;
+            }
+
+            return Some(EndpointHandle::new(quartz, handle.into()));
+        }
+
+        None
+    }
+
+    pub fn head(&self) -> String {
+        self.path.last().unwrap_or(&String::new()).clone()
+    }
+
+    pub fn dir(&self) -> PathBuf {
+        let mut result = self.quartz.path().join("endpoints");
+
+        for parent in self.path.iter() {
+            let name = Endpoint::name_to_dir(parent);
+
+            result = result.join(name);
+        }
+
+        result
+    }
+    pub fn parent(&self) -> QuartzResult<Self> {
+        let mut parent_path = self.path.clone();
+        if parent_path.pop().is_none() {
+            return Err(QuartzError::Internal);
+        }
+        Ok(Self::new(self.quartz, parent_path))
+    }
+
+    pub fn handle(&self) -> String {
+        self.path.join("/")
+    }
+
+    pub fn exists(&self) -> bool {
+        let path = self.dir();
+        path.exists()
+    }
+
+    /// Records files to build this endpoint with `parse` methods.
+    pub fn write(&self) -> QuartzResult {
+        let mut dir = self.quartz.path().join("endpoints");
+        for entry in self.path.iter() {
+            dir = dir.join(Endpoint::name_to_dir(entry));
+
+            std::fs::create_dir_all(&dir).map_err(EndpointError::SaveHandle)?;
+
+            let mut file = std::fs::OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .create(true)
+                .open(dir.join("spec"))
+                .map_err(EndpointError::SaveHandle)?;
+
+            file.write_all(entry.as_bytes())
+                .map_err(EndpointError::SaveHandle)?;
+        }
+
+        std::fs::create_dir_all(self.dir()).map_err(EndpointError::SaveHandle)?;
+
+        Ok(())
+    }
+
+    /// Removes endpoint to make it an empty handle
+    pub fn make_empty(&self) {
+        if self.endpoint().is_ok() {
+            let _ = std::fs::remove_file(self.dir().join("endpoint.toml"));
+            let _ = std::fs::remove_file(self.dir().join("body"));
+        }
+    }
+
+    pub fn depth(&self) -> usize {
+        self.path.len()
+    }
+
+    pub fn children(&self) -> QuartzResult<Vec<EndpointHandle<'_>>> {
+        let paths = std::fs::read_dir(self.dir()).map_err(EndpointError::GetHandleChildren)?;
+        let valid_paths = paths
+            .filter(|entry| entry.is_ok())
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| path.is_dir());
+
+        let list = valid_paths
+            .map(|path| {
+                let spec_file_path = path.join("spec");
+                let raw_spec_content =
+                    std::fs::read(spec_file_path).map_err(EndpointError::GetHandleChildren)?;
+                let spec = String::from_utf8(raw_spec_content)
+                    .map_err(|_| EndpointError::ParseHandleSpec)?;
+
+                let mut path = self.path.clone();
+                path.push(spec);
+                Ok(EndpointHandle::new(self.quartz, path))
+            })
+            .collect::<QuartzResult<Vec<_>>>()?;
+
+        Ok(list)
+    }
+
+    #[must_use]
+    pub fn endpoint(&self) -> QuartzResult<Endpoint> {
+        Endpoint::from_dir(&self.dir())
+    }
+
+    pub fn replace(&mut self, from: &str, to: &str) {
+        let handle = self.handle().replace(from, to);
+        self.path = EndpointHandle::new(self.quartz, handle.into()).path;
+    }
+    pub fn delete(&self, recursive: bool) -> QuartzResult {
+        if !self.exists() {
+            return Err(EndpointError::HandleNotFound(self.handle()).into());
+        }
+
+        if !self.children()?.is_empty() && !recursive {
+            return Err(EndpointError::RemoveChildrenOnNonRecursiveMode.into());
+        }
+
+        std::fs::remove_dir_all(self.dir()).map_err(EndpointError::RemoveHandleFiles)?;
+
+        Ok(())
+    }
+}

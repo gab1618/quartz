@@ -1,4 +1,4 @@
-use quartz_core::{endpoint::EndpointHandle, error::QuartzResult, state::StateField};
+use quartz_core::{endpoint::handle::EndpointHandle, error::QuartzResult, state::StateField};
 
 use crate::ctx::Ctx;
 
