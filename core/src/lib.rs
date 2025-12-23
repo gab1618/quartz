@@ -21,7 +21,7 @@ use chrono::Utc;
 use endpoint::Endpoint;
 use hyper::body::{Bytes, HttpBody};
 use hyper::header::{HeaderName, HeaderValue};
-use hyper::{Body, Client, Uri};
+use hyper::{Body, Client, Request, Uri};
 
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
@@ -296,7 +296,11 @@ impl Quartz {
         aditional_cookie_jar: Option<PathBuf>,
     ) -> QuartzResult<Bytes> {
         let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
+        let curr_env = self.env()?;
         let mut endpoint = handle.endpoint()?;
+        endpoint.update(&mut patch)?;
+        let resolved_endpoint = endpoint.as_resolved(&curr_env);
+
         let mut env = self.env()?;
         for var in variables {
             env.variables.set(&var)?;
@@ -345,7 +349,6 @@ impl Quartz {
             .handle(handle.handle())
             .timestemp(Utc::now().timestamp_micros());
 
-        endpoint.update(&mut patch)?;
         endpoint.apply_env(&env);
 
         let body = endpoint.body().clone();
@@ -353,10 +356,10 @@ impl Quartz {
         let mut res: hyper::Response<Body>;
 
         loop {
-            let mut req = endpoint
+            let mut req: Request<_> = resolved_endpoint
                 // TODO: Find a way around this clone
                 .clone()
-                .into_request()
+                .try_into()
                 .unwrap_or_else(|_| panic!("malformed request"));
             for (key, val) in env.headers.iter() {
                 if !endpoint.headers.contains_key(key) {

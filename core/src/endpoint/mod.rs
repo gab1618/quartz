@@ -1,6 +1,6 @@
 use colored::Colorize;
+use hyper::Uri;
 use hyper::http::uri::InvalidUri;
-use hyper::{Body, Request, Uri};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -319,25 +319,6 @@ impl Endpoint {
         }
 
         result
-    }
-
-    /// Returns the a [`Request`] consuming struct.
-    pub fn into_request(self) -> Result<Request<Body>, hyper::http::Error> {
-        let mut builder = hyper::Request::builder().uri(&self.full_url()?);
-
-        if let Ok(method) = hyper::Method::from_bytes(self.method.as_bytes()) {
-            builder = builder.method(method);
-        }
-
-        for (key, value) in self.headers.iter() {
-            builder = builder.header(key, value);
-        }
-
-        if let Some(body) = self.body() {
-            builder.body(body.to_owned().into())
-        } else {
-            builder.body(Body::empty())
-        }
     }
 
     pub fn colored_method(&self) -> colored::ColoredString {
