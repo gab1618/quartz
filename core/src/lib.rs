@@ -300,7 +300,7 @@ impl Quartz {
         let curr_env = self.env()?;
         let mut endpoint = handle.endpoint()?;
         endpoint.update(&mut patch)?;
-        let resolved_endpoint = endpoint.as_resolved(&curr_env);
+        let resolved_endpoint = endpoint.as_resolved(&handle, &curr_env)?;
 
         let mut env = self.env()?;
         for var in variables {

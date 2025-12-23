@@ -148,7 +148,7 @@ fn test_resolve_endpoint_url() {
     sub_endpoint.url = "**/todos".into();
     sub_endpoint.write(&sub_handle).unwrap();
 
-    let resolved = sub_endpoint.resolved_url(&default_env);
+    let resolved = sub_endpoint.resolved_url(&sub_handle, &default_env).unwrap();
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos");
 }
 
@@ -173,7 +173,7 @@ fn test_multilevel_inheritance() {
     third_endpoint.url = "**/1".into();
     third_endpoint.write(&third_handle).unwrap();
 
-    let resolved = third_endpoint.resolved_url(&default_env);
+    let resolved = third_endpoint.resolved_url(&third_handle, &default_env).unwrap();
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos/1");
 }
 
@@ -189,7 +189,7 @@ fn test_resolve_endpoint_vars() {
     default_env.save().unwrap();
     first_endpoint.write(&first_handle).unwrap();
 
-    let resolved = first_endpoint.as_resolved(&default_env);
+    let resolved = first_endpoint.as_resolved(&first_handle, &default_env).unwrap();
     assert_eq!(resolved.url, "https://jsonplaceholder.typicode.com/todos/1");
 }
 

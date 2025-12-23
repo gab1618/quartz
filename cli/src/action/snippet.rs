@@ -26,7 +26,7 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> QuartzResult {
     }
 
     endpoint.update(&mut args.patch)?;
-    let resolved = endpoint.as_resolved(&env);
+    let resolved = endpoint.as_resolved(&handle, &env)?;
 
     let mut stdout = stdout();
     match args.command {

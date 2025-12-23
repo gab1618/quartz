@@ -207,29 +207,34 @@ impl Endpoint {
     }
 
     /// Inherits parent URL when it starts with "**".
-    pub fn resolved_url(&self, env: &EnvRef) -> String {
+    pub fn resolved_url(&self, handle: &EndpointHandle, env: &EnvRef) -> QuartzResult<String> {
         let mut full_url = self.url.clone();
         if self.url.starts_with("**") {
-            full_url = self
+            full_url = handle
                 .parent()
                 .map(|p| {
-                    let mut parent_resolved = p.resolved_url(env);
+                    let parent_endpoint = p.endpoint()?;
+                    let mut parent_resolved = parent_endpoint.resolved_url(&p, env)?;
                     if parent_resolved.ends_with('/') {
                         parent_resolved.pop();
                     }
-                    self.url.clone().replacen("**", &parent_resolved, 1).clone()
+                    QuartzResult::Ok(self.url.clone().replacen("**", &parent_resolved, 1).clone())
                 })
-                .unwrap_or(self.url.clone());
+                .unwrap_or(Ok(self.url.clone()))?;
         }
 
         for (key, value) in env.vars().iter() {
             let key_match = Self::key_match_str(&key);
             full_url = full_url.replace(&key_match, value);
         }
-        full_url
+        Ok(full_url)
     }
 
-    pub fn as_resolved(&mut self, env: &EnvRef) -> ResolvedEndpoint {
+    pub fn as_resolved(
+        &mut self,
+        handle: &EndpointHandle,
+        env: &EnvRef,
+    ) -> QuartzResult<ResolvedEndpoint> {
         for (key, value) in env.variables.iter() {
             let key_match = Self::key_match_str(&key);
             *self.query = self
@@ -244,7 +249,7 @@ impl Endpoint {
                 .collect();
         }
         let mut resolved = ResolvedEndpoint {
-            url: self.resolved_url(env),
+            url: self.resolved_url(handle, env)?,
             method: Default::default(),
             headers: Default::default(),
             body: Default::default(),
@@ -266,7 +271,7 @@ impl Endpoint {
                 .collect();
         }
 
-        resolved
+        Ok(resolved)
     }
 
     pub fn full_url(&self) -> Result<Uri, InvalidUri> {
