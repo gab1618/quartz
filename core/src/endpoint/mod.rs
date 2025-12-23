@@ -192,11 +192,6 @@ impl Endpoint {
         format!("{{{{{}}}}}", key)
     }
 
-    pub fn body(&self) -> Option<String> {
-        let raw_body = std::fs::read_to_string(self.path.join("body")).ok();
-        raw_body
-    }
-
     pub fn set_handle(&mut self, handle: &EndpointHandle) {
         self.path = handle.dir().to_path_buf();
     }

@@ -31,7 +31,7 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> QuartzResult {
     let mut stdout = stdout();
     match args.command {
         Cmd::Curl(curl) => curl.write(&mut stdout, resolved)?,
-        Cmd::Http => snippet::Http::write(&mut stdout, &mut endpoint)?,
+        Cmd::Http => snippet::Http::write(&mut stdout, resolved)?,
     };
 
     Ok(())

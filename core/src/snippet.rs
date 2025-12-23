@@ -1,7 +1,7 @@
 use std::{io::Write, ops::Deref};
 
-use crate::{Endpoint, QuartzError, QuartzResult, endpoint::resolved_endpoint::ResolvedEndpoint};
-use hyper::{Body, Request, Response};
+use crate::{QuartzError, QuartzResult, endpoint::resolved_endpoint::ResolvedEndpoint};
+use hyper::{Body, Request, Response, Uri};
 
 enum CurlOption {
     Location,
@@ -165,8 +165,8 @@ impl From<&Request<Body>> for Http {
 }
 
 impl Http {
-    pub fn write<W: Write>(w: &mut W, endpoint: &mut Endpoint) -> QuartzResult {
-        let url = endpoint.full_url().map_err(|_| QuartzError::Internal)?;
+    pub fn write<W: Write>(w: &mut W, endpoint: ResolvedEndpoint) -> QuartzResult {
+        let url: Uri = endpoint.url.try_into().map_err(|_| QuartzError::Internal)?;
         let path = url.path_and_query().unwrap();
 
         writeln!(w, "{} {} HTTP/1.1", endpoint.method, path.as_str())
@@ -174,7 +174,7 @@ impl Http {
         writeln!(w, "Host: {}", url.host().unwrap()).map_err(QuartzError::WriteSnippet)?;
         write!(w, "{}", endpoint.headers).map_err(QuartzError::WriteSnippet)?;
 
-        if let Some(body) = endpoint.body() {
+        if let Some(body) = endpoint.body {
             writeln!(w, "").map_err(QuartzError::WriteSnippet)?;
             write!(w, "{body}").map_err(QuartzError::WriteSnippet)?;
         }
