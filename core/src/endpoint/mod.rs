@@ -320,14 +320,14 @@ impl Endpoint {
         result.join("&")
     }
 
-    pub fn write(&mut self) -> QuartzResult {
+    pub fn write(&mut self, handle: &EndpointHandle) -> QuartzResult {
         let toml_content = self.to_toml()?;
 
         let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
-            .open(self.path.join("endpoint.toml"))
+            .open(handle.dir().join("endpoint.toml"))
             .map_err(EndpointError::SaveEndpoint)?;
 
         file.write_all(toml_content.as_bytes())

@@ -33,19 +33,20 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
             if args.switch {
                 ctx.quartz.handle_switch(args.handle)?;
             }
-            let endpoint = new_handle.endpoint()?;
-            ctx.quartz.apply_endpoint_patch(endpoint, args.patch)?;
+            ctx.quartz.apply_endpoint_patch(new_handle, args.patch)?;
         }
         Cmd::Use(args) => {
             let curr_handle = match args.handle {
                 Some(handle) => Some(ctx.quartz.handle_switch(handle)?),
                 None => ctx.quartz.handle(),
             };
-            let curr_endpoint = curr_handle.map(|handle| handle.endpoint()).unwrap()?;
-            ctx.quartz.apply_endpoint_patch(curr_endpoint, args.patch)?;
-            if args.empty {
-                let curr_handle = ctx.quartz.handle();
-                curr_handle.map(|handle| handle.make_empty());
+            if let Some(handle) = curr_handle {
+                ctx.quartz.apply_endpoint_patch(handle, args.patch)?;
+
+                if args.empty {
+                    let curr_handle = ctx.quartz.handle();
+                    curr_handle.map(|handle| handle.make_empty());
+                }
             }
         }
         Cmd::Ls(args) => {

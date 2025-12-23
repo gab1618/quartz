@@ -196,7 +196,7 @@ impl Quartz {
         endpoint.set_handle(&handle);
 
         handle.write()?;
-        endpoint.write()?;
+        endpoint.write(&handle)?;
 
         Ok(handle)
     }
@@ -225,11 +225,12 @@ impl Quartz {
 
     pub fn apply_endpoint_patch(
         &self,
-        mut endpoint: Endpoint,
+        handle: EndpointHandle,
         mut patch: EndpointPatch,
     ) -> QuartzResult {
+        let mut endpoint = handle.endpoint()?;
         endpoint.update(&mut patch)?;
-        endpoint.write()?;
+        endpoint.write(&handle)?;
 
         Ok(())
     }
@@ -243,7 +244,7 @@ impl Quartz {
         dest_handle.write()?;
         let mut endpoint = src_handle.endpoint()?;
         endpoint.set_handle(&dest_handle);
-        endpoint.write()?;
+        endpoint.write(&dest_handle)?;
 
         if recursive {
             for child in src_handle.children()? {
