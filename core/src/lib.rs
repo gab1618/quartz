@@ -193,7 +193,6 @@ impl Quartz {
         }
 
         let mut endpoint = Endpoint::default();
-        endpoint.set_handle(&handle);
 
         handle.write()?;
         endpoint.write(&handle)?;
@@ -243,7 +242,6 @@ impl Quartz {
         let dest_handle = EndpointHandle::new(self, dest.into());
         dest_handle.write()?;
         let mut endpoint = src_handle.endpoint()?;
-        endpoint.set_handle(&dest_handle);
         endpoint.write(&dest_handle)?;
 
         if recursive {

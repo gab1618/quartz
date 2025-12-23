@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::io::Write;
 use std::ops::{Deref, DerefMut};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::endpoint::error::EndpointError;
 use crate::endpoint::handle::EndpointHandle;
@@ -70,9 +70,6 @@ pub struct Endpoint {
 
     /// List of (key, value) pairs.
     pub headers: Headers,
-
-    #[serde(skip_serializing, skip_deserializing)]
-    pub path: PathBuf,
 }
 
 #[derive(Debug, clap::Args)]
@@ -130,10 +127,9 @@ impl TryFrom<&mut EndpointPatch> for Endpoint {
 }
 
 impl Endpoint {
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new() -> Self {
         Self {
             method: String::from("GET"),
-            path,
             ..Default::default()
         }
     }
@@ -146,8 +142,7 @@ impl Endpoint {
         let bytes = std::fs::read(dir.join("endpoint.toml")).map_err(|_| QuartzError::Internal)?;
         let content = String::from_utf8(bytes).map_err(|_| QuartzError::Internal)?;
 
-        let mut endpoint: Endpoint = toml::from_str(&content).map_err(|_| QuartzError::Internal)?;
-        endpoint.path = dir.to_path_buf();
+        let endpoint: Endpoint = toml::from_str(&content).map_err(|_| QuartzError::Internal)?;
 
         Ok(endpoint)
     }
@@ -190,20 +185,6 @@ impl Endpoint {
 
     fn key_match_str(key: &str) -> String {
         format!("{{{{{}}}}}", key)
-    }
-
-    pub fn set_handle(&mut self, handle: &EndpointHandle) {
-        self.path = handle.dir().to_path_buf();
-    }
-
-    pub fn parent(&self) -> Option<Self> {
-        let mut path = self.path.clone();
-
-        if path.pop() {
-            Self::from_dir(&path).ok()
-        } else {
-            None
-        }
     }
 
     /// Inherits parent URL when it starts with "**".
@@ -349,7 +330,6 @@ impl Default for Endpoint {
             url: Default::default(),
             headers: Default::default(),
             query: Default::default(),
-            path: Default::default(),
         }
     }
 }
