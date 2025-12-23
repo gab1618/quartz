@@ -349,9 +349,7 @@ impl Quartz {
             .handle(handle.handle())
             .timestemp(Utc::now().timestamp_micros());
 
-        endpoint.apply_env(&env);
-
-        let body = endpoint.body().clone();
+        let body = handle.body().clone();
 
         let mut res: hyper::Response<Body>;
 

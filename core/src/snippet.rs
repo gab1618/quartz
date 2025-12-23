@@ -1,6 +1,6 @@
 use std::{io::Write, ops::Deref};
 
-use crate::{Endpoint, QuartzError, QuartzResult};
+use crate::{Endpoint, QuartzError, QuartzResult, endpoint::resolved_endpoint::ResolvedEndpoint};
 use hyper::{Body, Request, Response};
 
 enum CurlOption {
@@ -22,14 +22,14 @@ pub struct Curl {
 }
 
 impl Curl {
-    pub fn write<W: Write>(&self, w: &mut W, endpoint: &mut Endpoint) -> QuartzResult {
+    pub fn write<W: Write>(&self, w: &mut W, endpoint: ResolvedEndpoint) -> QuartzResult {
         let separator = if self.multiline { " \\\n\t" } else { " " };
 
         write!(
             w,
             "curl {} '{}'",
             self.option_string(CurlOption::Location),
-            endpoint.full_url().unwrap()
+            endpoint.url
         )
         .map_err(QuartzError::WriteSnippet)?;
         write!(
@@ -52,7 +52,7 @@ impl Curl {
             .map_err(QuartzError::WriteSnippet)?;
         }
 
-        if let Some(body) = endpoint.body() {
+        if let Some(body) = endpoint.body {
             let mut body = body.to_owned();
             write!(w, "{}{} '", separator, self.option_string(CurlOption::Data))
                 .map_err(QuartzError::WriteSnippet)?;

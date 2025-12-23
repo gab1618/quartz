@@ -26,11 +26,11 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> QuartzResult {
     }
 
     endpoint.update(&mut args.patch)?;
-    endpoint.apply_env(&env);
+    let resolved = endpoint.as_resolved(&env);
 
     let mut stdout = stdout();
     match args.command {
-        Cmd::Curl(curl) => curl.write(&mut stdout, &mut endpoint)?,
+        Cmd::Curl(curl) => curl.write(&mut stdout, resolved)?,
         Cmd::Http => snippet::Http::write(&mut stdout, &mut endpoint)?,
     };
 

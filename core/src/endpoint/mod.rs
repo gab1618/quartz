@@ -211,10 +211,6 @@ impl Endpoint {
         }
     }
 
-    pub fn resolve_url(&mut self, env: &EnvRef) {
-        let resolved = self.resolved_url(env);
-        self.url = resolved;
-    }
     /// Inherits parent URL when it starts with "**".
     pub fn resolved_url(&self, env: &EnvRef) -> String {
         let mut full_url = self.url.clone();
@@ -238,26 +234,9 @@ impl Endpoint {
         full_url
     }
 
-    pub fn apply_env(&mut self, env: &EnvRef) {
-        self.resolve_url(env);
-
+    pub fn as_resolved(&mut self, env: &EnvRef) -> ResolvedEndpoint {
         for (key, value) in env.variables.iter() {
             let key_match = Self::key_match_str(&key);
-
-            self.url = self.url.replace(&key_match, value);
-            self.method = self.method.replace(&key_match, value);
-
-            *self.headers = self
-                .headers
-                .iter()
-                .map(|(h_key, h_value)| {
-                    let h_key = &h_key.replace(&key_match, value);
-                    let h_value = &h_value.replace(&key_match, value);
-
-                    (h_key.clone(), h_value.clone())
-                })
-                .collect();
-
             *self.query = self
                 .query
                 .iter()
@@ -269,9 +248,6 @@ impl Endpoint {
                 })
                 .collect();
         }
-    }
-
-    pub fn as_resolved(&self, env: &EnvRef) -> ResolvedEndpoint {
         let mut resolved = ResolvedEndpoint {
             url: self.resolved_url(env),
             method: Default::default(),
