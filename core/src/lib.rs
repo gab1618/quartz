@@ -18,7 +18,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 use chrono::Utc;
-use endpoint::Endpoint;
 use hyper::body::{Bytes, HttpBody};
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::{Body, Client, Request, Uri};
@@ -181,23 +180,6 @@ impl Quartz {
         let created = EndpointHandle::new(self, name.into());
         created
     }
-    pub fn endpoint_create(&self, handle: &str) -> QuartzResult<EndpointHandle<'_>> {
-        if handle.is_empty() {
-            return Err(EndpointError::EmptyHandle.into());
-        }
-
-        let handle = self.new_handle(handle);
-
-        if handle.exists() {
-            return Err(EndpointError::AlreadyExistingHandle.into());
-        }
-
-        let endpoint = Endpoint::default();
-
-        handle.write_endpoint(&endpoint)?;
-
-        Ok(handle)
-    }
 
     pub fn handle_switch(&self, mut handle: String) -> QuartzResult<EndpointHandle<'_>> {
         if handle == "-" {
@@ -239,9 +221,10 @@ impl Quartz {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
         let dest_handle = EndpointHandle::new(self, dest.into());
-        let endpoint = src_handle.endpoint()?;
-
-        dest_handle.write_endpoint(&endpoint)?;
+        dest_handle.ensure_dir()?;
+        if let Some(endpoint) = src_handle.endpoint().ok() {
+            dest_handle.write_endpoint(endpoint)?;
+        }
 
         if recursive {
             for child in src_handle.children()? {
@@ -249,12 +232,7 @@ impl Quartz {
                 let mut new_handle = EndpointHandle::new(self, child.path);
 
                 // Replace original prefix with the dest one
-                let dest_handle_prefix = dest_handle
-                    .path
-                    .iter()
-                    .next()
-                    .expect("Unreachable")
-                    .to_owned();
+                let dest_handle_prefix = dest_handle.path[0].clone();
                 let _ = std::mem::replace(&mut new_handle.path[0], dest_handle_prefix);
 
                 self.handle_cp(true, &child_name, &new_handle.handle())?;

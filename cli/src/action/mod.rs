@@ -29,7 +29,8 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
 
         Cmd::Send(args) => action::send::cmd(ctx, args).await?,
         Cmd::Create(args) => {
-            let new_handle = ctx.quartz.endpoint_create(&args.handle)?;
+            let new_handle = ctx.quartz.new_handle(&args.handle);
+            new_handle.write_endpoint(Endpoint::new())?;
             if args.switch {
                 ctx.quartz.handle_switch(args.handle)?;
             }
