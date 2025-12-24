@@ -105,7 +105,8 @@ impl<'a> EndpointHandle<'a> {
         Ok(())
     }
 
-    pub fn write_endpoint(&self, endpoint: &Endpoint) -> QuartzResult {
+    pub fn write_endpoint<E: AsRef<Endpoint>>(&self, endpoint: E) -> QuartzResult {
+        let endpoint = endpoint.as_ref();
         let toml_content = endpoint.to_toml()?;
         self.ensure_dir()?;
 

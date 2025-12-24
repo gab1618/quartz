@@ -71,6 +71,12 @@ pub struct Endpoint {
     pub headers: Headers,
 }
 
+impl AsRef<Endpoint> for Endpoint {
+    fn as_ref(&self) -> &Endpoint {
+        self
+    }
+}
+
 #[derive(Debug, clap::Args)]
 #[group(multiple = false)]
 pub struct ContentTypeGroup {
