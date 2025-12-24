@@ -12,7 +12,7 @@ pub mod state;
 #[cfg(test)]
 mod tests;
 
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -420,33 +420,6 @@ impl Quartz {
         let h = History::new(self.path.clone())?;
 
         Ok(h)
-    }
-    pub fn set_body(&self, input: String) -> QuartzResult {
-        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
-
-        let mut f = std::fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(true)
-            .open(handle.dir().join("body"))
-            .map_err(EndpointError::AccessHandleBody)?;
-
-        f.write_all(input.as_bytes())
-            .map_err(EndpointError::AccessHandleBody)?;
-
-        Ok(())
-    }
-    pub fn get_body(&self) -> QuartzResult<String> {
-        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
-        let mut f = std::fs::OpenOptions::new()
-            .read(true)
-            .open(handle.dir().join("body"))
-            .map_err(EndpointError::AccessHandleBody)?;
-        let mut body_content = String::new();
-        f.read_to_string(&mut body_content)
-            .map_err(EndpointError::AccessHandleBody)?;
-
-        Ok(body_content)
     }
     pub fn body_file_path(&self) -> QuartzResult<PathBuf> {
         const POSSIBLE_EXT: [&str; 3] = ["json", "html", "xml"];

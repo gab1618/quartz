@@ -47,5 +47,7 @@ pub fn stdin(ctx: Ctx) {
         }
     }
 
-    ctx.quartz.set_body(input).unwrap();
+    if let Some(curr_handle) = ctx.quartz.handle() {
+        curr_handle.set_body(input).unwrap();
+    }
 }
