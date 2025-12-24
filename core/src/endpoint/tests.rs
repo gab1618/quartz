@@ -49,7 +49,7 @@ fn test_cp_endpoint_spec() {
     let mut created_endpoint = created_handle.endpoint().unwrap();
     let example_url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
     created_endpoint.url = example_url.clone();
-    created_endpoint.write(&created_handle).unwrap();
+    created_handle.write_endpoint(&created_endpoint).unwrap();
     quartz.handle_cp(true, "testing", "testing-copy").unwrap();
 
     let found_handle = quartz.new_handle("testing-copy/ex2/sub");
@@ -114,11 +114,11 @@ fn test_mv_handle_overwrite() {
     let first_handle = quartz.endpoint_create("testing").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
-    first_endpoint.write(&first_handle).unwrap();
+    first_handle.write_endpoint(&first_endpoint).unwrap();
     let second_handle = quartz.endpoint_create("new").unwrap();
     let mut second_endpoint = second_handle.endpoint().unwrap();
     second_endpoint.url = "https://jsonplaceholder.typicode.com/todos/2".to_owned();
-    second_endpoint.write(&second_handle).unwrap();
+    second_handle.write_endpoint(&second_endpoint).unwrap();
 
     quartz.handle_mv("testing", "new").unwrap();
 
@@ -141,12 +141,12 @@ fn test_resolve_endpoint_url() {
     let first_handle = quartz.endpoint_create("jsonplaceholder").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com".into();
-    first_endpoint.write(&first_handle).unwrap();
+    first_handle.write_endpoint(&first_endpoint).unwrap();
 
     let sub_handle = quartz.endpoint_create("jsonplaceholder/todos").unwrap();
     let mut sub_endpoint = sub_handle.endpoint().unwrap();
     sub_endpoint.url = "**/todos".into();
-    sub_endpoint.write(&sub_handle).unwrap();
+    sub_handle.write_endpoint(&sub_endpoint).unwrap();
 
     let resolved = sub_endpoint.resolved_url(&sub_handle, &default_env).unwrap();
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos");
@@ -159,19 +159,19 @@ fn test_multilevel_inheritance() {
     let first_handle = quartz.endpoint_create("jsonplaceholder").unwrap();
     let mut first_endpoint = first_handle.endpoint().unwrap();
     first_endpoint.url = "https://jsonplaceholder.typicode.com".into();
-    first_endpoint.write(&first_handle).unwrap();
+    first_handle.write_endpoint(&first_endpoint).unwrap();
 
     let second_handle = quartz.endpoint_create("jsonplaceholder/todos").unwrap();
     let mut second_endpoint = second_handle.endpoint().unwrap();
     second_endpoint.url = "**/todos".into();
-    second_endpoint.write(&second_handle).unwrap();
+    second_handle.write_endpoint(&second_endpoint).unwrap();
 
     let third_handle = quartz
         .endpoint_create("jsonplaceholder/todos/first")
         .unwrap();
     let mut third_endpoint = third_handle.endpoint().unwrap();
     third_endpoint.url = "**/1".into();
-    third_endpoint.write(&third_handle).unwrap();
+    third_handle.write_endpoint(&third_endpoint).unwrap();
 
     let resolved = third_endpoint.resolved_url(&third_handle, &default_env).unwrap();
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos/1");
@@ -187,7 +187,7 @@ fn test_resolve_endpoint_vars() {
     first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/{{id}}".into();
     default_env.var_set("id".into(), "1".into()).unwrap();
     default_env.save().unwrap();
-    first_endpoint.write(&first_handle).unwrap();
+    first_handle.write_endpoint(&first_endpoint).unwrap();
 
     let resolved = first_endpoint.as_resolved(&first_handle, &default_env).unwrap();
     assert_eq!(resolved.url, "https://jsonplaceholder.typicode.com/todos/1");

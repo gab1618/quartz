@@ -192,10 +192,10 @@ impl Quartz {
             return Err(EndpointError::AlreadyExistingHandle.into());
         }
 
-        let mut endpoint = Endpoint::default();
+        let endpoint = Endpoint::default();
 
         handle.write()?;
-        endpoint.write(&handle)?;
+        handle.write_endpoint(&endpoint)?;
 
         Ok(handle)
     }
@@ -229,7 +229,7 @@ impl Quartz {
     ) -> QuartzResult {
         let mut endpoint = handle.endpoint()?;
         endpoint.update(&mut patch)?;
-        endpoint.write(&handle)?;
+        handle.write_endpoint(&endpoint)?;
 
         Ok(())
     }
@@ -241,8 +241,9 @@ impl Quartz {
         }
         let dest_handle = EndpointHandle::new(self, dest.into());
         dest_handle.write()?;
-        let mut endpoint = src_handle.endpoint()?;
-        endpoint.write(&dest_handle)?;
+        let endpoint = src_handle.endpoint()?;
+
+        dest_handle.write_endpoint(&endpoint)?;
 
         if recursive {
             for child in src_handle.children()? {

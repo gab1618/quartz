@@ -50,7 +50,7 @@ pub fn set(ctx: Ctx, queries: Vec<String>) -> QuartzResult {
         endpoint.query.set(&input)?;
     }
 
-    endpoint.write(&handle)?;
+    handle.write_endpoint(&endpoint)?;
 
     Ok(())
 }
@@ -68,7 +68,7 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
         }
     }
 
-    endpoint.write(&handle)?;
+    handle.write_endpoint(&endpoint)?;
     Ok(())
 }
 

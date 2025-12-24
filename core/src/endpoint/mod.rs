@@ -4,7 +4,6 @@ use hyper::http::uri::InvalidUri;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::io::Write;
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
@@ -304,22 +303,6 @@ impl Endpoint {
 
         result.sort();
         result.join("&")
-    }
-
-    pub fn write(&mut self, handle: &EndpointHandle) -> QuartzResult {
-        let toml_content = self.to_toml()?;
-
-        let mut file = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(handle.dir().join("endpoint.toml"))
-            .map_err(EndpointError::SaveEndpoint)?;
-
-        file.write_all(toml_content.as_bytes())
-            .map_err(EndpointError::SaveEndpoint)?;
-
-        Ok(())
     }
 }
 

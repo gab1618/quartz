@@ -26,7 +26,7 @@ pub fn set(ctx: Ctx, name: String, value: String) -> QuartzResult {
     let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
     endpoint.headers.0.insert(name, value);
-    endpoint.write(&handle)?;
+    handle.write_endpoint(&endpoint)?;
     Ok(())
 }
 
@@ -43,7 +43,7 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
         }
     }
 
-    endpoint.write(&handle)?;
+    handle.write_endpoint(&endpoint)?;
     Ok(())
 }
 

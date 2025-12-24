@@ -123,6 +123,20 @@ impl<'a> EndpointHandle<'a> {
 
         Ok(())
     }
+    pub fn write_endpoint(&self, endpoint: &Endpoint) -> QuartzResult {
+        let toml_content = endpoint.to_toml()?;
+
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(self.dir().join("endpoint.toml"))
+            .map_err(EndpointError::SaveEndpoint)?;
+
+        file.write_all(toml_content.as_bytes())
+            .map_err(EndpointError::SaveEndpoint)?;
+        Ok(())
+    }
 
     /// Removes endpoint to make it an empty handle
     pub fn make_empty(&self) {
