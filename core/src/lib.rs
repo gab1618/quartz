@@ -223,7 +223,7 @@ impl Quartz {
 
     pub fn apply_endpoint_patch(
         &self,
-        handle: EndpointHandle,
+        handle: &EndpointHandle,
         mut patch: EndpointPatch,
     ) -> QuartzResult {
         let mut endpoint = handle.endpoint()?;

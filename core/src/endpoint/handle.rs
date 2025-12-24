@@ -99,11 +99,15 @@ impl<'a> EndpointHandle<'a> {
         let path = self.dir();
         path.exists()
     }
+    pub fn ensure_dir(&self) -> QuartzResult {
+        std::fs::create_dir_all(self.dir()).map_err(EndpointError::SaveEndpoint)?;
+
+        Ok(())
+    }
 
     pub fn write_endpoint(&self, endpoint: &Endpoint) -> QuartzResult {
         let toml_content = endpoint.to_toml()?;
-
-        std::fs::create_dir_all(self.dir()).map_err(EndpointError::SaveEndpoint)?;
+        self.ensure_dir()?;
 
         let mut file = std::fs::OpenOptions::new()
             .write(true)
@@ -198,7 +202,7 @@ impl<'a> EndpointHandle<'a> {
         resolved
     }
     pub fn set_body(&self, body: String) -> QuartzResult {
-        std::fs::create_dir_all(self.dir()).map_err(|_| QuartzError::Internal)?;
+        self.ensure_dir()?;
         let mut f = OpenOptions::new()
             .write(true)
             .create(true)
