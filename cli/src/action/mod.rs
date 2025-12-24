@@ -55,12 +55,10 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
         }
         Cmd::Show { command } => action::show::cmd(ctx, command)?,
         Cmd::Edit => {
-            let endpoint_path = ctx
-                .quartz
-                .handle_endpoint_file_path()
-                .ok_or(QuartzError::Internal)?;
-
-            ctx.edit(&endpoint_path, validator::toml_as::<Endpoint>)?;
+            if let Some(curr_handle) = ctx.quartz.handle() {
+                let endpoint_file_path = curr_handle.endpoint_file_path();
+                ctx.edit(&endpoint_file_path, validator::toml_as::<Endpoint>)?;
+            }
         }
         Cmd::Cp(args) => {
             ctx.quartz

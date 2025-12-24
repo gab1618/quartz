@@ -241,11 +241,6 @@ impl Quartz {
 
         Ok(())
     }
-    pub fn handle_endpoint_file_path(&self) -> Option<PathBuf> {
-        let handle = self.handle();
-        let dir = handle.map(|inner| inner.dir().join("endpoint.toml"));
-        dir
-    }
 
     pub async fn send(
         &self,

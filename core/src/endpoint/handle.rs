@@ -86,6 +86,9 @@ impl<'a> EndpointHandle<'a> {
 
         result
     }
+    pub fn endpoint_file_path(&self) -> PathBuf {
+        self.dir().join("endpoint.toml")
+    }
     pub fn parent(&self) -> QuartzResult<Self> {
         let mut parent_path = self.path.clone();
         if parent_path.pop().is_none() {
