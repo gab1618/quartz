@@ -55,6 +55,9 @@ impl<'a> EndpointHandle<'a> {
     pub fn new(quartz: &'a Quartz, path: EndpointHandlePath) -> Self {
         Self { quartz, path }
     }
+    pub fn root(quartz: &'a Quartz) -> Self {
+        Self::new(quartz, EndpointHandlePath(vec![]))
+    }
 
     pub fn from_state(quartz: &'a Quartz) -> Option<Self> {
         if let Ok(handle) = StateField::Endpoint.get(quartz) {

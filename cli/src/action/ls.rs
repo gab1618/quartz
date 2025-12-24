@@ -16,7 +16,7 @@ pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
     let parsed_arg_handle = args
         .handle
         .map(|handle| EndpointHandle::new(&ctx.quartz, handle.into()));
-    let base_handle = parsed_arg_handle.unwrap_or(ctx.quartz.root_handle());
+    let base_handle = parsed_arg_handle.unwrap_or(EndpointHandle::root(&ctx.quartz));
     let current_handle = StateField::Endpoint.get(&ctx.quartz).ok();
     output_tree(&ctx, base_handle, current_handle, 0);
 

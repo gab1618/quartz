@@ -12,7 +12,6 @@ pub mod state;
 #[cfg(test)]
 mod tests;
 
-use crate::endpoint::handle::EndpointHandlePath;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -253,9 +252,6 @@ impl Quartz {
         src_handle.delete(true)?;
 
         Ok(())
-    }
-    pub fn root_handle(&self) -> EndpointHandle<'_> {
-        EndpointHandle::new(self, EndpointHandlePath(vec![]))
     }
     pub fn handle_endpoint_file_path(&self) -> Option<PathBuf> {
         let handle = self.handle();
