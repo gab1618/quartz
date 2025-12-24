@@ -202,18 +202,6 @@ impl Quartz {
         Ok(handle)
     }
 
-    pub fn apply_endpoint_patch(
-        &self,
-        handle: &EndpointHandle,
-        mut patch: EndpointPatch,
-    ) -> QuartzResult {
-        let mut endpoint = handle.endpoint()?;
-        endpoint.update(&mut patch)?;
-        handle.write_endpoint(&endpoint)?;
-
-        Ok(())
-    }
-
     pub fn handle_cp(&self, recursive: bool, src: &str, dest: &str) -> QuartzResult {
         let src_handle = EndpointHandle::new(self, src.into());
         if !src_handle.exists() {

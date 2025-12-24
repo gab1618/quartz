@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     Quartz,
-    endpoint::{Endpoint, error::EndpointError},
+    endpoint::{Endpoint, EndpointPatch, error::EndpointError},
     env::EnvRef,
     error::{QuartzError, QuartzResult},
     state::StateField,
@@ -215,6 +215,13 @@ impl<'a> EndpointHandle<'a> {
             .map_err(|_| QuartzError::Internal)?;
         f.write_all(body.as_bytes())
             .map_err(|_| QuartzError::Internal)?;
+
+        Ok(())
+    }
+    pub fn apply_endpoint_patch(&self, mut patch: EndpointPatch) -> QuartzResult {
+        let mut endpoint = self.endpoint().ok().unwrap_or(Endpoint::new());
+        endpoint.update(&mut patch)?;
+        self.write_endpoint(&endpoint)?;
 
         Ok(())
     }
