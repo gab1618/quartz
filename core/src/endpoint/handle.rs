@@ -185,7 +185,7 @@ impl<'a> EndpointHandle<'a> {
 
         Ok(())
     }
-    fn body_file_path(&self) -> PathBuf {
+    pub fn body_file_path(&self) -> PathBuf {
         self.dir().join("body")
     }
     pub fn body(&self) -> Option<String> {

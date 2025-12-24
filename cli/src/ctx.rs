@@ -1,5 +1,5 @@
-use std::path::Path;
 use crate::validator;
+use std::path::Path;
 
 use crate::{Quartz, QuartzError, QuartzResult};
 use quartz_core::config::Config;
@@ -70,7 +70,8 @@ impl Ctx {
     }
 
     pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
-        let mut file_path = self.quartz.body_file_path()?;
+        let curr_handle = self.quartz.handle().unwrap();
+        let mut file_path = curr_handle.body_file_path();
 
         if let Some(format) = format {
             file_path.set_extension(format);
