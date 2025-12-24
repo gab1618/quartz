@@ -194,7 +194,6 @@ impl Quartz {
 
         let endpoint = Endpoint::default();
 
-        handle.write()?;
         handle.write_endpoint(&endpoint)?;
 
         Ok(handle)
@@ -240,7 +239,6 @@ impl Quartz {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
         let dest_handle = EndpointHandle::new(self, dest.into());
-        dest_handle.write()?;
         let endpoint = src_handle.endpoint()?;
 
         dest_handle.write_endpoint(&endpoint)?;

@@ -100,31 +100,10 @@ impl<'a> EndpointHandle<'a> {
         path.exists()
     }
 
-    /// Records files to build this endpoint with `parse` methods.
-    pub fn write(&self) -> QuartzResult {
-        let mut dir = self.quartz.path().join("endpoints");
-        for entry in self.path.iter() {
-            dir = dir.join(Endpoint::name_to_dir(entry));
-
-            std::fs::create_dir_all(&dir).map_err(EndpointError::SaveHandle)?;
-
-            let mut file = std::fs::OpenOptions::new()
-                .write(true)
-                .truncate(true)
-                .create(true)
-                .open(dir.join("spec"))
-                .map_err(EndpointError::SaveHandle)?;
-
-            file.write_all(entry.as_bytes())
-                .map_err(EndpointError::SaveHandle)?;
-        }
-
-        std::fs::create_dir_all(self.dir()).map_err(EndpointError::SaveHandle)?;
-
-        Ok(())
-    }
     pub fn write_endpoint(&self, endpoint: &Endpoint) -> QuartzResult {
         let toml_content = endpoint.to_toml()?;
+
+        std::fs::create_dir_all(self.dir()).map_err(EndpointError::SaveEndpoint)?;
 
         let mut file = std::fs::OpenOptions::new()
             .write(true)
@@ -151,23 +130,22 @@ impl<'a> EndpointHandle<'a> {
     }
 
     pub fn children(&self) -> QuartzResult<Vec<EndpointHandle<'_>>> {
-        let paths = std::fs::read_dir(self.dir()).map_err(EndpointError::GetHandleChildren)?;
-        let valid_paths = paths
-            .filter(|entry| entry.is_ok())
-            .map(|entry| entry.unwrap().path())
-            .filter(|path| path.is_dir());
+        // If can't read the dir, just assume no children
+        let paths = std::fs::read_dir(self.dir())
+            .into_iter()
+            .flatten()
+            .flatten();
+        let valid_paths = paths.map(|entry| entry.path()).filter(|path| path.is_dir());
 
+        // TODO: add proper error handling
         let list = valid_paths
             .map(|path| {
-                let spec_file_path = path.join("spec");
-                let raw_spec_content =
-                    std::fs::read(spec_file_path).map_err(EndpointError::GetHandleChildren)?;
-                let spec = String::from_utf8(raw_spec_content)
-                    .map_err(|_| EndpointError::ParseHandleSpec)?;
+                let quartz_endpoints_path = self.quartz.path().join("endpoints");
 
-                let mut path = self.path.clone();
-                path.push(spec);
-                Ok(EndpointHandle::new(self.quartz, path))
+                let handle_subpath = path.strip_prefix(quartz_endpoints_path).unwrap();
+                let handle_name = handle_subpath.as_os_str().to_str().unwrap();
+
+                Ok(EndpointHandle::new(self.quartz, handle_name.into()))
             })
             .collect::<QuartzResult<Vec<_>>>()?;
 
@@ -220,6 +198,7 @@ impl<'a> EndpointHandle<'a> {
         resolved
     }
     pub fn set_body(&self, body: String) -> QuartzResult {
+        std::fs::create_dir_all(self.dir()).map_err(|_| QuartzError::Internal)?;
         let mut f = OpenOptions::new()
             .write(true)
             .create(true)

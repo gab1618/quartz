@@ -212,7 +212,6 @@ fn test_resolve_body() {
     let mut default_env = quartz.env().unwrap();
 
     let first_handle = quartz.new_handle("first");
-    first_handle.write().unwrap();
 
     assert_eq!(first_handle.body(), None);
     first_handle.set_body("{{testing}}".into()).unwrap();
