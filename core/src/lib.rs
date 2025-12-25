@@ -72,10 +72,8 @@ impl Quartz {
         ];
 
         for dir in ensure_dirs {
-            std::fs::create_dir(
-                quartz_dir.join(PathBuf::from_str(dir).map_err(|_| Error::Setup)?),
-            )
-            .map_err(|_| Error::Setup)?;
+            std::fs::create_dir(quartz_dir.join(PathBuf::from_str(dir).map_err(|_| Error::Setup)?))
+                .map_err(|_| Error::Setup)?;
         }
 
         if path.join(".git").exists() {
@@ -345,9 +343,7 @@ impl Quartz {
 
                 cookie_jar.set(
                     url.host().unwrap(),
-                    cookie_header
-                        .to_str()
-                        .map_err(|_| Error::ParseCookie)?,
+                    cookie_header.to_str().map_err(|_| Error::ParseCookie)?,
                 );
             }
 
@@ -356,9 +352,7 @@ impl Quartz {
             }
 
             if let Some(location) = res.headers().get("Location") {
-                let location = location
-                    .to_str()
-                    .map_err(|_| Error::ParseLocationHeader)?;
+                let location = location.to_str().map_err(|_| Error::ParseLocationHeader)?;
 
                 if location.starts_with('/') {
                     let url = endpoint
@@ -399,8 +393,8 @@ impl Quartz {
 
         Ok(bytes)
     }
-    pub fn history(&self) -> Result<History> {
-        let h = History::new(self.path.clone())?;
+    pub fn history(&self) -> Result<History<'_>> {
+        let h = History::new(&self.path)?;
 
         Ok(h)
     }

@@ -24,13 +24,13 @@ pub struct EntryBuilder {
     messages: Vec<String>,
 }
 
-pub struct History {
-    mount_path: PathBuf,
+pub struct History<'a> {
+    path: &'a PathBuf,
 }
 
-impl History {
-    pub fn new(mount_path: PathBuf) -> Result<Self> {
-        Ok(Self { mount_path })
+impl<'a> History<'a> {
+    pub fn new(path: &'a PathBuf) -> Result<Self> {
+        Ok(Self { path })
     }
 
     pub fn entries(&self) -> Result<Vec<Entry>> {
@@ -60,7 +60,7 @@ impl History {
     }
 
     pub fn dir(&self) -> PathBuf {
-        self.mount_path.join("user").join("history")
+        self.path.join("user").join("history")
     }
 
     pub fn last_entry(&self) -> Result<Option<Entry>> {
