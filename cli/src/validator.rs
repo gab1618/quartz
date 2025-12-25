@@ -60,7 +60,7 @@ pub fn toml_as<T>(input: &str) -> Result
 where
     T: serde::de::DeserializeOwned,
 {
-    toml::from_str::<T>(input).map_err(|_| Error::Internal)?;
+    toml::from_str::<T>(input).map_err(|_| Error::ParseToml)?;
 
     Ok(())
 }

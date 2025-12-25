@@ -1,5 +1,9 @@
-use crate::{action, cli::ShowCmd as Cmd, ctx::Ctx};
-use quartz_core::error::{Error, Result};
+use crate::{
+    action,
+    cli::ShowCmd as Cmd,
+    ctx::Ctx,
+    error::{Error, Result},
+};
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
@@ -51,9 +55,9 @@ pub fn handle(ctx: Ctx) {
 }
 
 pub fn endpoint(ctx: Ctx) -> Result {
-    let handle = ctx.quartz.handle().unwrap();
-    let endpoint = handle.endpoint().unwrap();
+    let handle = ctx.quartz.handle().ok_or(Error::NoHandleInUse)?;
+    let endpoint = handle.endpoint()?;
 
-    println!("{}", endpoint.to_toml().map_err(|_| Error::Internal)?);
+    println!("{}", endpoint.to_toml()?);
     Ok(())
 }

@@ -1,7 +1,7 @@
 use crate::validator;
 use std::path::Path;
 
-use crate::{Quartz, Error, Result};
+use crate::{Error, Quartz, Result};
 use quartz_core::config::Config;
 
 pub struct Ctx {
@@ -37,10 +37,10 @@ impl Ctx {
         }
 
         if !path.exists() {
-            std::fs::File::create(path).map_err(|_| Error::Internal)?;
+            std::fs::File::create(path).map_err(Error::CreateEditFile)?;
         }
 
-        std::fs::copy(path, &temp_path).map_err(|_| Error::Internal)?;
+        std::fs::copy(path, &temp_path).map_err(Error::CopyEditFile)?;
         let editor = self.quartz.config().parse().preferences.editor();
 
         let _ = std::process::Command::new(&editor)
@@ -50,14 +50,14 @@ impl Ctx {
                 panic!("failed to open editor: {}\n\n{}", editor, err);
             });
 
-        let content = std::fs::read_to_string(&temp_path).map_err(|_| Error::Internal)?;
+        let content = std::fs::read_to_string(&temp_path).map_err(Error::ReadEditFile)?;
 
         if let Err(err) = validate(&content) {
-            std::fs::remove_file(&temp_path).map_err(|_| Error::Internal)?;
+            std::fs::remove_file(&temp_path).map_err(Error::RemoveEditFile)?;
             panic!("{}", err);
         }
 
-        std::fs::rename(&temp_path, path).map_err(|_| Error::Internal)?;
+        std::fs::rename(&temp_path, path).map_err(Error::CopyEditFile)?;
         Ok(())
     }
 

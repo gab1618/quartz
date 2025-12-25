@@ -1,5 +1,5 @@
+use crate::error::{Error, Result};
 use crate::{cli::BodyCmd as Cmd, ctx::Ctx};
-use quartz_core::error::{Error, Result};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -24,7 +24,7 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
 }
 
 pub fn print(ctx: Ctx) -> Result {
-    let curr_handle = ctx.quartz.handle().ok_or(Error::Internal)?;
+    let curr_handle = ctx.quartz.handle().ok_or(Error::NoHandleInUse)?;
 
     if let Some(body) = curr_handle.body() {
         print!("{body}");

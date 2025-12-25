@@ -11,14 +11,11 @@ use clap::Parser;
 use crate::{
     cli::{Cli, Cmd},
     ctx::Ctx,
-    error::{QuartzCliError, QuartzCliResult},
-};
-use quartz_core::{
-    Quartz,
     error::{Error, Result},
 };
+use quartz_core::Quartz;
 
-async fn entrypoint() -> QuartzCliResult {
+async fn entrypoint() -> Result {
     let args = Cli::parse();
 
     // Has to run outside action flow because it cannot resolve `ctx`.
@@ -27,8 +24,8 @@ async fn entrypoint() -> QuartzCliResult {
         return Ok(());
     }
 
-    let home_dir = std::env::home_dir().ok_or(QuartzCliError::GetHomeDir)?;
-    let curr_dir = current_dir().map_err(QuartzCliError::GetCurrentDir)?;
+    let home_dir = std::env::home_dir().ok_or(Error::GetHomeDir)?;
+    let curr_dir = current_dir().map_err(Error::GetCurrentDir)?;
 
     let quartz = Quartz::new(curr_dir, home_dir)?;
 
