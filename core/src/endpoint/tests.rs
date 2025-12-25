@@ -1,7 +1,5 @@
-use crate::{
-    endpoint::{Endpoint, EndpointHandle},
-    tests::utils::TestQuartz,
-};
+use super::{endpoint::Endpoint, handle::EndpointHandle};
+use crate::tests::utils::TestQuartz;
 
 #[test]
 fn test_simple_cp_handle() {

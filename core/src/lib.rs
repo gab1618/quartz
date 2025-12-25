@@ -30,7 +30,7 @@ use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
 use crate::{
-    endpoint::{EndpointPatch, handle::EndpointHandle},
+    endpoint::{endpoint::EndpointPatch, handle::EndpointHandle},
     env::EnvRef,
     state::StateField,
 };

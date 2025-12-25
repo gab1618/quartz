@@ -1,7 +1,7 @@
 use std::io::stdout;
 
 use crate::{cli::SnippetCmd as Cmd, ctx::Ctx};
-use quartz_core::{endpoint::EndpointPatch, error::Result, pairmap::PairMap, snippet};
+use quartz_core::{endpoint::endpoint::EndpointPatch, error::Result, pairmap::PairMap, snippet};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {

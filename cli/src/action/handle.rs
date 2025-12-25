@@ -1,4 +1,4 @@
-use quartz_core::endpoint::EndpointPatch;
+use quartz_core::endpoint::endpoint::EndpointPatch;
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {

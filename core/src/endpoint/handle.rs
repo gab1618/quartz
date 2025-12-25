@@ -7,7 +7,10 @@ use std::{
 
 use crate::{
     Quartz,
-    endpoint::{Endpoint, EndpointPatch, error::EndpointError},
+    endpoint::{
+        endpoint::{Endpoint, EndpointPatch},
+        error::EndpointError,
+    },
     env::EnvRef,
     error::Result,
     state::StateField,

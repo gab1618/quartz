@@ -1,5 +1,5 @@
 use crate::validator;
-use quartz_core::endpoint::Endpoint;
+use quartz_core::endpoint::endpoint::Endpoint;
 use quartz_core::error::Error;
 
 use crate::Result;
