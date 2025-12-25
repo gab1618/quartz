@@ -18,6 +18,8 @@ pub enum EndpointError {
     GetHandleChildren(#[source] std::io::Error),
     #[error("Could not parse handle spec")]
     ParseHandleSpec,
+    #[error("Could not read spec file: {0}")]
+    ReadHandleSpec(#[source] std::io::Error),
     #[error("Could not serialize endpoint: {0}")]
     SerializeEndpoint(#[source] toml::ser::Error),
     #[error("Could not save endpoint: {0}")]
@@ -28,4 +30,10 @@ pub enum EndpointError {
     RemoveChildrenOnNonRecursiveMode,
     #[error("Could not remove handle files: {0}")]
     RemoveHandleFiles(#[source] std::io::Error),
+    #[error("No handle parent directory")]
+    NoHandleParentDir,
+    #[error("Could not modify body: {0}")]
+    ModifyBody(#[source] std::io::Error),
+    #[error("Could not set request body")]
+    SetRequestBody,
 }

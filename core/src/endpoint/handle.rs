@@ -9,7 +9,7 @@ use crate::{
     Quartz,
     endpoint::{Endpoint, EndpointPatch, error::EndpointError},
     env::EnvRef,
-    error::{Error, Result},
+    error::Result,
     state::StateField,
 };
 
@@ -92,7 +92,7 @@ impl<'a> EndpointHandle<'a> {
     pub fn parent(&self) -> Result<Self> {
         let mut parent_path = self.path.clone();
         if parent_path.pop().is_none() {
-            return Err(Error::Internal);
+            return Err(EndpointError::NoHandleParentDir.into());
         }
         Ok(Self::new(self.quartz, parent_path))
     }
@@ -215,9 +215,9 @@ impl<'a> EndpointHandle<'a> {
             .create(true)
             .truncate(true)
             .open(self.body_file_path())
-            .map_err(|_| Error::Internal)?;
+            .map_err(EndpointError::ModifyBody)?;
         f.write_all(body.as_bytes())
-            .map_err(|_| Error::Internal)?;
+            .map_err(EndpointError::ModifyBody)?;
 
         Ok(())
     }

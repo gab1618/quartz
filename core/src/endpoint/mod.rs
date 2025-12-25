@@ -144,10 +144,12 @@ impl Endpoint {
     }
 
     pub fn from_dir(dir: &Path) -> crate::Result<Self> {
-        let bytes = std::fs::read(dir.join("endpoint.toml")).map_err(|_| Error::Internal)?;
-        let content = String::from_utf8(bytes).map_err(|_| Error::Internal)?;
+        let bytes =
+            std::fs::read(dir.join("endpoint.toml")).map_err(EndpointError::ReadHandleSpec)?;
+        let content = String::from_utf8(bytes).map_err(|_| EndpointError::ParseHandleSpec)?;
 
-        let endpoint: Endpoint = toml::from_str(&content).map_err(|_| Error::Internal)?;
+        let endpoint: Endpoint =
+            toml::from_str(&content).map_err(|_| EndpointError::ParseHandleSpec)?;
 
         Ok(endpoint)
     }

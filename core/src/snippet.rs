@@ -3,6 +3,12 @@ use std::{io::Write, ops::Deref};
 use crate::{Error, Result, endpoint::resolved_endpoint::ResolvedEndpoint};
 use hyper::{Body, Request, Response, Uri};
 
+#[derive(Debug, thiserror::Error)]
+pub enum SnippetError {
+    #[error("Could not serialize url into uri")]
+    SerializeUri,
+}
+
 enum CurlOption {
     Location,
     Request,
@@ -166,7 +172,10 @@ impl From<&Request<Body>> for Http {
 
 impl Http {
     pub fn write<W: Write>(w: &mut W, endpoint: ResolvedEndpoint) -> Result {
-        let url: Uri = endpoint.url.try_into().map_err(|_| Error::Internal)?;
+        let url: Uri = endpoint
+            .url
+            .try_into()
+            .map_err(|_| SnippetError::SerializeUri)?;
         let path = url.path_and_query().unwrap();
 
         writeln!(w, "{} {} HTTP/1.1", endpoint.method, path.as_str())

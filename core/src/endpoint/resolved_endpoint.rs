@@ -1,6 +1,6 @@
 use hyper::{Body, Request};
 
-use crate::{error::Error, headers::Headers};
+use crate::{endpoint::error::EndpointError, error::Error, headers::Headers};
 
 #[derive(Clone)]
 pub struct ResolvedEndpoint {
@@ -27,11 +27,11 @@ impl TryInto<Request<Body>> for ResolvedEndpoint {
         if let Some(body) = self.body {
             builder
                 .body(body.to_owned().into())
-                .map_err(|_| Error::Internal)
+                .map_err(|_| EndpointError::SetRequestBody.into())
         } else {
             builder
                 .body(Body::empty())
-                .map_err(|_| Error::Internal)
+                .map_err(|_| EndpointError::SetRequestBody.into())
         }
     }
 }

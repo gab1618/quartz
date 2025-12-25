@@ -1,6 +1,6 @@
 use crate::{
     config::error::ConfigError, endpoint::error::EndpointError, env::error::EnvError,
-    history::error::HistoryError,
+    history::error::HistoryError, snippet::SnippetError,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -11,6 +11,8 @@ pub enum Error {
     HistoryError(#[from] HistoryError),
     #[error(transparent)]
     EnvError(#[from] EnvError),
+    #[error(transparent)]
+    SnippetError(#[from] SnippetError),
     #[error("Unknown error")]
     Internal,
     #[error("Could not initialize quartz: {0}")]
