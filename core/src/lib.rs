@@ -29,10 +29,11 @@ use crate::error::{Error, Result};
 use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
+use crate::state::StateManager;
 use crate::{
     endpoint::{endpoint::EndpointPatch, handle::EndpointHandle},
     env::EnvRef,
-    state::StateField,
+    state::field::StateField,
 };
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
@@ -43,13 +44,14 @@ pub struct Quartz {
 }
 
 impl Quartz {
-    pub fn new(path: PathBuf, config_path: PathBuf) -> Result<Self> {
+    pub fn new(path: PathBuf, config_path: PathBuf) -> Self {
         let quartz_path = path.join(".quartz");
         let config = ConfigManager::new(config_path);
-        Ok(Self {
+
+        Self {
             path: quartz_path,
             config,
-        })
+        }
     }
     pub fn init(path: PathBuf, config_path: PathBuf) -> Result<Self> {
         let quartz_dir = path.join(".quartz");
@@ -92,8 +94,11 @@ impl Quartz {
             config,
         })
     }
+    pub fn state(&self) -> StateManager<'_> {
+        StateManager::new(&self.path)
+    }
     pub fn handle(&self) -> Option<EndpointHandle<'_>> {
-        let curr_endpoint_name = StateField::Endpoint.get(self).ok();
+        let curr_endpoint_name = self.state().get(StateField::Endpoint).ok();
 
         let parsed =
             curr_endpoint_name.map(|handle_name| EndpointHandle::new(self, handle_name.into()));
@@ -103,7 +108,10 @@ impl Quartz {
         &self.path
     }
     pub fn env(&self) -> Result<EnvRef<'_>> {
-        let curr_env_name = StateField::Env.get(&self).unwrap_or("default".into());
+        let curr_env_name = self
+            .state()
+            .get(StateField::Env)
+            .unwrap_or("default".into());
 
         let parsed_env = EnvRef::new(self, curr_env_name)?;
         Ok(parsed_env)
@@ -135,7 +143,7 @@ impl Quartz {
         if !requested_env.exists() {
             return Err(EnvError::NotFound.into());
         }
-        StateField::Env.set(self, &requested_env.name)?;
+        self.state().set(StateField::Env, &requested_env.name)?;
 
         Ok(requested_env)
     }
@@ -180,7 +188,7 @@ impl Quartz {
 
     pub fn handle_switch(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
         if handle == "-" {
-            let previous_handle = StateField::PreviousEndpoint.get(self)?;
+            let previous_handle = self.state().get(StateField::PreviousEndpoint)?;
             handle = previous_handle;
         }
 
@@ -190,11 +198,12 @@ impl Quartz {
             return Err(EndpointError::HandleNotFound(handle.head()).into());
         }
 
-        let previous = StateField::Endpoint.get(self);
-        StateField::Endpoint.set(self, &handle.path.join("/"))?;
+        let previous = self.state().get(StateField::Endpoint);
+        self.state()
+            .set(StateField::Endpoint, &handle.path.join("/"))?;
 
         if let Ok(prev) = previous {
-            StateField::PreviousEndpoint.set(self, &prev)?;
+            self.state().set(StateField::PreviousEndpoint, &prev)?;
         }
 
         Ok(handle)

@@ -1,4 +1,4 @@
-use quartz_core::{endpoint::handle::EndpointHandle, error::Result, state::StateField};
+use quartz_core::{endpoint::handle::EndpointHandle, error::Result, state::field::StateField};
 
 use crate::ctx::Ctx;
 
@@ -17,7 +17,7 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
         .handle
         .map(|handle| EndpointHandle::new(&ctx.quartz, handle.into()));
     let base_handle = parsed_arg_handle.unwrap_or(EndpointHandle::root(&ctx.quartz));
-    let current_handle = StateField::Endpoint.get(&ctx.quartz).ok();
+    let current_handle = ctx.quartz.state().get(StateField::Endpoint).ok();
     output_tree(&ctx, base_handle, current_handle, 0);
 
     Ok(())

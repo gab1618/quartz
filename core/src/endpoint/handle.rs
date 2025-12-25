@@ -13,7 +13,7 @@ use crate::{
     },
     env::EnvRef,
     error::Result,
-    state::StateField,
+    state::field::StateField,
 };
 
 #[derive(Clone)]
@@ -63,7 +63,9 @@ impl<'a> EndpointHandle<'a> {
     }
 
     pub fn from_state(quartz: &'a Quartz) -> Option<Self> {
-        if let Ok(handle) = StateField::Endpoint.get(quartz) {
+        let state = quartz.state();
+
+        if let Ok(handle) = state.get(StateField::Endpoint) {
             if handle.is_empty() {
                 return None;
             }
