@@ -23,6 +23,7 @@ use hyper::{Body, Client, Request, Uri};
 
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
+use crate::endpoint::EndpointManager;
 use crate::endpoint::error::EndpointError;
 use crate::env::error::EnvError;
 use crate::error::{Error, Result};
@@ -30,11 +31,7 @@ use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
 use crate::state::StateManager;
-use crate::{
-    endpoint::{endpoint::EndpointPatch, handle::EndpointHandle},
-    env::EnvRef,
-    state::field::StateField,
-};
+use crate::{endpoint::endpoint::EndpointPatch, env::EnvRef, state::field::StateField};
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
 
@@ -97,12 +94,8 @@ impl Quartz {
     pub fn state(&self) -> StateManager<'_> {
         StateManager::new(&self.path)
     }
-    pub fn handle(&self) -> Option<EndpointHandle<'_>> {
-        let curr_endpoint_name = self.state().get(StateField::Endpoint).ok();
-
-        let parsed =
-            curr_endpoint_name.map(|handle_name| EndpointHandle::new(self, handle_name.into()));
-        parsed
+    pub fn endpoint(&self) -> EndpointManager<'_> {
+        EndpointManager::new(self)
     }
     pub fn path(&self) -> &PathBuf {
         &self.path
@@ -181,73 +174,6 @@ impl Quartz {
     pub fn config(&self) -> &ConfigManager {
         &self.config
     }
-    pub fn new_handle(&self, name: &str) -> EndpointHandle<'_> {
-        let created = EndpointHandle::new(self, name.into());
-        created
-    }
-
-    pub fn handle_switch(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
-        if handle == "-" {
-            let previous_handle = self.state().get(StateField::PreviousEndpoint)?;
-            handle = previous_handle;
-        }
-
-        let handle = EndpointHandle::new(self, handle.into());
-
-        if !handle.exists() {
-            return Err(EndpointError::HandleNotFound(handle.head()).into());
-        }
-
-        let previous = self.state().get(StateField::Endpoint);
-        self.state()
-            .set(StateField::Endpoint, &handle.path.join("/"))?;
-
-        if let Ok(prev) = previous {
-            self.state().set(StateField::PreviousEndpoint, &prev)?;
-        }
-
-        Ok(handle)
-    }
-
-    pub fn handle_cp(&self, recursive: bool, src: &str, dest: &str) -> Result {
-        let src_handle = EndpointHandle::new(self, src.into());
-        if !src_handle.exists() {
-            return Err(EndpointError::HandleNotFound(src.to_owned()).into());
-        }
-        let dest_handle = EndpointHandle::new(self, dest.into());
-        dest_handle.ensure_dir()?;
-        if let Some(endpoint) = src_handle.endpoint().ok() {
-            dest_handle.write_endpoint(endpoint)?;
-        }
-
-        if recursive {
-            for child in src_handle.children()? {
-                let child_name = child.handle();
-                let mut new_handle = EndpointHandle::new(self, child.path);
-
-                // Replace original prefix with the dest one
-                let dest_handle_prefix = dest_handle.path[0].clone();
-                let _ = std::mem::replace(&mut new_handle.path[0], dest_handle_prefix);
-
-                self.handle_cp(true, &child_name, &new_handle.handle())?;
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn handle_mv(&self, src: &str, dest: &str) -> Result {
-        let src_handle = EndpointHandle::new(self, src.into());
-        if !src_handle.exists() {
-            return Err(EndpointError::HandleNotFound(src.to_owned()).into());
-        }
-
-        // TODO: this might be one of the lazyest solutions so far
-        self.handle_cp(true, src, dest)?;
-        src_handle.delete(true)?;
-
-        Ok(())
-    }
 
     pub async fn send(
         &self,
@@ -257,7 +183,8 @@ impl Quartz {
         cookies: Vec<String>,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> Result<Bytes> {
-        let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
+        let endpoint = self.endpoint();
+        let handle = endpoint.handle().ok_or(EndpointError::NoHandleInUse)?;
         let curr_env = self.env()?;
         let mut endpoint = handle.endpoint()?;
         endpoint.update(&mut patch)?;

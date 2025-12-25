@@ -29,18 +29,20 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
 
         Cmd::Send(args) => action::send::cmd(ctx, args).await?,
         Cmd::Create(args) => {
-            let new_handle = ctx.quartz.new_handle(&args.handle);
+            let endpoint = ctx.quartz.endpoint();
+            let new_handle = endpoint.new_handle(&args.handle);
             new_handle.write_endpoint(Endpoint::new())?;
             if args.switch {
-                ctx.quartz.handle_switch(args.handle)?;
+                endpoint.handle_switch(args.handle)?;
             }
 
             new_handle.apply_endpoint_patch(args.patch)?;
         }
         Cmd::Use(args) => {
+            let endpoint = ctx.quartz.endpoint();
             let curr_handle = match args.handle {
-                Some(handle) => Some(ctx.quartz.handle_switch(handle)?),
-                None => ctx.quartz.handle(),
+                Some(handle) => Some(endpoint.handle_switch(handle)?),
+                None => endpoint.handle(),
             };
             if let Some(handle) = curr_handle {
                 handle.apply_endpoint_patch(args.patch)?;
@@ -55,21 +57,24 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
         }
         Cmd::Show { command } => action::show::cmd(ctx, command)?,
         Cmd::Edit => {
-            if let Some(curr_handle) = ctx.quartz.handle() {
+            let endpoint = ctx.quartz.endpoint();
+            if let Some(curr_handle) = endpoint.handle() {
                 let endpoint_file_path = curr_handle.endpoint_file_path();
                 ctx.edit(&endpoint_file_path, validator::toml_as::<Endpoint>)?;
             }
         }
         Cmd::Cp(args) => {
-            ctx.quartz
-                .handle_cp(args.recursive, &args.src, &args.dest)?;
+            let endpoint = ctx.quartz.endpoint();
+            endpoint.handle_cp(args.recursive, &args.src, &args.dest)?;
         }
         Cmd::Mv(args) => {
-            ctx.quartz.handle_mv(&args.src, &args.dest)?;
+            let endpoint = ctx.quartz.endpoint();
+            endpoint.handle_mv(&args.src, &args.dest)?;
         }
         Cmd::Rm(args) => {
+            let endpoint = ctx.quartz.endpoint();
             for handle in args.handles {
-                let handle = ctx.quartz.new_handle(&handle);
+                let handle = endpoint.new_handle(&handle);
                 handle.delete(args.recursive)?;
             }
         }
@@ -77,9 +82,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
         Cmd::Header { command } => action::header::cmd(ctx, command)?,
         Cmd::Body(args) => action::body::cmd(ctx, args)?,
         Cmd::History(args) => action::history::cmd(ctx, args)?,
-        Cmd::Last { command } => {
-            action::last::cmd(ctx, command).map_err(|_| Error::Internal)?
-        }
+        Cmd::Last { command } => action::last::cmd(ctx, command).map_err(|_| Error::Internal)?,
         Cmd::Var { command } => action::var::cmd(ctx, command)?,
         Cmd::Env { command } => action::env::cmd(ctx, command)?,
         Cmd::Config { command } => action::config::cmd(ctx, command)?,

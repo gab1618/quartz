@@ -17,7 +17,8 @@ pub struct Args {
 }
 
 pub fn cmd(ctx: Ctx, mut args: Args) -> Result {
-    let handle = ctx.quartz.handle().unwrap();
+    let endpoint = ctx.quartz.endpoint();
+    let handle = endpoint.handle().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
     let mut env = ctx.quartz.env()?;
 

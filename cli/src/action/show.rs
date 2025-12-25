@@ -38,24 +38,28 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
 }
 
 pub fn url(ctx: Ctx) {
-    let handle = ctx.quartz.handle().unwrap();
+    let endpoint = ctx.quartz.endpoint();
+    let handle = endpoint.handle().unwrap();
     let endpoint = handle.endpoint().unwrap();
     println!("{}", endpoint.url);
 }
 
 pub fn method(ctx: Ctx) {
-    let handle = ctx.quartz.handle().unwrap();
+    let endpoint = ctx.quartz.endpoint();
+    let handle = endpoint.handle().unwrap();
     let endpoint = handle.endpoint().unwrap();
     println!("{}", endpoint.method);
 }
 
 pub fn handle(ctx: Ctx) {
-    let handle = ctx.quartz.handle().unwrap();
+    let endpoint = ctx.quartz.endpoint();
+    let handle = endpoint.handle().unwrap();
     println!("{}", handle.head());
 }
 
 pub fn endpoint(ctx: Ctx) -> Result {
-    let handle = ctx.quartz.handle().ok_or(Error::NoHandleInUse)?;
+    let endpoint = ctx.quartz.endpoint();
+    let handle = endpoint.handle().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
 
     println!("{}", endpoint.to_toml()?);
