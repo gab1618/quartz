@@ -10,7 +10,7 @@ pub mod error;
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Entry {
-    timestemp: i64,
+    timestamp: i64,
     handle: String,
 
     /// List of exchanged HTTP messages
@@ -19,7 +19,7 @@ pub struct Entry {
 
 #[derive(Default)]
 pub struct EntryBuilder {
-    timestemp: i64,
+    timestamp: i64,
     handle: Option<String>,
     messages: Vec<String>,
 }
@@ -53,7 +53,7 @@ impl History {
         timestamps.reverse();
         let entries = timestamps
             .iter()
-            .filter_map(|timestemp| Entry::read(&self.dir().join(timestemp.to_string())).ok())
+            .filter_map(|timestamp| Entry::read(&self.dir().join(timestamp.to_string())).ok())
             .collect();
 
         Ok(entries)
@@ -75,7 +75,7 @@ impl History {
         std::fs::OpenOptions::new()
             .create(true)
             .write(true)
-            .open(self.dir().join(entry.timestemp.to_string()))
+            .open(self.dir().join(entry.timestamp.to_string()))
             .map_err(HistoryError::Save)?
             .write_all(content.as_bytes())
             .map_err(HistoryError::Save)?;
@@ -108,20 +108,20 @@ impl EntryBuilder {
     }
 
     pub fn timestemp(&mut self, value: i64) -> &mut Self {
-        self.timestemp = value;
+        self.timestamp = value;
         self
     }
 
     pub fn build(self) -> QuartzResult<Entry> {
         let handle = self.handle.ok_or(HistoryError::GetEntryBuilderHandle)?;
 
-        if self.timestemp == 0 || self.messages.is_empty() {
+        if self.timestamp == 0 || self.messages.is_empty() {
             return Err(HistoryError::Empty.into());
         }
 
         Ok(Entry {
             handle,
-            timestemp: self.timestemp,
+            timestamp: self.timestamp,
             messages: self.messages,
         })
     }
