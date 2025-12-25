@@ -1,5 +1,5 @@
 use crate::history::error::HistoryError;
-use crate::{QuartzResult, snippet};
+use crate::{Result, snippet};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -29,11 +29,11 @@ pub struct History {
 }
 
 impl History {
-    pub fn new(mount_path: PathBuf) -> QuartzResult<Self> {
+    pub fn new(mount_path: PathBuf) -> Result<Self> {
         Ok(Self { mount_path })
     }
 
-    pub fn entries(&self) -> QuartzResult<Vec<Entry>> {
+    pub fn entries(&self) -> Result<Vec<Entry>> {
         let paths = std::fs::read_dir(self.dir()).map_err(|_| HistoryError::ReadEntries)?;
         let mut timestamps = paths
             .map(|path| {
@@ -47,7 +47,7 @@ impl History {
 
                 Ok(timestamp)
             })
-            .collect::<QuartzResult<Vec<_>>>()?;
+            .collect::<Result<Vec<_>>>()?;
 
         timestamps.sort();
         timestamps.reverse();
@@ -63,13 +63,13 @@ impl History {
         self.mount_path.join("user").join("history")
     }
 
-    pub fn last_entry(&self) -> QuartzResult<Option<Entry>> {
+    pub fn last_entry(&self) -> Result<Option<Entry>> {
         let last_entry = self.entries()?.into_iter().next();
 
         Ok(last_entry)
     }
 
-    pub fn write(&self, entry: Entry) -> QuartzResult {
+    pub fn write(&self, entry: Entry) -> Result {
         let content = toml::to_string(&entry).map_err(|_| HistoryError::Serialize)?;
 
         std::fs::OpenOptions::new()
@@ -112,7 +112,7 @@ impl EntryBuilder {
         self
     }
 
-    pub fn build(self) -> QuartzResult<Entry> {
+    pub fn build(self) -> Result<Entry> {
         let handle = self.handle.ok_or(HistoryError::GetEntryBuilderHandle)?;
 
         if self.timestamp == 0 || self.messages.is_empty() {
@@ -140,7 +140,7 @@ impl Entry {
         &self.messages
     }
 
-    pub fn read(path: &Path) -> QuartzResult<Self> {
+    pub fn read(path: &Path) -> Result<Self> {
         let content = std::fs::read_to_string(path).map_err(|_| HistoryError::ReadEntry)?;
 
         Ok(toml::from_str(&content).map_err(|_| HistoryError::ParseEntry)?)

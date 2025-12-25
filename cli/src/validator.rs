@@ -1,4 +1,4 @@
-use crate::{QuartzError, QuartzResult};
+use crate::{Error, Result};
 
 /// Validator for files that don't have to do any checks. It is
 /// garanteed to return [`Ok`].
@@ -16,7 +16,7 @@ use crate::{QuartzError, QuartzResult};
 ///
 /// assert!(validator::infallible(input).is_ok());
 /// ```
-pub fn infallible(_input: &str) -> QuartzResult {
+pub fn infallible(_input: &str) -> Result {
     Ok(())
 }
 
@@ -56,11 +56,11 @@ pub fn infallible(_input: &str) -> QuartzResult {
 /// assert!(validator::toml_as::<Config>(input).is_ok());
 /// assert!(validator::toml_as::<Config>(input_missing).is_err());
 /// ```
-pub fn toml_as<T>(input: &str) -> QuartzResult
+pub fn toml_as<T>(input: &str) -> Result
 where
     T: serde::de::DeserializeOwned,
 {
-    toml::from_str::<T>(input).map_err(|_| QuartzError::Internal)?;
+    toml::from_str::<T>(input).map_err(|_| Error::Internal)?;
 
     Ok(())
 }

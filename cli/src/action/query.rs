@@ -1,6 +1,6 @@
 use crate::{cli::QueryCmd as Cmd, ctx::Ctx};
 use colored::Colorize;
-use quartz_core::{error::QuartzResult, pairmap::PairMap};
+use quartz_core::{error::Result, pairmap::PairMap};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
@@ -19,7 +19,7 @@ pub struct RmArgs {
     keys: Vec<String>,
 }
 
-pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
         Cmd::Get(args) => get(ctx, args.key),
         Cmd::Set(args) => set(ctx, args.queries)?,
@@ -42,7 +42,7 @@ pub fn get(ctx: Ctx, key: String) {
     println!("{value}");
 }
 
-pub fn set(ctx: Ctx, queries: Vec<String>) -> QuartzResult {
+pub fn set(ctx: Ctx, queries: Vec<String>) -> Result {
     let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
 
@@ -55,7 +55,7 @@ pub fn set(ctx: Ctx, queries: Vec<String>) -> QuartzResult {
     Ok(())
 }
 
-pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
+pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
     let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
 

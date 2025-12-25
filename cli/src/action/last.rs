@@ -3,13 +3,13 @@ use crate::{
     ctx::Ctx,
 };
 use quartz_core::{
-    error::{QuartzError, QuartzResult},
+    error::{Error, Result},
     history::{self},
 };
 
-pub fn cmd(ctx: Ctx, maybe_command: Option<Cmd>) -> QuartzResult {
+pub fn cmd(ctx: Ctx, maybe_command: Option<Cmd>) -> Result {
     let h = ctx.quartz.history()?;
-    let entry = h.last_entry()?.ok_or(QuartzError::Internal)?;
+    let entry = h.last_entry()?.ok_or(Error::Internal)?;
 
     if maybe_command.is_none() {
         println!("{entry}");

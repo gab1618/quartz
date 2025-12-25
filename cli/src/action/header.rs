@@ -1,7 +1,7 @@
 use crate::{cli::HeaderCmd as Cmd, ctx::Ctx};
-use quartz_core::error::QuartzResult;
+use quartz_core::error::Result;
 
-pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
         Cmd::Get { key } => get(ctx, key),
         Cmd::Set { name, value } => set(ctx, name, value),
@@ -10,7 +10,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
     }
 }
 
-pub fn get(ctx: Ctx, key: String) -> QuartzResult {
+pub fn get(ctx: Ctx, key: String) -> Result {
     let handle = ctx.quartz.handle().unwrap();
     let endpoint = handle.endpoint().unwrap();
     if let Some(header) = endpoint.headers.get(&key) {
@@ -22,7 +22,7 @@ pub fn get(ctx: Ctx, key: String) -> QuartzResult {
     Ok(())
 }
 
-pub fn set(ctx: Ctx, name: String, value: String) -> QuartzResult {
+pub fn set(ctx: Ctx, name: String, value: String) -> Result {
     let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
     endpoint.headers.0.insert(name, value);
@@ -30,7 +30,7 @@ pub fn set(ctx: Ctx, name: String, value: String) -> QuartzResult {
     Ok(())
 }
 
-pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
+pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
     let handle = ctx.quartz.handle().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
 
@@ -47,7 +47,7 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> QuartzResult {
     Ok(())
 }
 
-pub fn ls(ctx: Ctx) -> QuartzResult {
+pub fn ls(ctx: Ctx) -> Result {
     let handle = ctx.quartz.handle().unwrap();
     let endpoint = handle.endpoint().unwrap();
 

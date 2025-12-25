@@ -11,7 +11,7 @@ use crate::endpoint::error::EndpointError;
 use crate::endpoint::handle::EndpointHandle;
 use crate::endpoint::resolved_endpoint::ResolvedEndpoint;
 use crate::env::EnvRef;
-use crate::error::{QuartzError, QuartzResult};
+use crate::error::Error;
 use crate::headers::Headers;
 use crate::pairmap::PairMap;
 
@@ -121,7 +121,7 @@ impl EndpointPatch {
 }
 
 impl TryFrom<&mut EndpointPatch> for Endpoint {
-    type Error = QuartzError;
+    type Error = Error;
 
     fn try_from(value: &mut EndpointPatch) -> Result<Self, Self::Error> {
         let mut endpoint = Self::default();
@@ -143,16 +143,16 @@ impl Endpoint {
         name.trim().replace(['/', '\\'], "-")
     }
 
-    pub fn from_dir(dir: &Path) -> QuartzResult<Self> {
-        let bytes = std::fs::read(dir.join("endpoint.toml")).map_err(|_| QuartzError::Internal)?;
-        let content = String::from_utf8(bytes).map_err(|_| QuartzError::Internal)?;
+    pub fn from_dir(dir: &Path) -> crate::Result<Self> {
+        let bytes = std::fs::read(dir.join("endpoint.toml")).map_err(|_| Error::Internal)?;
+        let content = String::from_utf8(bytes).map_err(|_| Error::Internal)?;
 
-        let endpoint: Endpoint = toml::from_str(&content).map_err(|_| QuartzError::Internal)?;
+        let endpoint: Endpoint = toml::from_str(&content).map_err(|_| Error::Internal)?;
 
         Ok(endpoint)
     }
 
-    pub fn update(&mut self, src: &mut EndpointPatch) -> QuartzResult {
+    pub fn update(&mut self, src: &mut EndpointPatch) -> crate::Result {
         if let Some(method) = &mut src.method {
             std::mem::swap(&mut self.method, method);
         }
@@ -183,7 +183,7 @@ impl Endpoint {
         Ok(())
     }
 
-    pub fn to_toml(&self) -> QuartzResult<String> {
+    pub fn to_toml(&self) -> crate::Result<String> {
         let result = toml::to_string(&self).map_err(EndpointError::SerializeEndpoint)?;
         Ok(result)
     }
@@ -193,7 +193,7 @@ impl Endpoint {
     }
 
     /// Inherits parent URL when it starts with "**".
-    pub fn resolved_url(&self, handle: &EndpointHandle, env: &EnvRef) -> QuartzResult<String> {
+    pub fn resolved_url(&self, handle: &EndpointHandle, env: &EnvRef) -> crate::Result<String> {
         let mut full_url = self.url.clone();
         if self.url.starts_with("**") {
             full_url = handle
@@ -204,7 +204,7 @@ impl Endpoint {
                     if parent_resolved.ends_with('/') {
                         parent_resolved.pop();
                     }
-                    QuartzResult::Ok(self.url.clone().replacen("**", &parent_resolved, 1).clone())
+                    crate::Result::Ok(self.url.clone().replacen("**", &parent_resolved, 1).clone())
                 })
                 .unwrap_or(Ok(self.url.clone()))?;
         }
@@ -220,7 +220,7 @@ impl Endpoint {
         &mut self,
         handle: &EndpointHandle,
         env: &EnvRef,
-    ) -> QuartzResult<ResolvedEndpoint> {
+    ) -> crate::Result<ResolvedEndpoint> {
         for (key, value) in env.variables.iter() {
             let key_match = Self::key_match_str(&key);
             *self.query = self

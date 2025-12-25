@@ -1,5 +1,5 @@
 use crate::{cli::ConfigCmd as Cmd, ctx::Ctx};
-use quartz_core::error::QuartzResult;
+use quartz_core::error::Result;
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
@@ -12,7 +12,7 @@ pub struct SetArgs {
     value: String,
 }
 
-pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
         Cmd::Get(args) => {
             let config_manager = ctx.quartz.config();

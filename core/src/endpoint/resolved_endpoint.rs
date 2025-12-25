@@ -1,6 +1,6 @@
 use hyper::{Body, Request};
 
-use crate::{error::QuartzError, headers::Headers};
+use crate::{error::Error, headers::Headers};
 
 #[derive(Clone)]
 pub struct ResolvedEndpoint {
@@ -11,7 +11,7 @@ pub struct ResolvedEndpoint {
 }
 
 impl TryInto<Request<Body>> for ResolvedEndpoint {
-    type Error = QuartzError;
+    type Error = Error;
 
     fn try_into(self) -> Result<Request<Body>, Self::Error> {
         let mut builder = hyper::Request::builder().uri(&self.url);
@@ -27,11 +27,11 @@ impl TryInto<Request<Body>> for ResolvedEndpoint {
         if let Some(body) = self.body {
             builder
                 .body(body.to_owned().into())
-                .map_err(|_| QuartzError::Internal)
+                .map_err(|_| Error::Internal)
         } else {
             builder
                 .body(Body::empty())
-                .map_err(|_| QuartzError::Internal)
+                .map_err(|_| Error::Internal)
         }
     }
 }

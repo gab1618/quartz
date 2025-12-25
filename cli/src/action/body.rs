@@ -1,5 +1,5 @@
 use crate::{cli::BodyCmd as Cmd, ctx::Ctx};
-use quartz_core::error::{QuartzError, QuartzResult};
+use quartz_core::error::{Error, Result};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -11,7 +11,7 @@ pub struct Args {
     command: crate::cli::BodyCmd,
 }
 
-pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
+pub fn cmd(ctx: Ctx, args: Args) -> Result {
     match args.command {
         Cmd::Show => {
             print(ctx)?;
@@ -23,8 +23,8 @@ pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
     Ok(())
 }
 
-pub fn print(ctx: Ctx) -> QuartzResult {
-    let curr_handle = ctx.quartz.handle().ok_or(QuartzError::Internal)?;
+pub fn print(ctx: Ctx) -> Result {
+    let curr_handle = ctx.quartz.handle().ok_or(Error::Internal)?;
 
     if let Some(body) = curr_handle.body() {
         print!("{body}");
@@ -33,7 +33,7 @@ pub fn print(ctx: Ctx) -> QuartzResult {
     Ok(())
 }
 
-pub fn edit(ctx: Ctx, format: Option<String>) -> QuartzResult {
+pub fn edit(ctx: Ctx, format: Option<String>) -> Result {
     ctx.body_edit(format)?;
 
     Ok(())

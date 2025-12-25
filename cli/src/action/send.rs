@@ -1,4 +1,4 @@
-use quartz_core::{error::QuartzResult, endpoint::EndpointPatch};
+use quartz_core::{error::Result, endpoint::EndpointPatch};
 use std::path::PathBuf;
 use tokio::io::{AsyncWriteExt, stdout};
 
@@ -26,7 +26,7 @@ pub struct Args {
     cookie_jar: Option<PathBuf>,
 }
 
-pub async fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
+pub async fn cmd(ctx: Ctx, args: Args) -> Result {
     let bytes = ctx
         .quartz
         .send(

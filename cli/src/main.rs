@@ -15,7 +15,7 @@ use crate::{
 };
 use quartz_core::{
     Quartz,
-    error::{QuartzError, QuartzResult},
+    error::{Error, Result},
 };
 
 async fn entrypoint() -> QuartzCliResult {
@@ -43,7 +43,7 @@ async fn entrypoint() -> QuartzCliResult {
 }
 
 #[tokio::main]
-async fn main() -> QuartzResult {
+async fn main() -> Result {
     if let Err(error) = entrypoint().await {
         eprintln!("{}", error);
         std::process::exit(1);

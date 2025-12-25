@@ -1,6 +1,6 @@
 use std::{io::Write, ops::Deref};
 
-use crate::{QuartzError, QuartzResult, endpoint::resolved_endpoint::ResolvedEndpoint};
+use crate::{Error, Result, endpoint::resolved_endpoint::ResolvedEndpoint};
 use hyper::{Body, Request, Response, Uri};
 
 enum CurlOption {
@@ -22,7 +22,7 @@ pub struct Curl {
 }
 
 impl Curl {
-    pub fn write<W: Write>(&self, w: &mut W, endpoint: ResolvedEndpoint) -> QuartzResult {
+    pub fn write<W: Write>(&self, w: &mut W, endpoint: ResolvedEndpoint) -> Result {
         let separator = if self.multiline { " \\\n\t" } else { " " };
 
         write!(
@@ -31,14 +31,14 @@ impl Curl {
             self.option_string(CurlOption::Location),
             endpoint.url
         )
-        .map_err(QuartzError::WriteSnippet)?;
+        .map_err(Error::WriteSnippet)?;
         write!(
             w,
             " {} {}",
             self.option_string(CurlOption::Request),
             endpoint.method
         )
-        .map_err(QuartzError::WriteSnippet)?;
+        .map_err(Error::WriteSnippet)?;
 
         for (key, value) in endpoint.headers.iter() {
             write!(
@@ -49,22 +49,22 @@ impl Curl {
                 key,
                 value
             )
-            .map_err(QuartzError::WriteSnippet)?;
+            .map_err(Error::WriteSnippet)?;
         }
 
         if let Some(body) = endpoint.body {
             let mut body = body.to_owned();
             write!(w, "{}{} '", separator, self.option_string(CurlOption::Data))
-                .map_err(QuartzError::WriteSnippet)?;
+                .map_err(Error::WriteSnippet)?;
 
             if body.ends_with('\n') {
                 body.truncate(body.len() - 1);
             }
 
-            write!(w, "{body}").map_err(QuartzError::WriteSnippet)?;
-            writeln!(w, "'").map_err(QuartzError::WriteSnippet)?;
+            write!(w, "{body}").map_err(Error::WriteSnippet)?;
+            writeln!(w, "'").map_err(Error::WriteSnippet)?;
         } else {
-            writeln!(w, "").map_err(QuartzError::WriteSnippet)?;
+            writeln!(w, "").map_err(Error::WriteSnippet)?;
         }
 
         Ok(())
@@ -165,18 +165,18 @@ impl From<&Request<Body>> for Http {
 }
 
 impl Http {
-    pub fn write<W: Write>(w: &mut W, endpoint: ResolvedEndpoint) -> QuartzResult {
-        let url: Uri = endpoint.url.try_into().map_err(|_| QuartzError::Internal)?;
+    pub fn write<W: Write>(w: &mut W, endpoint: ResolvedEndpoint) -> Result {
+        let url: Uri = endpoint.url.try_into().map_err(|_| Error::Internal)?;
         let path = url.path_and_query().unwrap();
 
         writeln!(w, "{} {} HTTP/1.1", endpoint.method, path.as_str())
-            .map_err(QuartzError::WriteSnippet)?;
-        writeln!(w, "Host: {}", url.host().unwrap()).map_err(QuartzError::WriteSnippet)?;
-        write!(w, "{}", endpoint.headers).map_err(QuartzError::WriteSnippet)?;
+            .map_err(Error::WriteSnippet)?;
+        writeln!(w, "Host: {}", url.host().unwrap()).map_err(Error::WriteSnippet)?;
+        write!(w, "{}", endpoint.headers).map_err(Error::WriteSnippet)?;
 
         if let Some(body) = endpoint.body {
-            writeln!(w, "").map_err(QuartzError::WriteSnippet)?;
-            write!(w, "{body}").map_err(QuartzError::WriteSnippet)?;
+            writeln!(w, "").map_err(Error::WriteSnippet)?;
+            write!(w, "{body}").map_err(Error::WriteSnippet)?;
         }
 
         Ok(())

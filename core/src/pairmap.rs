@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use crate::{QuartzError, QuartzResult};
+use crate::{Error, Result};
 
 pub trait PairMap<'a, K = String, V = String>
 where
@@ -23,8 +23,8 @@ where
     }
 
     /// Inserts key-value pair into map.
-    fn set(&mut self, input: &'a str) -> QuartzResult {
-        let (key, value) = Self::pair(input).ok_or(QuartzError::KeymapSet)?;
+    fn set(&mut self, input: &'a str) -> Result {
+        let (key, value) = Self::pair(input).ok_or(Error::KeymapSet)?;
 
         self.map().insert(key, value);
 

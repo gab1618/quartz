@@ -25,7 +25,7 @@ use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
 use crate::endpoint::error::EndpointError;
 use crate::env::error::EnvError;
-use crate::error::{QuartzError, QuartzResult};
+use crate::error::{Error, Result};
 use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
@@ -43,7 +43,7 @@ pub struct Quartz {
 }
 
 impl Quartz {
-    pub fn new(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
+    pub fn new(path: PathBuf, config_path: PathBuf) -> Result<Self> {
         let quartz_path = path.join(".quartz");
         let config = ConfigManager::new(config_path);
         Ok(Self {
@@ -51,16 +51,16 @@ impl Quartz {
             config,
         })
     }
-    pub fn init(path: PathBuf, config_path: PathBuf) -> QuartzResult<Self> {
+    pub fn init(path: PathBuf, config_path: PathBuf) -> Result<Self> {
         let quartz_dir = path.join(".quartz");
         let config = ConfigManager::new(config_path);
 
         // TODO: properly propagate these errors for better diagnostics context
         if quartz_dir.exists() {
-            return Err(QuartzError::AlreadyInitialized);
+            return Err(Error::AlreadyInitialized);
         }
 
-        std::fs::create_dir(&quartz_dir).map_err(QuartzError::Init)?;
+        std::fs::create_dir(&quartz_dir).map_err(Error::Init)?;
 
         let ensure_dirs = vec![
             "endpoints",
@@ -73,9 +73,9 @@ impl Quartz {
 
         for dir in ensure_dirs {
             std::fs::create_dir(
-                quartz_dir.join(PathBuf::from_str(dir).map_err(|_| QuartzError::Setup)?),
+                quartz_dir.join(PathBuf::from_str(dir).map_err(|_| Error::Setup)?),
             )
-            .map_err(|_| QuartzError::Setup)?;
+            .map_err(|_| Error::Setup)?;
         }
 
         if path.join(".git").exists() {
@@ -104,7 +104,7 @@ impl Quartz {
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
-    pub fn env(&self) -> QuartzResult<EnvRef<'_>> {
+    pub fn env(&self) -> Result<EnvRef<'_>> {
         let curr_env_name = StateField::Env.get(&self).unwrap_or("default".into());
 
         let parsed_env = EnvRef::new(self, curr_env_name)?;
@@ -114,14 +114,14 @@ impl Quartz {
         let env = EnvRef::new(self, name).ok();
         env
     }
-    pub fn create_env(&self, name: String) -> QuartzResult<EnvRef<'_>> {
+    pub fn create_env(&self, name: String) -> Result<EnvRef<'_>> {
         let new_env = EnvRef::new(self, name)?;
 
         new_env.save()?;
 
         Ok(new_env)
     }
-    pub fn get_envs(&self) -> QuartzResult<impl Iterator<Item = QuartzResult<String>>> {
+    pub fn get_envs(&self) -> Result<impl Iterator<Item = Result<String>>> {
         let entries = std::fs::read_dir(self.path().join("env")).map_err(EnvError::GetEnvs)?;
         let env_names = entries.map(|entry| {
             let ok_dir_entry = entry.map_err(EnvError::GetEnvs)?;
@@ -132,7 +132,7 @@ impl Quartz {
 
         Ok(env_names)
     }
-    pub fn switch_env(&self, name: String) -> QuartzResult<EnvRef<'_>> {
+    pub fn switch_env(&self, name: String) -> Result<EnvRef<'_>> {
         let requested_env = EnvRef::new(&self, name)?;
         if !requested_env.exists() {
             return Err(EnvError::NotFound.into());
@@ -141,7 +141,7 @@ impl Quartz {
 
         Ok(requested_env)
     }
-    pub fn remove_env(&self, name: String) -> QuartzResult {
+    pub fn remove_env(&self, name: String) -> Result {
         let env = EnvRef::new(&self, name)?;
 
         if !env.exists() {
@@ -156,7 +156,7 @@ impl Quartz {
         Ok(())
     }
 
-    pub fn cp_env(&self, src: String, dest: String) -> QuartzResult<EnvRef<'_>> {
+    pub fn cp_env(&self, src: String, dest: String) -> Result<EnvRef<'_>> {
         let src = EnvRef::new(&self, src)?;
         let mut dest = EnvRef::new(&self, dest)?;
 
@@ -180,7 +180,7 @@ impl Quartz {
         created
     }
 
-    pub fn handle_switch(&self, mut handle: String) -> QuartzResult<EndpointHandle<'_>> {
+    pub fn handle_switch(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
         if handle == "-" {
             let previous_handle = StateField::PreviousEndpoint.get(self)?;
             handle = previous_handle;
@@ -202,7 +202,7 @@ impl Quartz {
         Ok(handle)
     }
 
-    pub fn handle_cp(&self, recursive: bool, src: &str, dest: &str) -> QuartzResult {
+    pub fn handle_cp(&self, recursive: bool, src: &str, dest: &str) -> Result {
         let src_handle = EndpointHandle::new(self, src.into());
         if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
@@ -229,7 +229,7 @@ impl Quartz {
         Ok(())
     }
 
-    pub fn handle_mv(&self, src: &str, dest: &str) -> QuartzResult {
+    pub fn handle_mv(&self, src: &str, dest: &str) -> Result {
         let src_handle = EndpointHandle::new(self, src.into());
         if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
@@ -249,7 +249,7 @@ impl Quartz {
         no_follow: bool,
         cookies: Vec<String>,
         aditional_cookie_jar: Option<PathBuf>,
-    ) -> QuartzResult<Bytes> {
+    ) -> Result<Bytes> {
         let handle = self.handle().ok_or(EndpointError::NoHandleInUse)?;
         let curr_env = self.env()?;
         let mut endpoint = handle.endpoint()?;
@@ -317,8 +317,8 @@ impl Quartz {
             for (key, val) in env.headers.iter() {
                 if !endpoint.headers.contains_key(key) {
                     req.headers_mut().insert(
-                        HeaderName::from_str(key).map_err(|_| QuartzError::ParseHeader)?,
-                        HeaderValue::from_str(val).map_err(|_| QuartzError::ParseHeader)?,
+                        HeaderName::from_str(key).map_err(|_| Error::ParseHeader)?,
+                        HeaderValue::from_str(val).map_err(|_| Error::ParseHeader)?,
                     );
                 }
             }
@@ -336,18 +336,18 @@ impl Quartz {
             res = client
                 .request(req)
                 .await
-                .map_err(|_| QuartzError::RequestFailure)?;
+                .map_err(|_| Error::RequestFailure)?;
 
             entry.message(&res);
 
             if let Some(cookie_header) = res.headers().get("Set-Cookie") {
-                let url = endpoint.full_url().map_err(|_| QuartzError::ParseUrl)?;
+                let url = endpoint.full_url().map_err(|_| Error::ParseUrl)?;
 
                 cookie_jar.set(
                     url.host().unwrap(),
                     cookie_header
                         .to_str()
-                        .map_err(|_| QuartzError::ParseCookie)?,
+                        .map_err(|_| Error::ParseCookie)?,
                 );
             }
 
@@ -358,19 +358,19 @@ impl Quartz {
             if let Some(location) = res.headers().get("Location") {
                 let location = location
                     .to_str()
-                    .map_err(|_| QuartzError::ParseLocationHeader)?;
+                    .map_err(|_| Error::ParseLocationHeader)?;
 
                 if location.starts_with('/') {
                     let url = endpoint
                         .full_url()
-                        .map_err(|_| QuartzError::ParseLocationHeader)?;
+                        .map_err(|_| Error::ParseLocationHeader)?;
                     // This is awful
                     endpoint.url = Uri::builder()
                         .authority(url.authority().unwrap().as_str())
                         .scheme(url.scheme().unwrap().as_str())
                         .path_and_query(location)
                         .build()
-                        .map_err(|_| QuartzError::ParseLocationHeader)?
+                        .map_err(|_| Error::ParseLocationHeader)?
                         .to_string();
                 } else if Uri::from_str(location).is_ok() {
                     endpoint.url = location.to_string();
@@ -399,7 +399,7 @@ impl Quartz {
 
         Ok(bytes)
     }
-    pub fn history(&self) -> QuartzResult<History> {
+    pub fn history(&self) -> Result<History> {
         let h = History::new(self.path.clone())?;
 
         Ok(h)

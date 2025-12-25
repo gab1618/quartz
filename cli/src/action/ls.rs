@@ -1,4 +1,4 @@
-use quartz_core::{endpoint::handle::EndpointHandle, error::QuartzResult, state::StateField};
+use quartz_core::{endpoint::handle::EndpointHandle, error::Result, state::StateField};
 
 use crate::ctx::Ctx;
 
@@ -12,7 +12,7 @@ pub struct Args {
     pub depth: Option<usize>,
 }
 
-pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
+pub fn cmd(ctx: Ctx, args: Args) -> Result {
     let parsed_arg_handle = args
         .handle
         .map(|handle| EndpointHandle::new(&ctx.quartz, handle.into()));

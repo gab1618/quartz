@@ -7,7 +7,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    error::{QuartzError, QuartzResult},
+    error::{Error, Result},
     headers::Headers,
     pairmap::PairMap,
 };
@@ -48,7 +48,7 @@ impl PairMap<'_> for Variables {
 }
 
 impl Variables {
-    pub fn parse(file_content: &str) -> QuartzResult<Self> {
+    pub fn parse(file_content: &str) -> Result<Self> {
         let mut variables = Variables::default();
 
         for var in file_content.split('\n').filter(|line| !line.is_empty()) {
@@ -66,23 +66,23 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn header_set(&mut self, name: String, value: String) -> QuartzResult {
+    pub fn header_set(&mut self, name: String, value: String) -> Result {
         self.headers.0.insert(name, value);
         Ok(())
     }
-    pub fn header_rm(&mut self, header: &str) -> QuartzResult {
+    pub fn header_rm(&mut self, header: &str) -> Result {
         self.headers.remove(header);
         Ok(())
     }
-    pub fn header_get(&self, key: &str) -> QuartzResult<String> {
+    pub fn header_get(&self, key: &str) -> Result<String> {
         let value = self
             .headers
             .get(key)
-            .ok_or(QuartzError::HeaderNotFound)?
+            .ok_or(Error::HeaderNotFound)?
             .to_owned();
         Ok(value)
     }
-    pub fn var_set(&mut self, key: String, value: String) -> QuartzResult {
+    pub fn var_set(&mut self, key: String, value: String) -> Result {
         self.variables.0.insert(key, value);
 
         Ok(())
@@ -101,11 +101,11 @@ impl Env {
 
         vars
     }
-    pub fn var_rm(&mut self, keys: Vec<String>) -> QuartzResult {
+    pub fn var_rm(&mut self, keys: Vec<String>) -> Result {
         for key in keys {
             self.variables
                 .remove(&key)
-                .ok_or(QuartzError::RemoveHeader)?;
+                .ok_or(Error::RemoveHeader)?;
         }
 
         Ok(())

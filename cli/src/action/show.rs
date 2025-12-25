@@ -1,7 +1,7 @@
 use crate::{action, cli::ShowCmd as Cmd, ctx::Ctx};
-use quartz_core::error::{QuartzError, QuartzResult};
+use quartz_core::error::{Error, Result};
 
-pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
         Cmd::Query { key } => {
             if let Some(key) = key {
@@ -50,10 +50,10 @@ pub fn handle(ctx: Ctx) {
     println!("{}", handle.head());
 }
 
-pub fn endpoint(ctx: Ctx) -> QuartzResult {
+pub fn endpoint(ctx: Ctx) -> Result {
     let handle = ctx.quartz.handle().unwrap();
     let endpoint = handle.endpoint().unwrap();
 
-    println!("{}", endpoint.to_toml().map_err(|_| QuartzError::Internal)?);
+    println!("{}", endpoint.to_toml().map_err(|_| Error::Internal)?);
     Ok(())
 }

@@ -1,7 +1,10 @@
-use crate::{config::error::ConfigError, endpoint::error::EndpointError, env::error::EnvError, history::error::HistoryError};
+use crate::{
+    config::error::ConfigError, endpoint::error::EndpointError, env::error::EnvError,
+    history::error::HistoryError,
+};
 
 #[derive(Debug, thiserror::Error)]
-pub enum QuartzError {
+pub enum Error {
     #[error(transparent)]
     EndpointError(#[from] EndpointError),
     #[error(transparent)]
@@ -46,4 +49,4 @@ pub enum QuartzError {
     WriteSnippet(#[source] std::io::Error),
 }
 
-pub type QuartzResult<T = ()> = Result<T, QuartzError>;
+pub type Result<T = ()> = std::result::Result<T, Error>;

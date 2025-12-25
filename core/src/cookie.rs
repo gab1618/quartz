@@ -1,4 +1,4 @@
-use crate::{QuartzError, QuartzResult};
+use crate::{Error};
 use chrono::prelude::*;
 use hyper::http::uri::Scheme;
 use std::{
@@ -503,9 +503,9 @@ impl CookieJar {
     /// # Errors
     ///
     /// This function will return an error if the file does not exist.
-    pub fn read(path: &Path) -> QuartzResult<Self> {
+    pub fn read(path: &Path) -> crate::Result<Self> {
         let mut cookies = Self::default();
-        let file = std::fs::read_to_string(path).map_err(QuartzError::ReadCookies)?;
+        let file = std::fs::read_to_string(path).map_err(Error::ReadCookies)?;
         let lines = file.lines();
 
         for line in lines {
@@ -525,13 +525,13 @@ impl CookieJar {
     }
 
     /// Write cookie jar contents to environment cookie jar in Netspace HTTP Cookie file format.
-    pub fn write(&self) -> QuartzResult {
+    pub fn write(&self) -> crate::Result {
         self.write_at(&self.path)
     }
 
     /// Write cookie jar contents to `path` in Netspace HTTP Cookie file format.
-    pub fn write_at(&self, path: &Path) -> QuartzResult {
-        std::fs::write(path, self.to_string()).map_err(QuartzError::SaveCookie)
+    pub fn write_at(&self, path: &Path) -> crate::Result {
+        std::fs::write(path, self.to_string()).map_err(Error::SaveCookie)
     }
 }
 

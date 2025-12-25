@@ -1,6 +1,6 @@
 use std::{io::Write, process::Stdio};
 
-use quartz_core::error::{QuartzError, QuartzResult};
+use quartz_core::error::{Error, Result};
 
 use crate::ctx::Ctx;
 
@@ -11,7 +11,7 @@ pub struct Args {
     max_count: Option<usize>,
 }
 
-pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
+pub fn cmd(ctx: Ctx, args: Args) -> Result {
     let history = ctx.quartz.history()?;
     let mut count = 0;
     let max_count = args.max_count.unwrap_or(usize::MAX);
@@ -45,8 +45,8 @@ pub fn cmd(ctx: Ctx, args: Args) -> QuartzResult {
         .as_mut()
         .unwrap()
         .write_all(output.as_bytes())
-        .map_err(|_| QuartzError::Internal)?;
-    child.wait().map_err(|_| QuartzError::Internal)?;
+        .map_err(|_| Error::Internal)?;
+    child.wait().map_err(|_| Error::Internal)?;
 
     Ok(())
 }

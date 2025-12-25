@@ -1,7 +1,7 @@
 use crate::validator;
 use std::path::Path;
 
-use crate::{Quartz, QuartzError, QuartzResult};
+use crate::{Quartz, Error, Result};
 use quartz_core::config::Config;
 
 pub struct Ctx {
@@ -24,9 +24,9 @@ impl Ctx {
     ///
     /// * `path` - A path slice to a file
     /// * `validate` - Validator method to ensure the edit can be saved without errors
-    pub fn edit<F>(&self, path: &Path, validate: F) -> QuartzResult
+    pub fn edit<F>(&self, path: &Path, validate: F) -> Result
     where
-        F: FnOnce(&str) -> QuartzResult,
+        F: FnOnce(&str) -> Result,
     {
         let mut temp_path = self.quartz.path().join("user").join("EDIT");
 
@@ -37,10 +37,10 @@ impl Ctx {
         }
 
         if !path.exists() {
-            std::fs::File::create(path).map_err(|_| QuartzError::Internal)?;
+            std::fs::File::create(path).map_err(|_| Error::Internal)?;
         }
 
-        std::fs::copy(path, &temp_path).map_err(|_| QuartzError::Internal)?;
+        std::fs::copy(path, &temp_path).map_err(|_| Error::Internal)?;
         let editor = self.quartz.config().parse().preferences.editor();
 
         let _ = std::process::Command::new(&editor)
@@ -50,18 +50,18 @@ impl Ctx {
                 panic!("failed to open editor: {}\n\n{}", editor, err);
             });
 
-        let content = std::fs::read_to_string(&temp_path).map_err(|_| QuartzError::Internal)?;
+        let content = std::fs::read_to_string(&temp_path).map_err(|_| Error::Internal)?;
 
         if let Err(err) = validate(&content) {
-            std::fs::remove_file(&temp_path).map_err(|_| QuartzError::Internal)?;
+            std::fs::remove_file(&temp_path).map_err(|_| Error::Internal)?;
             panic!("{}", err);
         }
 
-        std::fs::rename(&temp_path, path).map_err(|_| QuartzError::Internal)?;
+        std::fs::rename(&temp_path, path).map_err(|_| Error::Internal)?;
         Ok(())
     }
 
-    pub fn edit_config(&self) -> QuartzResult {
+    pub fn edit_config(&self) -> Result {
         let config = self.quartz.config();
         let config_path = config.file_path();
         self.edit(&config_path, validator::toml_as::<Config>)?;
@@ -69,7 +69,7 @@ impl Ctx {
         Ok(())
     }
 
-    pub fn body_edit(&self, format: Option<String>) -> QuartzResult {
+    pub fn body_edit(&self, format: Option<String>) -> Result {
         let curr_handle = self.quartz.handle().unwrap();
         let mut file_path = curr_handle.body_file_path();
 

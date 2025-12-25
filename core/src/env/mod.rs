@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::{
-    Quartz, QuartzResult,
+    Quartz, Result,
     cookie::CookieJar,
     env::{
         env::{Env, Variables},
@@ -39,7 +39,7 @@ impl<'a> DerefMut for EnvRef<'a> {
 }
 
 impl<'a> EnvRef<'a> {
-    pub fn new(quartz: &'a Quartz, name: String) -> QuartzResult<Self> {
+    pub fn new(quartz: &'a Quartz, name: String) -> Result<Self> {
         let mut env = Self {
             quartz,
             name,
@@ -62,7 +62,7 @@ impl<'a> EnvRef<'a> {
         self.quartz.path.join("env").join(&self.name)
     }
 
-    pub fn save(&self) -> QuartzResult {
+    pub fn save(&self) -> Result {
         let dir = self.dir();
         if !dir.exists() {
             std::fs::create_dir(&dir).map_err(EnvError::CreateEnvDir)?;
@@ -93,7 +93,7 @@ impl<'a> EnvRef<'a> {
 
         Ok(())
     }
-    pub fn clean(&self) -> QuartzResult {
+    pub fn clean(&self) -> Result {
         std::fs::remove_dir_all(self.dir()).map_err(EnvError::DeleteEnv)?;
         Ok(())
     }

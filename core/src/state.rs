@@ -1,4 +1,4 @@
-use crate::{Quartz, QuartzError, QuartzResult};
+use crate::{Quartz, Error, Result};
 use std::{io::Write, path::PathBuf};
 
 pub enum StateField {
@@ -23,28 +23,28 @@ impl StateField {
         })
     }
 
-    pub fn get(&self, quartz: &Quartz) -> QuartzResult<String> {
+    pub fn get(&self, quartz: &Quartz) -> Result<String> {
         let file_content =
-            std::fs::read_to_string(self.file_path(quartz)).map_err(QuartzError::GetState)?;
+            std::fs::read_to_string(self.file_path(quartz)).map_err(Error::GetState)?;
 
         Ok(file_content)
     }
 
-    pub fn set(&self, quartz: &Quartz, value: &str) -> QuartzResult {
+    pub fn set(&self, quartz: &Quartz, value: &str) -> Result {
         let mut file = std::fs::OpenOptions::new()
             .truncate(true)
             .create(true)
             .write(true)
             .open(self.file_path(quartz))
-            .map_err(QuartzError::SetState)?;
+            .map_err(Error::SetState)?;
 
         file.write_all(value.as_bytes())
-            .map_err(QuartzError::SetState)
+            .map_err(Error::SetState)
     }
 }
 
 impl State {
-    pub fn get(&self, quartz: &Quartz, field: StateField) -> QuartzResult<String> {
+    pub fn get(&self, quartz: &Quartz, field: StateField) -> Result<String> {
         let overwrite = match field {
             StateField::Endpoint => self.handle.clone(),
             _ => None,

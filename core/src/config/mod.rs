@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{config::error::ConfigError, error::QuartzResult};
+use crate::{config::error::ConfigError, error::Result};
 
 pub mod error;
 
@@ -21,12 +21,12 @@ impl ConfigManager {
         let parsed = Config::parse(&self.mount_path);
         parsed
     }
-    pub fn save(&self, conf: Config) -> QuartzResult {
+    pub fn save(&self, conf: Config) -> Result {
         let save_filepath = Config::filepath(&self.mount_path);
         conf.write(save_filepath)?;
         Ok(())
     }
-    pub fn set(&self, key: &str, value: &str) -> QuartzResult {
+    pub fn set(&self, key: &str, value: &str) -> Result {
         let mut curr_config = self.parse();
         match key {
             "preferences.editor" => curr_config.preferences.set_editor(value),
@@ -41,7 +41,7 @@ impl ConfigManager {
 
         Ok(())
     }
-    pub fn get(&self, key: &str) -> QuartzResult<String> {
+    pub fn get(&self, key: &str) -> Result<String> {
         let value = match key {
             "preferences.editor" => Some(self.parse().preferences.editor()),
             "preferences.pager" => Some(self.parse().preferences.pager()),
@@ -52,7 +52,7 @@ impl ConfigManager {
 
         Ok(value)
     }
-    pub fn raw_configs(&self) -> QuartzResult<String> {
+    pub fn raw_configs(&self) -> Result<String> {
         let content = toml::to_string(&self.parse()).map_err(ConfigError::SerializeConfig)?;
 
         Ok(content)
@@ -90,7 +90,7 @@ impl Config {
         Config::default()
     }
 
-    pub fn write(mut self, file_path: PathBuf) -> QuartzResult {
+    pub fn write(mut self, file_path: PathBuf) -> Result {
         let content = toml::to_string(&mut self).map_err(ConfigError::SerializeConfig)?;
 
         if !file_path.exists() {

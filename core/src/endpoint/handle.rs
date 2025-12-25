@@ -9,7 +9,7 @@ use crate::{
     Quartz,
     endpoint::{Endpoint, EndpointPatch, error::EndpointError},
     env::EnvRef,
-    error::{QuartzError, QuartzResult},
+    error::{Error, Result},
     state::StateField,
 };
 
@@ -89,10 +89,10 @@ impl<'a> EndpointHandle<'a> {
     pub fn endpoint_file_path(&self) -> PathBuf {
         self.dir().join("endpoint.toml")
     }
-    pub fn parent(&self) -> QuartzResult<Self> {
+    pub fn parent(&self) -> Result<Self> {
         let mut parent_path = self.path.clone();
         if parent_path.pop().is_none() {
-            return Err(QuartzError::Internal);
+            return Err(Error::Internal);
         }
         Ok(Self::new(self.quartz, parent_path))
     }
@@ -105,13 +105,13 @@ impl<'a> EndpointHandle<'a> {
         let path = self.dir();
         path.exists()
     }
-    pub fn ensure_dir(&self) -> QuartzResult {
+    pub fn ensure_dir(&self) -> Result {
         std::fs::create_dir_all(self.dir()).map_err(EndpointError::SaveEndpoint)?;
 
         Ok(())
     }
 
-    pub fn write_endpoint<E: AsRef<Endpoint>>(&self, endpoint: E) -> QuartzResult {
+    pub fn write_endpoint<E: AsRef<Endpoint>>(&self, endpoint: E) -> Result {
         let endpoint = endpoint.as_ref();
         let toml_content = endpoint.to_toml()?;
         self.ensure_dir()?;
@@ -140,7 +140,7 @@ impl<'a> EndpointHandle<'a> {
         self.path.len()
     }
 
-    pub fn children(&self) -> QuartzResult<Vec<EndpointHandle<'_>>> {
+    pub fn children(&self) -> Result<Vec<EndpointHandle<'_>>> {
         // If can't read the dir, just assume no children
         let paths = std::fs::read_dir(self.dir())
             .into_iter()
@@ -158,13 +158,13 @@ impl<'a> EndpointHandle<'a> {
 
                 Ok(EndpointHandle::new(self.quartz, handle_name.into()))
             })
-            .collect::<QuartzResult<Vec<_>>>()?;
+            .collect::<Result<Vec<_>>>()?;
 
         Ok(list)
     }
 
     #[must_use]
-    pub fn endpoint(&self) -> QuartzResult<Endpoint> {
+    pub fn endpoint(&self) -> Result<Endpoint> {
         Endpoint::from_dir(&self.dir())
     }
 
@@ -172,7 +172,7 @@ impl<'a> EndpointHandle<'a> {
         let handle = self.handle().replace(from, to);
         self.path = EndpointHandle::new(self.quartz, handle.into()).path;
     }
-    pub fn delete(&self, recursive: bool) -> QuartzResult {
+    pub fn delete(&self, recursive: bool) -> Result {
         if !self.exists() {
             return Err(EndpointError::HandleNotFound(self.handle()).into());
         }
@@ -208,20 +208,20 @@ impl<'a> EndpointHandle<'a> {
         });
         resolved
     }
-    pub fn set_body(&self, body: String) -> QuartzResult {
+    pub fn set_body(&self, body: String) -> Result {
         self.ensure_dir()?;
         let mut f = OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
             .open(self.body_file_path())
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(|_| Error::Internal)?;
         f.write_all(body.as_bytes())
-            .map_err(|_| QuartzError::Internal)?;
+            .map_err(|_| Error::Internal)?;
 
         Ok(())
     }
-    pub fn apply_endpoint_patch(&self, mut patch: EndpointPatch) -> QuartzResult {
+    pub fn apply_endpoint_patch(&self, mut patch: EndpointPatch) -> Result {
         let mut endpoint = self.endpoint().ok().unwrap_or(Endpoint::new());
         endpoint.update(&mut patch)?;
         self.write_endpoint(&endpoint)?;

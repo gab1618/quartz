@@ -2,13 +2,13 @@ use std::{collections::HashMap, fmt::Display, ops::{Deref, DerefMut}};
 
 use serde::{Deserialize, Serialize};
 
-use crate::{error::QuartzResult, pairmap::PairMap};
+use crate::{error::Result, pairmap::PairMap};
 
 #[derive(Default, Debug, Serialize, Deserialize, Clone)]
 pub struct Headers(pub HashMap<String, String>);
 
 impl Headers {
-    pub fn parse(file_content: &str) -> QuartzResult<Self> {
+    pub fn parse(file_content: &str) -> Result<Self> {
         let mut headers = Headers::default();
         for header in file_content.lines().filter(|line| !line.is_empty()) {
             headers.set(header)?;

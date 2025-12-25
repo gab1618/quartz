@@ -2,7 +2,7 @@ use crate::{
     cli::{EnvCmd as Cmd, HeaderCmd},
     ctx::Ctx,
 };
-use quartz_core::error::QuartzResult;
+use quartz_core::error::Result;
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {
@@ -25,7 +25,7 @@ pub struct RmArgs {
     env: String,
 }
 
-pub fn cmd(ctx: Ctx, command: Cmd) -> QuartzResult {
+pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
         Cmd::Create(args) => {
             ctx.quartz.create_env(args.name)?;
