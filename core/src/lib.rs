@@ -24,14 +24,14 @@ use hyper::{Body, Client, Request, Uri};
 use crate::config::ConfigManager;
 use crate::cookie::CookieJar;
 use crate::endpoint::EndpointManager;
+use crate::endpoint::endpoint::EndpointPatch;
 use crate::endpoint::error::EndpointError;
-use crate::env::error::EnvError;
+use crate::env::EnvManager;
 use crate::error::{Error, Result};
 use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
 use crate::state::StateManager;
-use crate::{endpoint::endpoint::EndpointPatch, env::env_ref::EnvRef, state::field::StateField};
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
 
@@ -97,82 +97,14 @@ impl Quartz {
     pub fn endpoint(&self) -> EndpointManager<'_> {
         EndpointManager::new(self)
     }
+    pub fn env(&self) -> EnvManager<'_> {
+        EnvManager::new(self)
+    }
     pub fn history(&self) -> History<'_> {
         History::new(&self.path)
     }
     pub fn path(&self) -> &PathBuf {
         &self.path
-    }
-    pub fn env(&self) -> Result<EnvRef<'_>> {
-        let curr_env_name = self
-            .state()
-            .get(StateField::Env)
-            .unwrap_or("default".into());
-
-        let parsed_env = EnvRef::new(self, curr_env_name)?;
-        Ok(parsed_env)
-    }
-    pub fn get_env(&self, name: String) -> Option<EnvRef<'_>> {
-        let env = EnvRef::new(self, name).ok();
-        env
-    }
-    pub fn create_env(&self, name: String) -> Result<EnvRef<'_>> {
-        let new_env = EnvRef::new(self, name)?;
-
-        new_env.save()?;
-
-        Ok(new_env)
-    }
-    pub fn get_envs(&self) -> Result<impl Iterator<Item = Result<String>>> {
-        let entries = std::fs::read_dir(self.path().join("env")).map_err(EnvError::GetEnvs)?;
-        let env_names = entries.map(|entry| {
-            let ok_dir_entry = entry.map_err(EnvError::GetEnvs)?;
-            let filename = ok_dir_entry.file_name();
-            let str_filename = filename.to_str().ok_or(EnvError::ParseEnvName)?.to_owned();
-            Ok(str_filename)
-        });
-
-        Ok(env_names)
-    }
-    pub fn switch_env(&self, name: String) -> Result<EnvRef<'_>> {
-        let requested_env = EnvRef::new(&self, name)?;
-        if !requested_env.exists() {
-            return Err(EnvError::NotFound.into());
-        }
-        self.state().set(StateField::Env, &requested_env.name)?;
-
-        Ok(requested_env)
-    }
-    pub fn remove_env(&self, name: String) -> Result {
-        let env = EnvRef::new(&self, name)?;
-
-        if !env.exists() {
-            return Err(EnvError::NotFound.into());
-        }
-        let curr_env = self.env()?;
-        if env.name == curr_env.name {
-            return Err(EnvError::EnvInUse(env.name).into());
-        }
-        env.clean()?;
-
-        Ok(())
-    }
-
-    pub fn cp_env(&self, src: String, dest: String) -> Result<EnvRef<'_>> {
-        let src = EnvRef::new(&self, src)?;
-        let mut dest = EnvRef::new(&self, dest)?;
-
-        for (key, value) in src.variables.iter() {
-            dest.variables.insert(key.to_string(), value.to_string());
-        }
-
-        for (key, value) in src.headers.iter() {
-            dest.headers.insert(key.to_string(), value.to_string());
-        }
-
-        dest.save()?;
-
-        Ok(dest)
     }
     pub fn config(&self) -> &ConfigManager {
         &self.config
@@ -188,12 +120,13 @@ impl Quartz {
     ) -> Result<Bytes> {
         let endpoint = self.endpoint();
         let handle = endpoint.handle().ok_or(EndpointError::NoHandleInUse)?;
-        let curr_env = self.env()?;
+        let env = self.env();
+        let curr_env = env.env()?;
         let mut endpoint = handle.endpoint()?;
         endpoint.update(&mut patch)?;
         let resolved_endpoint = endpoint.as_resolved(&handle, &curr_env)?;
 
-        let mut env = self.env()?;
+        let mut env = env.env()?;
         for var in variables {
             env.variables.set(&var)?;
         }

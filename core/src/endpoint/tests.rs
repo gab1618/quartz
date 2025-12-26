@@ -159,7 +159,8 @@ fn test_mv_handle_overwrite() {
 #[test]
 fn test_resolve_endpoint_url() {
     let quartz = TestQuartz::empty();
-    let default_env = quartz.env().unwrap();
+    let env = quartz.env();
+    let default_env = env.env().unwrap();
     let endpoint = quartz.endpoint();
 
     let first_handle = endpoint.new_handle("jsonplaceholder");
@@ -182,7 +183,8 @@ fn test_resolve_endpoint_url() {
 #[test]
 fn test_multilevel_inheritance() {
     let quartz = TestQuartz::empty();
-    let default_env = quartz.env().unwrap();
+    let env = quartz.env();
+    let default_env = env.env().unwrap();
     let endpoint = quartz.endpoint();
     let first_handle = endpoint.new_handle("jsonplaceholder");
     let mut first_endpoint = Endpoint::new();
@@ -208,7 +210,8 @@ fn test_multilevel_inheritance() {
 #[test]
 fn test_resolve_endpoint_vars() {
     let quartz = TestQuartz::empty();
-    let mut default_env = quartz.env().unwrap();
+    let env = quartz.env();
+    let mut default_env = env.env().unwrap();
     let endpoint = quartz.endpoint();
 
     let first_handle = endpoint.new_handle("jsonplaceholder");
@@ -242,7 +245,8 @@ fn test_handle_parent() {
 #[test]
 fn test_resolve_body() {
     let quartz = TestQuartz::empty();
-    let mut default_env = quartz.env().unwrap();
+    let env = quartz.env();
+    let mut default_env = env.env().unwrap();
     let endpoint = quartz.endpoint();
 
     let first_handle = endpoint.new_handle("first");

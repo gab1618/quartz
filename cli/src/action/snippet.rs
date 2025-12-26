@@ -18,16 +18,17 @@ pub struct Args {
 
 pub fn cmd(ctx: Ctx, mut args: Args) -> Result {
     let endpoint = ctx.quartz.endpoint();
+    let env = ctx.quartz.env();
     let handle = endpoint.handle().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
-    let mut env = ctx.quartz.env()?;
+    let mut curr_env = env.env()?;
 
     for var in args.variables {
-        env.variables.set(&var)?;
+        curr_env.variables.set(&var)?;
     }
 
     endpoint.update(&mut args.patch)?;
-    let resolved = endpoint.as_resolved(&handle, &env)?;
+    let resolved = endpoint.as_resolved(&handle, &curr_env)?;
 
     let mut stdout = stdout();
     match args.command {
