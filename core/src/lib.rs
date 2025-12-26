@@ -15,7 +15,7 @@ mod tests;
 pub use error::{Error, Result};
 
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use chrono::Utc;
@@ -24,14 +24,11 @@ use hyper::header::{HeaderName, HeaderValue};
 use hyper::{Body, Client, Request, Uri};
 
 use crate::config::ConfigManager;
-use crate::cookie::CookieJar;
 use crate::endpoint::EndpointManager;
-use crate::endpoint::endpoint::EndpointPatch;
 use crate::endpoint::error::EndpointError;
 use crate::env::EnvManager;
 use crate::history::History;
 use crate::history::error::HistoryError;
-use crate::pairmap::PairMap;
 use crate::state::StateManager;
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
@@ -113,10 +110,7 @@ impl Quartz {
 
     pub async fn send(
         &self,
-        variables: Vec<String>,
-        mut patch: EndpointPatch,
         no_follow: bool,
-        cookies: Vec<String>,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> Result<Bytes> {
         let endpoint = self.endpoint();
@@ -124,13 +118,9 @@ impl Quartz {
         let env = self.env();
         let curr_env = env.current()?;
         let mut endpoint = handle.endpoint()?;
-        endpoint.update(&mut patch)?;
         let resolved_endpoint = endpoint.as_resolved(&handle, &curr_env)?;
 
-        let mut env = env.current()?;
-        for var in variables {
-            env.variables.set(&var)?;
-        }
+        let env = env.current()?;
 
         if !endpoint.headers.contains_key("user-agent") {
             endpoint
@@ -140,31 +130,9 @@ impl Quartz {
 
         let mut cookie_jar = env.cookie_jar();
 
-        let extras = cookies
-            .iter()
-            .map::<Result<Vec<String>>, _>(|c| {
-                if c.contains('=') {
-                    return Err(Error::InvalidCookieFormat);
-                }
-
-                let path = Path::new(c);
-                if !path.exists() {
-                    return Err(Error::CookiePathNotFound);
-                }
-
-                let cookies = CookieJar::read(path)?
-                    .iter()
-                    .map(|c| format!("{}={}", c.name(), c.value()))
-                    .collect();
-                Ok(cookies)
-            })
-            .filter_map(Result::ok)
-            .flatten();
-
         let cookie_value = cookie_jar
             .iter()
             .map(|c| format!("{}={}", c.name(), c.value()))
-            .chain(extras)
             .collect::<Vec<String>>()
             .join("; ");
 
