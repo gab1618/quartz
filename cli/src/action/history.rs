@@ -1,6 +1,6 @@
 use std::{io::Write, process::Stdio};
 
-use quartz_core::error::{Error, Result};
+use crate::{Error, Result};
 
 use crate::ctx::Ctx;
 
@@ -45,8 +45,8 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
         .as_mut()
         .unwrap()
         .write_all(output.as_bytes())
-        .map_err(|_| Error::Internal)?;
-    child.wait().map_err(|_| Error::Internal)?;
+        .map_err(|_| Error::WriteStdin)?;
+    child.wait().map_err(|_| Error::WriteStdin)?;
 
     Ok(())
 }

@@ -18,6 +18,10 @@ pub enum Error {
     RemoveEditFile(#[source] std::io::Error),
     #[error("Could not parse toml")]
     ParseToml,
+    #[error("There is no history entries")]
+    NoHistoryEntry,
+    #[error("Could not write to stdin")]
+    WriteStdin,
 }
 
 pub type Result<T = ()> = std::result::Result<T, Error>;

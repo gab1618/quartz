@@ -1,15 +1,13 @@
+use crate::{Error, Result};
 use crate::{
     cli::{LastCmd as Cmd, LastResCmd as ResCmd},
     ctx::Ctx,
 };
-use quartz_core::{
-    error::{Error, Result},
-    history::{self},
-};
+use quartz_core::history::{self};
 
 pub fn cmd(ctx: Ctx, maybe_command: Option<Cmd>) -> Result {
     let h = ctx.quartz.history();
-    let entry = h.last_entry()?.ok_or(Error::Internal)?;
+    let entry = h.last_entry()?.ok_or(Error::NoHistoryEntry)?;
 
     if maybe_command.is_none() {
         println!("{entry}");

@@ -1,6 +1,5 @@
 use crate::validator;
 use quartz_core::endpoint::endpoint::Endpoint;
-use quartz_core::error::Error;
 
 use crate::Result;
 use crate::action;
@@ -82,7 +81,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
         Cmd::Header { command } => action::header::cmd(ctx, command)?,
         Cmd::Body(args) => action::body::cmd(ctx, args)?,
         Cmd::History(args) => action::history::cmd(ctx, args)?,
-        Cmd::Last { command } => action::last::cmd(ctx, command).map_err(|_| Error::Internal)?,
+        Cmd::Last { command } => action::last::cmd(ctx, command)?,
         Cmd::Var { command } => action::var::cmd(ctx, command)?,
         Cmd::Env { command } => action::env::cmd(ctx, command)?,
         Cmd::Config { command } => action::config::cmd(ctx, command)?,

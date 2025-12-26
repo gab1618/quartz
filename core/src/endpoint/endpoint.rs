@@ -272,10 +272,10 @@ impl Endpoint {
             let mut scheme = "http://".to_owned();
             scheme.push_str(&url);
 
-            return Uri::try_from(scheme).map_err(|_| crate::Error::Internal);
+            return Uri::try_from(scheme).map_err(|_| EndpointError::SerializeUri.into());
         }
 
-        result.map_err(|_| crate::Error::Internal)
+        result.map_err(|_| EndpointError::SerializeUri.into())
     }
 
     pub fn colored_method(&self) -> colored::ColoredString {

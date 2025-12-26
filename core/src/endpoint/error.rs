@@ -36,4 +36,6 @@ pub enum EndpointError {
     ModifyBody(#[source] std::io::Error),
     #[error("Could not set request body")]
     SetRequestBody,
+    #[error("Could not serialize uri")]
+    SerializeUri,
 }

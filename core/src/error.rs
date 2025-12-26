@@ -13,8 +13,6 @@ pub enum Error {
     EnvError(#[from] EnvError),
     #[error(transparent)]
     SnippetError(#[from] SnippetError),
-    #[error("Unknown error")]
-    Internal,
     #[error("Could not initialize quartz: {0}")]
     Init(#[source] std::io::Error),
     #[error("Quartz already initialized")]
