@@ -31,7 +31,7 @@ use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
 use crate::state::StateManager;
-use crate::{endpoint::endpoint::EndpointPatch, env::EnvRef, state::field::StateField};
+use crate::{endpoint::endpoint::EndpointPatch, env::env_ref::EnvRef, state::field::StateField};
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
 

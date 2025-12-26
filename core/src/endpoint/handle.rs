@@ -11,7 +11,7 @@ use crate::{
         endpoint::{Endpoint, EndpointPatch},
         error::EndpointError,
     },
-    env::EnvRef,
+    env::env_ref::EnvRef,
     error::Result,
     state::field::StateField,
 };
