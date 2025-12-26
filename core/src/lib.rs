@@ -182,8 +182,7 @@ impl Quartz {
             let mut req: Request<_> = resolved_endpoint
                 // TODO: Find a way around this clone
                 .clone()
-                .try_into()
-                .unwrap_or_else(|_| panic!("malformed request"));
+                .try_into()?;
             for (key, val) in env.headers.iter() {
                 if !endpoint.headers.contains_key(key) {
                     req.headers_mut().insert(
@@ -211,7 +210,7 @@ impl Quartz {
             entry.message(&res);
 
             if let Some(cookie_header) = res.headers().get("Set-Cookie") {
-                let url = endpoint.full_url().map_err(|_| Error::ParseUrl)?;
+                let url = endpoint.full_url()?;
 
                 cookie_jar.set(
                     url.host().unwrap(),
@@ -227,9 +226,7 @@ impl Quartz {
                 let location = location.to_str().map_err(|_| Error::ParseLocationHeader)?;
 
                 if location.starts_with('/') {
-                    let url = endpoint
-                        .full_url()
-                        .map_err(|_| Error::ParseLocationHeader)?;
+                    let url = endpoint.full_url()?;
                     // This is awful
                     endpoint.url = Uri::builder()
                         .authority(url.authority().unwrap().as_str())
