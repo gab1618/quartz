@@ -12,6 +12,8 @@ pub mod state;
 #[cfg(test)]
 mod tests;
 
+pub use error::{Error, Result};
+
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -27,7 +29,6 @@ use crate::endpoint::EndpointManager;
 use crate::endpoint::endpoint::EndpointPatch;
 use crate::endpoint::error::EndpointError;
 use crate::env::EnvManager;
-use crate::error::{Error, Result};
 use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::pairmap::PairMap;
