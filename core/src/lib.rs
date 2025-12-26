@@ -145,7 +145,7 @@ impl Quartz {
         let mut entry = history::Entry::builder();
         entry
             .handle(handle.handle())
-            .timestemp(Utc::now().timestamp_micros());
+            .timestamp(Utc::now().timestamp_micros());
 
         let body = handle.body().clone();
 

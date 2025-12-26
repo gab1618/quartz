@@ -107,7 +107,7 @@ impl EntryBuilder {
         self
     }
 
-    pub fn timestemp(&mut self, value: i64) -> &mut Self {
+    pub fn timestamp(&mut self, value: i64) -> &mut Self {
         self.timestamp = value;
         self
     }
