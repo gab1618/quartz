@@ -119,7 +119,7 @@ impl Quartz {
         aditional_cookie_jar: Option<PathBuf>,
     ) -> Result<Bytes> {
         let endpoint = self.endpoint();
-        let handle = endpoint.handle().ok_or(EndpointError::NoHandleInUse)?;
+        let handle = endpoint.current().ok_or(EndpointError::NoHandleInUse)?;
         let env = self.env();
         let curr_env = env.current()?;
         let mut endpoint = handle.endpoint()?;

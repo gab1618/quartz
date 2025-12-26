@@ -8,7 +8,7 @@ fn test_simple_cp_handle() {
     let handle = endpoint.new_handle("testing");
     handle.ensure_dir().unwrap();
     endpoint
-        .handle_cp(false, "testing", "testing-copy")
+        .copy(false, "testing", "testing-copy")
         .unwrap();
 
     let found_handle = endpoint.new_handle("testing-copy");
@@ -23,7 +23,7 @@ fn test_recursive_cp_handle() {
     endpoint.new_handle("testing/ex").ensure_dir().unwrap();
     endpoint.new_handle("testing/ex2").ensure_dir().unwrap();
     endpoint.new_handle("testing/ex2/sub").ensure_dir().unwrap();
-    endpoint.handle_cp(true, "testing", "testing-copy").unwrap();
+    endpoint.copy(true, "testing", "testing-copy").unwrap();
 
     assert!(endpoint.new_handle("testing-copy").exists());
     assert!(endpoint.new_handle("testing-copy/ex").exists());
@@ -40,7 +40,7 @@ fn test_non_recursive_cp_handle() {
     endpoint.new_handle("testing/ex2").ensure_dir().unwrap();
     endpoint.new_handle("testing/ex2/sub").ensure_dir().unwrap();
     endpoint
-        .handle_cp(false, "testing", "testing-copy")
+        .copy(false, "testing", "testing-copy")
         .unwrap();
 
     assert!(endpoint.new_handle("testing-copy").exists());
@@ -65,7 +65,7 @@ fn test_cp_endpoint_spec() {
     let mut created_endpoint = created_handle.endpoint().unwrap();
     created_endpoint.url = example_url.clone();
     created_handle.write_endpoint(created_endpoint).unwrap();
-    endpoint.handle_cp(true, "testing", "testing-copy").unwrap();
+    endpoint.copy(true, "testing", "testing-copy").unwrap();
 
     let found_handle = endpoint.new_handle("testing-copy/ex2/sub");
     assert!(found_handle.exists());
@@ -124,7 +124,7 @@ fn test_mv_handle() {
     let endpoint = quartz.endpoint();
     endpoint.new_handle("testing").ensure_dir().unwrap();
 
-    endpoint.handle_mv("testing", "new").unwrap();
+    endpoint.mv("testing", "new").unwrap();
 
     assert!(endpoint.new_handle("new").exists());
     assert!(!endpoint.new_handle("testing").exists());
@@ -143,7 +143,7 @@ fn test_mv_handle_overwrite() {
     second_endpoint.url = "https://jsonplaceholder.typicode.com/todos/2".to_owned();
     second_handle.write_endpoint(second_endpoint).unwrap();
 
-    endpoint.handle_mv("testing", "new").unwrap();
+    endpoint.mv("testing", "new").unwrap();
 
     let overwritten_handle = EndpointHandle::new(&quartz, "new".into());
     assert!(overwritten_handle.exists());

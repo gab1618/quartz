@@ -26,7 +26,7 @@ impl<'a> EndpointManager<'a> {
         created
     }
 
-    pub fn handle(&self) -> Option<EndpointHandle<'_>> {
+    pub fn current(&self) -> Option<EndpointHandle<'_>> {
         let curr_endpoint_name = self.quartz.state().get(StateField::Endpoint).ok();
 
         let parsed = curr_endpoint_name
@@ -34,7 +34,7 @@ impl<'a> EndpointManager<'a> {
         parsed
     }
 
-    pub fn handle_switch(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
+    pub fn switch(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
         if handle == "-" {
             let previous_handle = self.quartz.state().get(StateField::PreviousEndpoint)?;
             handle = previous_handle;
@@ -60,7 +60,7 @@ impl<'a> EndpointManager<'a> {
         Ok(handle)
     }
 
-    pub fn handle_cp(&self, recursive: bool, src: &str, dest: &str) -> Result {
+    pub fn copy(&self, recursive: bool, src: &str, dest: &str) -> Result {
         let src_handle = EndpointHandle::new(self.quartz, src.into());
         if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
@@ -80,21 +80,21 @@ impl<'a> EndpointManager<'a> {
                 let dest_handle_prefix = dest_handle.path[0].clone();
                 let _ = std::mem::replace(&mut new_handle.path[0], dest_handle_prefix);
 
-                self.handle_cp(true, &child_name, &new_handle.handle())?;
+                self.copy(true, &child_name, &new_handle.handle())?;
             }
         }
 
         Ok(())
     }
 
-    pub fn handle_mv(&self, src: &str, dest: &str) -> Result {
+    pub fn mv(&self, src: &str, dest: &str) -> Result {
         let src_handle = EndpointHandle::new(self.quartz, src.into());
         if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
 
         // TODO: this might be one of the lazyest solutions so far
-        self.handle_cp(true, src, dest)?;
+        self.copy(true, src, dest)?;
         src_handle.delete(true)?;
 
         Ok(())

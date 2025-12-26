@@ -6,7 +6,7 @@ fn change_body() {
     let endpoint = quartz.endpoint();
     let handle = endpoint.new_handle("testing");
     handle.write_endpoint(Endpoint::new()).unwrap();
-    endpoint.handle_switch("testing".to_owned()).unwrap();
+    endpoint.switch("testing".to_owned()).unwrap();
 
     handle.set_body("{}".to_owned()).unwrap();
     assert_eq!(handle.body().unwrap(), "{}".to_owned());

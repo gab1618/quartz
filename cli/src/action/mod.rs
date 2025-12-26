@@ -33,7 +33,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
             let new_handle = endpoint.new_handle(&args.handle);
             new_handle.write_endpoint(Endpoint::new())?;
             if args.switch {
-                endpoint.handle_switch(args.handle)?;
+                endpoint.switch(args.handle)?;
             }
 
             new_handle.apply_endpoint_patch(args.patch)?;
@@ -41,8 +41,8 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
         Cmd::Use(args) => {
             let endpoint = ctx.quartz.endpoint();
             let curr_handle = match args.handle {
-                Some(handle) => Some(endpoint.handle_switch(handle)?),
-                None => endpoint.handle(),
+                Some(handle) => Some(endpoint.switch(handle)?),
+                None => endpoint.current(),
             };
             if let Some(handle) = curr_handle {
                 handle.apply_endpoint_patch(args.patch)?;
@@ -58,18 +58,18 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
         Cmd::Show { command } => action::show::cmd(ctx, command)?,
         Cmd::Edit => {
             let endpoint = ctx.quartz.endpoint();
-            if let Some(curr_handle) = endpoint.handle() {
+            if let Some(curr_handle) = endpoint.current() {
                 let endpoint_file_path = curr_handle.endpoint_file_path();
                 ctx.edit(&endpoint_file_path, validator::toml_as::<Endpoint>)?;
             }
         }
         Cmd::Cp(args) => {
             let endpoint = ctx.quartz.endpoint();
-            endpoint.handle_cp(args.recursive, &args.src, &args.dest)?;
+            endpoint.copy(args.recursive, &args.src, &args.dest)?;
         }
         Cmd::Mv(args) => {
             let endpoint = ctx.quartz.endpoint();
-            endpoint.handle_mv(&args.src, &args.dest)?;
+            endpoint.mv(&args.src, &args.dest)?;
         }
         Cmd::Rm(args) => {
             let endpoint = ctx.quartz.endpoint();

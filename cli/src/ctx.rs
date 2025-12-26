@@ -71,7 +71,7 @@ impl Ctx {
 
     pub fn body_edit(&self, format: Option<String>) -> Result {
         let endpoint = self.quartz.endpoint();
-        let curr_handle = endpoint.handle().unwrap();
+        let curr_handle = endpoint.current().unwrap();
         let mut file_path = curr_handle.body_file_path();
 
         if let Some(format) = format {
