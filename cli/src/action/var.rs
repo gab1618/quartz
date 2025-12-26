@@ -23,7 +23,7 @@ pub struct RmArgs {
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     let env = ctx.quartz.env();
-    let mut curr_env = env.env()?;
+    let mut curr_env = env.current()?;
     match command {
         Cmd::Edit => edit(ctx)?,
         Cmd::Get(args) => {
@@ -48,7 +48,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
 
 pub fn edit(ctx: Ctx) -> Result {
     let env = ctx.quartz.env();
-    let curr_env = env.env()?;
+    let curr_env = env.current()?;
     ctx.edit(&curr_env.dir().join("variables"), |c| {
         Variables::parse(c)?;
         Ok(())

@@ -29,30 +29,30 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
         Cmd::Create(args) => {
             let env = ctx.quartz.env();
-            env.create_env(args.name)?;
+            env.create(args.name)?;
         }
         Cmd::Cp(args) => {
             let env = ctx.quartz.env();
-            env.cp_env(args.src, args.dest)?;
+            env.copy(args.src, args.dest)?;
         }
         Cmd::Use(args) => {
             let env = ctx.quartz.env();
-            env.switch_env(args.env)?;
+            env.switch(args.env)?;
         }
         Cmd::Ls => {
             let env = ctx.quartz.env();
-            let envs = env.get_envs()?;
+            let envs = env.envs()?;
             for env in envs {
                 println!("{}", env?);
             }
         }
         Cmd::Rm(args) => {
             let env = ctx.quartz.env();
-            env.remove_env(args.env)?;
+            env.remove(args.env)?;
         },
         Cmd::Header { command } => {
             let env = ctx.quartz.env();
-            let mut curr_env = env.env().unwrap();
+            let mut curr_env = env.current().unwrap();
             match command {
                 HeaderCmd::Set { name, value } => {
                     println!("Setting {} to {}", name, value);

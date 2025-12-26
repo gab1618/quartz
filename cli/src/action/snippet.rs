@@ -21,7 +21,7 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> Result {
     let env = ctx.quartz.env();
     let handle = endpoint.handle().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
-    let mut curr_env = env.env()?;
+    let mut curr_env = env.current()?;
 
     for var in args.variables {
         curr_env.variables.set(&var)?;

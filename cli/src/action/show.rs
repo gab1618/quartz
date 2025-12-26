@@ -27,7 +27,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
         Cmd::Handle => handle(ctx),
         Cmd::Env => {
             let env = ctx.quartz.env();
-            let curr_env = env.env().unwrap();
+            let curr_env = env.current().unwrap();
             println!("{}", curr_env.name);
         }
         Cmd::Cookies(args) => action::cookie::print(ctx, args),

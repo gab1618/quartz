@@ -17,7 +17,7 @@ impl<'a> EnvManager<'a> {
     pub fn new(quartz: &'a Quartz) -> Self {
         Self { quartz }
     }
-    pub fn env(&self) -> Result<EnvRef<'_>> {
+    pub fn current(&self) -> Result<EnvRef<'_>> {
         let curr_env_name = self
             .quartz
             .state()
@@ -27,18 +27,18 @@ impl<'a> EnvManager<'a> {
         let parsed_env = EnvRef::new(self.quartz, curr_env_name)?;
         Ok(parsed_env)
     }
-    pub fn get_env(&self, name: String) -> Option<EnvRef<'_>> {
+    pub fn get(&self, name: String) -> Option<EnvRef<'_>> {
         let env = EnvRef::new(self.quartz, name).ok();
         env
     }
-    pub fn create_env(&self, name: String) -> Result<EnvRef<'_>> {
+    pub fn create(&self, name: String) -> Result<EnvRef<'_>> {
         let new_env = EnvRef::new(self.quartz, name)?;
 
         new_env.save()?;
 
         Ok(new_env)
     }
-    pub fn get_envs(&self) -> Result<impl Iterator<Item = Result<String>>> {
+    pub fn envs(&self) -> Result<impl Iterator<Item = Result<String>>> {
         let entries =
             std::fs::read_dir(self.quartz.path().join("env")).map_err(EnvError::GetEnvs)?;
         let env_names = entries.map(|entry| {
@@ -50,7 +50,7 @@ impl<'a> EnvManager<'a> {
 
         Ok(env_names)
     }
-    pub fn switch_env(&self, name: String) -> Result<EnvRef<'_>> {
+    pub fn switch(&self, name: String) -> Result<EnvRef<'_>> {
         let requested_env = EnvRef::new(self.quartz, name)?;
         if !requested_env.exists() {
             return Err(EnvError::NotFound.into());
@@ -61,13 +61,13 @@ impl<'a> EnvManager<'a> {
 
         Ok(requested_env)
     }
-    pub fn remove_env(&self, name: String) -> Result {
+    pub fn remove(&self, name: String) -> Result {
         let env = EnvRef::new(self.quartz, name)?;
 
         if !env.exists() {
             return Err(EnvError::NotFound.into());
         }
-        let curr_env = self.env()?;
+        let curr_env = self.current()?;
         if env.name == curr_env.name {
             return Err(EnvError::EnvInUse(env.name).into());
         }
@@ -76,7 +76,7 @@ impl<'a> EnvManager<'a> {
         Ok(())
     }
 
-    pub fn cp_env(&self, src: String, dest: String) -> Result<EnvRef<'_>> {
+    pub fn copy(&self, src: String, dest: String) -> Result<EnvRef<'_>> {
         let src = EnvRef::new(self.quartz, src)?;
         let mut dest = EnvRef::new(self.quartz, dest)?;
 

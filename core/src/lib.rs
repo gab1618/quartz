@@ -121,12 +121,12 @@ impl Quartz {
         let endpoint = self.endpoint();
         let handle = endpoint.handle().ok_or(EndpointError::NoHandleInUse)?;
         let env = self.env();
-        let curr_env = env.env()?;
+        let curr_env = env.current()?;
         let mut endpoint = handle.endpoint()?;
         endpoint.update(&mut patch)?;
         let resolved_endpoint = endpoint.as_resolved(&handle, &curr_env)?;
 
-        let mut env = env.env()?;
+        let mut env = env.current()?;
         for var in variables {
             env.variables.set(&var)?;
         }
