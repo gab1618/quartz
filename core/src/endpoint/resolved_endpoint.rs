@@ -26,7 +26,7 @@ impl TryInto<Request<Body>> for ResolvedEndpoint {
 
         if let Some(body) = self.body {
             builder
-                .body(body.to_owned().into())
+                .body(body.into())
                 .map_err(|_| EndpointError::SetRequestBody.into())
         } else {
             builder
@@ -35,3 +35,4 @@ impl TryInto<Request<Body>> for ResolvedEndpoint {
         }
     }
 }
+
