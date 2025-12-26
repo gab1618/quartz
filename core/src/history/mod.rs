@@ -29,8 +29,8 @@ pub struct History<'a> {
 }
 
 impl<'a> History<'a> {
-    pub fn new(path: &'a PathBuf) -> Result<Self> {
-        Ok(Self { path })
+    pub fn new(path: &'a PathBuf) -> Self {
+        Self { path }
     }
 
     pub fn entries(&self) -> Result<Vec<Entry>> {

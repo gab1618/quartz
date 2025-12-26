@@ -8,7 +8,7 @@ use quartz_core::{
 };
 
 pub fn cmd(ctx: Ctx, maybe_command: Option<Cmd>) -> Result {
-    let h = ctx.quartz.history()?;
+    let h = ctx.quartz.history();
     let entry = h.last_entry()?.ok_or(Error::Internal)?;
 
     if maybe_command.is_none() {

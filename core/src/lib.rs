@@ -97,6 +97,9 @@ impl Quartz {
     pub fn endpoint(&self) -> EndpointManager<'_> {
         EndpointManager::new(self)
     }
+    pub fn history(&self) -> History<'_> {
+        History::new(&self.path)
+    }
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
@@ -324,14 +327,9 @@ impl Quartz {
 
         entry.message_raw(String::from_utf8(bytes.to_vec()).map_err(|_| HistoryError::Serialize)?);
 
-        let h = self.history()?;
+        let h = self.history();
         h.write(entry.build()?)?;
 
         Ok(bytes)
-    }
-    pub fn history(&self) -> Result<History<'_>> {
-        let h = History::new(&self.path)?;
-
-        Ok(h)
     }
 }

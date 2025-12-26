@@ -12,7 +12,7 @@ pub struct Args {
 }
 
 pub fn cmd(ctx: Ctx, args: Args) -> Result {
-    let history = ctx.quartz.history()?;
+    let history = ctx.quartz.history();
     let mut count = 0;
     let max_count = args.max_count.unwrap_or(usize::MAX);
 
