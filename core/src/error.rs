@@ -47,6 +47,10 @@ pub enum Error {
     SaveCookie(#[source] std::io::Error),
     #[error("Could write snippet: {0}")]
     WriteSnippet(#[source] std::io::Error),
+    #[error("Cookie path not found")]
+    CookiePathNotFound,
+    #[error("Invalid cookie format")]
+    InvalidCookieFormat,
 }
 
 pub type Result<T = ()> = std::result::Result<T, Error>;

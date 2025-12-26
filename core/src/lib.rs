@@ -139,22 +139,26 @@ impl Quartz {
 
         let mut cookie_jar = env.cookie_jar();
 
-        let extras = cookies.iter().flat_map(|c| {
-            if c.contains('=') {
-                return vec![c.to_owned()];
-            }
+        let extras = cookies
+            .iter()
+            .map::<Result<Vec<String>>, _>(|c| {
+                if c.contains('=') {
+                    return Err(Error::InvalidCookieFormat);
+                }
 
-            let path = Path::new(c);
-            if !path.exists() {
-                panic!("no such file: {c}");
-            }
+                let path = Path::new(c);
+                if !path.exists() {
+                    return Err(Error::CookiePathNotFound);
+                }
 
-            CookieJar::read(path)
-                .unwrap()
-                .iter()
-                .map(|c| format!("{}={}", c.name(), c.value()))
-                .collect()
-        });
+                let cookies = CookieJar::read(path)?
+                    .iter()
+                    .map(|c| format!("{}={}", c.name(), c.value()))
+                    .collect();
+                Ok(cookies)
+            })
+            .filter_map(Result::ok)
+            .flatten();
 
         let cookie_value = cookie_jar
             .iter()
