@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::endpoint::error::EndpointError;
 use crate::endpoint::handle::EndpointHandle;
 use crate::endpoint::resolved_endpoint::ResolvedEndpoint;
-use crate::env::env_ref::EnvRef;
+use crate::env::env::Env;
 use crate::{error::Error, headers::Headers, pairmap::PairMap};
 
 #[derive(Default, Debug, Serialize, Deserialize, Clone)]
@@ -188,7 +188,7 @@ impl Endpoint {
     }
 
     /// Inherits parent URL when it starts with "**".
-    pub fn resolved_url(&self, handle: &EndpointHandle, env: &EnvRef) -> crate::Result<String> {
+    pub fn resolved_url(&self, handle: &EndpointHandle, env: &Env) -> crate::Result<String> {
         let mut full_url = self.url.clone();
         if self.url.starts_with("**") {
             full_url = handle
@@ -214,7 +214,7 @@ impl Endpoint {
     pub fn as_resolved(
         &mut self,
         handle: &EndpointHandle,
-        env: &EnvRef,
+        env: &Env,
     ) -> crate::Result<ResolvedEndpoint> {
         for (key, value) in env.variables.iter() {
             let key_match = Self::key_match_str(&key);

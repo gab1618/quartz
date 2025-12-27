@@ -23,22 +23,25 @@ pub struct RmArgs {
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     let env = ctx.quartz.env();
-    let mut curr_env = env.current()?;
+    let curr_env = env.current()?;
+    let mut curr_env_value = curr_env.read()?;
     match command {
         Cmd::Edit => edit(ctx)?,
         Cmd::Get(args) => {
-            if let Some(v) = curr_env.var_get(&args.key) {
+            if let Some(v) = curr_env_value.var_get(&args.key) {
                 print!("{v}");
             }
         }
         Cmd::Set(args) => {
-            curr_env.var_set(args.key, args.value)?;
+            curr_env_value.var_set(args.key, args.value)?;
+            curr_env.save(&curr_env_value)?;
         }
         Cmd::Rm(args) => {
-            curr_env.var_rm(args.keys)?;
+            curr_env_value.var_rm(args.keys)?;
+            curr_env.save(&curr_env_value)?;
         }
         Cmd::Ls => {
-            let vars = curr_env.vars();
+            let vars = curr_env_value.vars();
             print!("{vars}");
         }
     };

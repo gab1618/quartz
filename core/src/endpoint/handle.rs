@@ -11,7 +11,7 @@ use crate::{
         endpoint::{Endpoint, EndpointPatch},
         error::EndpointError,
     },
-    env::env_ref::EnvRef,
+    env::env::Env,
     error::Result,
     state::field::StateField,
 };
@@ -202,7 +202,7 @@ impl<'a> EndpointHandle<'a> {
     fn key_match_str(key: &str) -> String {
         format!("{{{{{}}}}}", key)
     }
-    pub fn resolved_body(&self, env: &EnvRef) -> Option<String> {
+    pub fn resolved_body(&self, env: &Env) -> Option<String> {
         let raw_body = self.body();
         let resolved = raw_body.map(|mut inner| {
             for (key, value) in env.vars().iter() {

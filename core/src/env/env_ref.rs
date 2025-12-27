@@ -1,8 +1,4 @@
-use std::{
-    io::Write,
-    ops::{Deref, DerefMut},
-    path::PathBuf,
-};
+use std::{io::Write, path::PathBuf};
 
 use crate::{
     Quartz, Result,
@@ -17,37 +13,22 @@ use crate::{
 pub struct EnvRef<'a> {
     pub name: String,
     quartz: &'a Quartz,
-    env: Env,
-}
-
-impl<'a> Deref for EnvRef<'a> {
-    type Target = Env;
-
-    fn deref(&self) -> &Self::Target {
-        &self.env
-    }
-}
-
-impl<'a> DerefMut for EnvRef<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.env
-    }
 }
 
 impl<'a> EnvRef<'a> {
-    pub fn new(quartz: &'a Quartz, name: String) -> Result<Self> {
-        let mut env = Self {
-            quartz,
-            name,
-            env: Env::default(),
-        };
+    pub fn new(quartz: &'a Quartz, name: String) -> Self {
+        Self { quartz, name }
+    }
+    pub fn read(&self) -> Result<Env> {
+        let mut env = Env::default();
 
-        if let Ok(var_contents) = std::fs::read_to_string(env.dir().join("variables")) {
+        if let Ok(var_contents) = std::fs::read_to_string(self.dir().join("variables")) {
             env.variables = Variables::parse(&var_contents)?;
         }
-        if let Ok(header_contents) = std::fs::read_to_string(env.dir().join("headers")) {
+        if let Ok(header_contents) = std::fs::read_to_string(self.dir().join("headers")) {
             env.headers = Headers::parse(&header_contents)?;
         }
+
         Ok(env)
     }
     pub fn exists(&self) -> bool {
@@ -58,7 +39,7 @@ impl<'a> EnvRef<'a> {
         self.quartz.path.join("env").join(&self.name)
     }
 
-    pub fn save(&self) -> Result {
+    pub fn save(&self, env: &Env) -> Result {
         let dir = self.dir();
         if !dir.exists() {
             std::fs::create_dir(&dir).map_err(EnvError::CreateEnvDir)?;
@@ -76,14 +57,14 @@ impl<'a> EnvRef<'a> {
             .open(dir.join("headers"))
             .map_err(EnvError::UpdateHeadersFile)?;
 
-        if !self.variables.is_empty() {
+        if !env.variables.is_empty() {
             var_file
-                .write_all(format!("{}", self.variables).as_bytes())
+                .write_all(format!("{}", env.variables).as_bytes())
                 .map_err(EnvError::UpdateVariablesFile)?;
         }
-        if !self.headers.0.is_empty() {
+        if !env.headers.0.is_empty() {
             headers_file
-                .write_all(format!("{}", self.headers).as_bytes())
+                .write_all(format!("{}", env.headers).as_bytes())
                 .map_err(EnvError::UpdateHeadersFile)?;
         }
 

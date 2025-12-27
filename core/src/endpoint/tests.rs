@@ -7,9 +7,7 @@ fn test_simple_cp_handle() {
     let endpoint = quartz.endpoint();
     let handle = endpoint.new_handle("testing");
     handle.ensure_dir().unwrap();
-    endpoint
-        .copy(false, "testing", "testing-copy")
-        .unwrap();
+    endpoint.copy(false, "testing", "testing-copy").unwrap();
 
     let found_handle = endpoint.new_handle("testing-copy");
     assert!(found_handle.exists());
@@ -39,9 +37,7 @@ fn test_non_recursive_cp_handle() {
     endpoint.new_handle("testing/ex").ensure_dir().unwrap();
     endpoint.new_handle("testing/ex2").ensure_dir().unwrap();
     endpoint.new_handle("testing/ex2/sub").ensure_dir().unwrap();
-    endpoint
-        .copy(false, "testing", "testing-copy")
-        .unwrap();
+    endpoint.copy(false, "testing", "testing-copy").unwrap();
 
     assert!(endpoint.new_handle("testing-copy").exists());
     assert!(!endpoint.new_handle("testing-copy/ex").exists());
@@ -161,6 +157,7 @@ fn test_resolve_endpoint_url() {
     let quartz = TestQuartz::empty();
     let env = quartz.env();
     let default_env = env.current().unwrap();
+    let default_env_value = default_env.read().unwrap();
     let endpoint = quartz.endpoint();
 
     let first_handle = endpoint.new_handle("jsonplaceholder");
@@ -175,7 +172,7 @@ fn test_resolve_endpoint_url() {
     sub_handle.write_endpoint(&sub_endpoint).unwrap();
 
     let resolved = sub_endpoint
-        .resolved_url(&sub_handle, &default_env)
+        .resolved_url(&sub_handle, &default_env_value)
         .unwrap();
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos");
 }
@@ -185,6 +182,7 @@ fn test_multilevel_inheritance() {
     let quartz = TestQuartz::empty();
     let env = quartz.env();
     let default_env = env.current().unwrap();
+    let default_env_value = default_env.read().unwrap();
     let endpoint = quartz.endpoint();
     let first_handle = endpoint.new_handle("jsonplaceholder");
     let mut first_endpoint = Endpoint::new();
@@ -202,7 +200,7 @@ fn test_multilevel_inheritance() {
     third_handle.write_endpoint(&third_endpoint).unwrap();
 
     let resolved = third_endpoint
-        .resolved_url(&third_handle, &default_env)
+        .resolved_url(&third_handle, &default_env_value)
         .unwrap();
     assert_eq!(resolved, "https://jsonplaceholder.typicode.com/todos/1");
 }
@@ -211,7 +209,8 @@ fn test_multilevel_inheritance() {
 fn test_resolve_endpoint_vars() {
     let quartz = TestQuartz::empty();
     let env = quartz.env();
-    let mut default_env = env.current().unwrap();
+    let default_env = env.current().unwrap();
+    let mut default_env_value = default_env.read().unwrap();
     let endpoint = quartz.endpoint();
 
     let first_handle = endpoint.new_handle("jsonplaceholder");
@@ -219,11 +218,11 @@ fn test_resolve_endpoint_vars() {
     first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/{{id}}".into();
     first_handle.write_endpoint(&first_endpoint).unwrap();
 
-    default_env.var_set("id".into(), "1".into()).unwrap();
-    default_env.save().unwrap();
+    default_env_value.var_set("id".into(), "1".into()).unwrap();
+    default_env.save(&default_env_value).unwrap();
 
     let resolved = first_endpoint
-        .as_resolved(&first_handle, &default_env)
+        .as_resolved(&first_handle, &default_env_value)
         .unwrap();
     assert_eq!(resolved.url, "https://jsonplaceholder.typicode.com/todos/1");
 }
@@ -246,7 +245,8 @@ fn test_handle_parent() {
 fn test_resolve_body() {
     let quartz = TestQuartz::empty();
     let env = quartz.env();
-    let mut default_env = env.current().unwrap();
+    let default_env = env.current().unwrap();
+    let mut default_env_value = default_env.read().unwrap();
     let endpoint = quartz.endpoint();
 
     let first_handle = endpoint.new_handle("first");
@@ -257,6 +257,11 @@ fn test_resolve_body() {
     let raw_body = first_handle.body();
     assert_eq!(raw_body, Some("{{testing}}".into()));
 
-    default_env.var_set("testing".into(), "1".into()).unwrap();
-    assert_eq!(first_handle.resolved_body(&default_env), Some("1".into()));
+    default_env_value
+        .var_set("testing".into(), "1".into())
+        .unwrap();
+    assert_eq!(
+        first_handle.resolved_body(&default_env_value),
+        Some("1".into())
+    );
 }

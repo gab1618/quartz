@@ -21,14 +21,15 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> Result {
     let env = ctx.quartz.env();
     let handle = endpoint.current().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
-    let mut curr_env = env.current()?;
+    let curr_env = env.current()?;
+    let mut curr_env_value = curr_env.read()?;
 
     for var in args.variables {
-        curr_env.variables.set(&var)?;
+        curr_env_value.variables.set(&var)?;
     }
 
     endpoint.update(&mut args.patch)?;
-    let resolved = endpoint.as_resolved(&handle, &curr_env)?;
+    let resolved = endpoint.as_resolved(&handle, &curr_env_value)?;
 
     let mut stdout = stdout();
     match args.command {

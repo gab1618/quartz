@@ -1,6 +1,6 @@
 use crate::{
     Quartz,
-    env::{env_ref::EnvRef, error::EnvError},
+    env::{env::Env, env_ref::EnvRef, error::EnvError},
     error::Result,
     state::field::StateField,
 };
@@ -24,17 +24,17 @@ impl<'a> EnvManager<'a> {
             .get(StateField::Env)
             .unwrap_or("default".into());
 
-        let parsed_env = EnvRef::new(self.quartz, curr_env_name)?;
+        let parsed_env = EnvRef::new(self.quartz, curr_env_name);
         Ok(parsed_env)
     }
     pub fn get(&self, name: String) -> Option<EnvRef<'_>> {
-        let env = EnvRef::new(self.quartz, name).ok();
-        env
+        let env = EnvRef::new(self.quartz, name);
+        if env.exists() { Some(env) } else { None }
     }
     pub fn create(&self, name: String) -> Result<EnvRef<'_>> {
-        let new_env = EnvRef::new(self.quartz, name)?;
+        let new_env = EnvRef::new(self.quartz, name);
 
-        new_env.save()?;
+        new_env.save(&Env::default())?;
 
         Ok(new_env)
     }
@@ -51,7 +51,7 @@ impl<'a> EnvManager<'a> {
         Ok(env_names)
     }
     pub fn switch(&self, name: String) -> Result<EnvRef<'_>> {
-        let requested_env = EnvRef::new(self.quartz, name)?;
+        let requested_env = EnvRef::new(self.quartz, name);
         if !requested_env.exists() {
             return Err(EnvError::NotFound.into());
         }
@@ -62,7 +62,7 @@ impl<'a> EnvManager<'a> {
         Ok(requested_env)
     }
     pub fn remove(&self, name: String) -> Result {
-        let env = EnvRef::new(self.quartz, name)?;
+        let env = EnvRef::new(self.quartz, name);
 
         if !env.exists() {
             return Err(EnvError::NotFound.into());
@@ -77,8 +77,10 @@ impl<'a> EnvManager<'a> {
     }
 
     pub fn copy(&self, src: String, dest: String) -> Result<EnvRef<'_>> {
-        let src = EnvRef::new(self.quartz, src)?;
-        let mut dest = EnvRef::new(self.quartz, dest)?;
+        let src_ref = EnvRef::new(self.quartz, src);
+        let src = src_ref.read()?;
+        let dest_ref = EnvRef::new(self.quartz, dest);
+        let mut dest = dest_ref.read()?;
 
         for (key, value) in src.variables.iter() {
             dest.variables.insert(key.to_string(), value.to_string());
@@ -88,8 +90,8 @@ impl<'a> EnvManager<'a> {
             dest.headers.insert(key.to_string(), value.to_string());
         }
 
-        dest.save()?;
+        dest_ref.save(&dest)?;
 
-        Ok(dest)
+        Ok(dest_ref)
     }
 }

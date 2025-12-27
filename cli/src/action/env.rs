@@ -49,27 +49,28 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
         Cmd::Rm(args) => {
             let env = ctx.quartz.env();
             env.remove(args.env)?;
-        },
+        }
         Cmd::Header { command } => {
             let env = ctx.quartz.env();
-            let mut curr_env = env.current().unwrap();
+            let curr_env = env.current().unwrap();
+            let mut curr_env_value = curr_env.read()?;
             match command {
                 HeaderCmd::Set { name, value } => {
                     println!("Setting {} to {}", name, value);
-                    curr_env.header_set(name, value)?;
-                    curr_env.save()?;
+                    curr_env_value.header_set(name, value)?;
+                    curr_env.save(&curr_env_value)?;
                 }
                 HeaderCmd::Ls => {
-                    println!("{}", curr_env.headers);
+                    println!("{}", curr_env_value.headers);
                 }
                 HeaderCmd::Rm { key } => {
                     for header in key {
-                        curr_env.header_rm(&header)?;
-                        curr_env.save()?;
+                        curr_env_value.header_rm(&header)?;
+                        curr_env.save(&curr_env_value)?;
                     }
                 }
                 HeaderCmd::Get { key } => {
-                    let header = curr_env.header_get(&key)?;
+                    let header = curr_env_value.header_get(&key)?;
                     println!("{header}");
                 }
             }

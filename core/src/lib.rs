@@ -117,10 +117,12 @@ impl Quartz {
         let handle = endpoint.current().ok_or(EndpointError::NoHandleInUse)?;
         let env = self.env();
         let curr_env = env.current()?;
+        let env_value = curr_env.read()?;
         let mut endpoint = handle.endpoint()?;
-        let resolved_endpoint = endpoint.as_resolved(&handle, &curr_env)?;
+        let resolved_endpoint = endpoint.as_resolved(&handle, &env_value)?;
 
         let env = env.current()?;
+        let env_value = env.read()?;
 
         if !endpoint.headers.contains_key("user-agent") {
             endpoint
@@ -156,7 +158,7 @@ impl Quartz {
                 // TODO: Find a way around this clone
                 .clone()
                 .try_into()?;
-            for (key, val) in env.headers.iter() {
+            for (key, val) in env_value.headers.iter() {
                 if !endpoint.headers.contains_key(key) {
                     req.headers_mut().insert(
                         HeaderName::from_str(key).map_err(|_| Error::ParseHeader)?,
