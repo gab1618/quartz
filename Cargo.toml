@@ -1,6 +1,6 @@
 [workspace]
-members = ["cli", "core"]
 resolver = "3"
+members = ["cli", "core", "openapi-utils"]
 
 [workspace.dependencies]
 quartz-core = {path = "./core"}
