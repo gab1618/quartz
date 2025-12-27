@@ -52,7 +52,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
         }
         Cmd::Header { command } => {
             let env = ctx.quartz.env();
-            let curr_env = env.current().unwrap();
+            let curr_env = env.current()?;
             let mut curr_env_value = curr_env.read()?;
             match command {
                 HeaderCmd::Set { name, value } => {

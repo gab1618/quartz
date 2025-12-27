@@ -1,7 +1,11 @@
 use std::io::stdout;
 
-use crate::{cli::SnippetCmd as Cmd, ctx::Ctx};
-use quartz_core::{endpoint::endpoint::EndpointPatch, error::Result, pairmap::PairMap, snippet};
+use crate::{
+    cli::SnippetCmd as Cmd,
+    ctx::Ctx,
+    error::{Error, Result},
+};
+use quartz_core::{endpoint::endpoint::EndpointPatch, pairmap::PairMap, snippet};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -19,8 +23,8 @@ pub struct Args {
 pub fn cmd(ctx: Ctx, mut args: Args) -> Result {
     let endpoint = ctx.quartz.endpoint();
     let env = ctx.quartz.env();
-    let handle = endpoint.current().unwrap();
-    let mut endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let mut endpoint = handle.endpoint()?;
     let curr_env = env.current()?;
     let mut curr_env_value = curr_env.read()?;
 

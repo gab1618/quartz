@@ -1,5 +1,8 @@
-use crate::{cli::HeaderCmd as Cmd, ctx::Ctx};
-use quartz_core::error::Result;
+use crate::{
+    cli::HeaderCmd as Cmd,
+    ctx::Ctx,
+    error::{Error, Result},
+};
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
@@ -12,8 +15,8 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
 
 pub fn get(ctx: Ctx, key: String) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let endpoint = handle.endpoint()?;
     if let Some(header) = endpoint.headers.get(&key) {
         println!("{}", header);
     } else {
@@ -25,8 +28,8 @@ pub fn get(ctx: Ctx, key: String) -> Result {
 
 pub fn set(ctx: Ctx, name: String, value: String) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let mut endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let mut endpoint = handle.endpoint()?;
     endpoint.headers.0.insert(name, value);
     handle.write_endpoint(&endpoint)?;
     Ok(())
@@ -34,8 +37,8 @@ pub fn set(ctx: Ctx, name: String, value: String) -> Result {
 
 pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let mut endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let mut endpoint = handle.endpoint()?;
 
     for k in keys {
         if endpoint.headers.contains_key(&k) {
@@ -52,8 +55,8 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
 
 pub fn ls(ctx: Ctx) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let endpoint = handle.endpoint()?;
 
     print!("{}", endpoint.headers);
     Ok(())

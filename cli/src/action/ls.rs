@@ -18,12 +18,12 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
         .map(|handle| EndpointHandle::new(&ctx.quartz, handle.into()));
     let base_handle = parsed_arg_handle.unwrap_or(EndpointHandle::root(&ctx.quartz));
     let current_handle = ctx.quartz.state().get(StateField::Endpoint).ok();
-    output_tree(&ctx, base_handle, current_handle, 0);
+    output_tree(&ctx, base_handle, current_handle, 0)?;
 
     Ok(())
 }
 
-fn output_tree(ctx: &Ctx, base: EndpointHandle, current_handle: Option<String>, padding: usize) {
+fn output_tree(ctx: &Ctx, base: EndpointHandle, current_handle: Option<String>, padding: usize) -> Result {
     let is_root = base.handle().is_empty();
     let handle_str = base.handle();
     let is_in_use = current_handle
@@ -39,12 +39,13 @@ fn output_tree(ctx: &Ctx, base: EndpointHandle, current_handle: Option<String>, 
     let handle_marker = if is_in_use { "*" } else { "" };
 
     println!("{}{}{}", padding_str, handle_marker, handle_str);
-    for child in base.children().unwrap() {
+    for child in base.children()? {
         output_tree(
             ctx,
             child,
             current_handle.clone(),
             padding + aditional_padding,
-        );
+        )?;
     }
+    Ok(())
 }

@@ -1,6 +1,10 @@
-use crate::{cli::QueryCmd as Cmd, ctx::Ctx};
+use crate::{
+    cli::QueryCmd as Cmd,
+    ctx::Ctx,
+    error::{Error, Result},
+};
 use colored::Colorize;
-use quartz_core::{error::Result, pairmap::PairMap};
+use quartz_core::pairmap::PairMap;
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {
@@ -21,19 +25,19 @@ pub struct RmArgs {
 
 pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
-        Cmd::Get(args) => get(ctx, args.key),
+        Cmd::Get(args) => get(ctx, args.key)?,
         Cmd::Set(args) => set(ctx, args.queries)?,
         Cmd::Rm(args) => rm(ctx, args.keys)?,
-        Cmd::Ls => ls(ctx),
+        Cmd::Ls => ls(ctx)?,
     };
 
     Ok(())
 }
 
-pub fn get(ctx: Ctx, key: String) {
+pub fn get(ctx: Ctx, key: String) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let endpoint = handle.endpoint()?;
 
     let value = endpoint
         .query
@@ -41,6 +45,7 @@ pub fn get(ctx: Ctx, key: String) {
         .unwrap_or_else(|| panic!("no query param {} found", key.red()));
 
     println!("{value}");
+    Ok(())
 }
 
 pub fn set(ctx: Ctx, queries: Vec<String>) -> Result {
@@ -60,7 +65,7 @@ pub fn set(ctx: Ctx, queries: Vec<String>) -> Result {
 pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
     let endpoint = ctx.quartz.endpoint();
     let handle = endpoint.current().unwrap();
-    let mut endpoint = handle.endpoint().unwrap();
+    let mut endpoint = handle.endpoint()?;
 
     for k in keys {
         if endpoint.query.contains_key(&k) {
@@ -75,16 +80,20 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
     Ok(())
 }
 
-pub fn ls(ctx: Ctx) {
+pub fn ls(ctx: Ctx) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let endpoint = handle.endpoint()?;
     print!("{}", endpoint.query);
+
+    Ok(())
 }
 
-pub fn print(ctx: Ctx) {
+pub fn print(ctx: Ctx) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let endpoint = handle.endpoint()?;
     println!("{}", endpoint.query_string());
+
+    Ok(())
 }

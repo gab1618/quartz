@@ -9,9 +9,9 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
         Cmd::Query { key } => {
             if let Some(key) = key {
-                action::query::get(ctx, key);
+                action::query::get(ctx, key)?;
             } else {
-                action::query::print(ctx);
+                action::query::print(ctx)?;
             }
         }
         Cmd::Headers { key } => {
@@ -21,16 +21,16 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
                 action::header::ls(ctx)?;
             }
         }
-        Cmd::Url => url(ctx),
-        Cmd::Method => method(ctx),
+        Cmd::Url => url(ctx)?,
+        Cmd::Method => method(ctx)?,
         Cmd::Body => action::body::print(ctx)?,
-        Cmd::Handle => handle(ctx),
+        Cmd::Handle => handle(ctx)?,
         Cmd::Env => {
             let env = ctx.quartz.env();
-            let curr_env = env.current().unwrap();
+            let curr_env = env.current()?;
             println!("{}", curr_env.name);
         }
-        Cmd::Cookies(args) => action::cookie::print(ctx, args),
+        Cmd::Cookies(args) => action::cookie::print(ctx, args)?,
         Cmd::Endpoint => endpoint(ctx)?,
         Cmd::Snippet(args) => action::snippet::cmd(ctx, args)?,
     };
@@ -38,24 +38,30 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     Ok(())
 }
 
-pub fn url(ctx: Ctx) {
+pub fn url(ctx: Ctx) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let endpoint = handle.endpoint()?;
     println!("{}", endpoint.url);
+
+    Ok(())
 }
 
-pub fn method(ctx: Ctx) {
+pub fn method(ctx: Ctx) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
-    let endpoint = handle.endpoint().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let endpoint = handle.endpoint()?;
     println!("{}", endpoint.method);
+
+    Ok(())
 }
 
-pub fn handle(ctx: Ctx) {
+pub fn handle(ctx: Ctx) -> Result {
     let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().unwrap();
+    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
     println!("{}", handle.head());
+
+    Ok(())
 }
 
 pub fn endpoint(ctx: Ctx) -> Result {
