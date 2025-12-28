@@ -948,6 +948,7 @@ dependencies = [
  "hyper-tls",
  "openssl",
  "quartz-core",
+ "quartz-snippet",
  "serde",
  "serde_json",
  "thiserror",
@@ -973,6 +974,15 @@ dependencies = [
  "thiserror",
  "tokio",
  "toml",
+]
+
+[[package]]
+name = "quartz-snippet"
+version = "0.1.0"
+dependencies = [
+ "hyper",
+ "quartz-core",
+ "thiserror",
 ]
 
 [[package]]

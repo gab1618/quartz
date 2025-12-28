@@ -6,7 +6,6 @@ pub mod error;
 pub mod headers;
 pub mod history;
 pub mod pairmap;
-pub mod snippet;
 pub mod state;
 
 #[cfg(test)]
@@ -167,7 +166,6 @@ impl Quartz {
                 }
             }
 
-            entry.message(&req);
             if let Some(ref body) = body {
                 entry.message_raw(body.to_owned());
             }
@@ -181,8 +179,6 @@ impl Quartz {
                 .request(req)
                 .await
                 .map_err(|_| Error::RequestFailure)?;
-
-            entry.message(&res);
 
             if let Some(cookie_header) = res.headers().get("Set-Cookie") {
                 let url = endpoint.full_url()?;

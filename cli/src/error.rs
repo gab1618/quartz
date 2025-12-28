@@ -2,6 +2,8 @@
 pub enum Error {
     #[error(transparent)]
     QuartzError(#[from] quartz_core::error::Error),
+    #[error(transparent)]
+    SnippetError(#[from] quartz_snippet::error::Error),
     #[error("Could not get home dir")]
     GetHomeDir,
     #[error("Could not get current dir: {0}")]

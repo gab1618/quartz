@@ -1,10 +1,13 @@
 [workspace]
-members = ["cli", "core"]
+members = ["cli", "core", "snippet"]
 resolver = "3"
 
 [workspace.dependencies]
 quartz-core = {path = "./core"}
+quartz-snippet = {path = "./snippet"}
 thiserror = "2.0.17"
+hyper = { version = "0.14", features = ["full"] }
+hyper-tls = "0.5.0"
 
 [profile.release]
 opt-level = 'z'

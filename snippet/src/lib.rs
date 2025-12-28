@@ -1,13 +1,11 @@
+pub mod error;
+
+pub use crate::error::{Error, Result};
 use std::{io::Write, ops::Deref};
 
-use crate::{Error, Result, endpoint::resolved_endpoint::ResolvedEndpoint};
-use hyper::{Body, Request, Response, Uri};
+use quartz_core::endpoint::resolved_endpoint::ResolvedEndpoint;
 
-#[derive(Debug, thiserror::Error)]
-pub enum SnippetError {
-    #[error("Could not serialize url into uri")]
-    SerializeUri,
-}
+use hyper::{Body, Request, Response, Uri};
 
 enum CurlOption {
     Location,
@@ -16,32 +14,28 @@ enum CurlOption {
     Data,
 }
 
-#[derive(clap::Args, Debug)]
-pub struct Curl {
-    /// Use long form cURL options (--header instead of -H)
-    #[arg(long)]
-    long: bool,
-
-    /// Split output across multiple lines
-    #[arg(long)]
-    multiline: bool,
-}
+pub struct Curl;
 
 impl Curl {
-    pub fn write<W: Write>(&self, w: &mut W, endpoint: ResolvedEndpoint) -> Result {
-        let separator = if self.multiline { " \\\n\t" } else { " " };
+    pub fn write<W: Write>(
+        w: &mut W,
+        endpoint: ResolvedEndpoint,
+        long: bool,
+        multiline: bool,
+    ) -> Result {
+        let separator = if multiline { " \\\n\t" } else { " " };
 
         write!(
             w,
             "curl {} '{}'",
-            self.option_string(CurlOption::Location),
+            Self::option_string(CurlOption::Location, long),
             endpoint.url
         )
         .map_err(Error::WriteSnippet)?;
         write!(
             w,
             " {} {}",
-            self.option_string(CurlOption::Request),
+            Self::option_string(CurlOption::Request, long),
             endpoint.method
         )
         .map_err(Error::WriteSnippet)?;
@@ -51,7 +45,7 @@ impl Curl {
                 w,
                 "{}{} '{}: {}'",
                 separator,
-                self.option_string(CurlOption::Header),
+                Self::option_string(CurlOption::Header, long),
                 key,
                 value
             )
@@ -60,7 +54,7 @@ impl Curl {
 
         if let Some(body) = endpoint.body {
             let mut body = body.to_owned();
-            write!(w, "{}{} '", separator, self.option_string(CurlOption::Data))
+            write!(w, "{}{} '", separator, Self::option_string(CurlOption::Data, long))
                 .map_err(Error::WriteSnippet)?;
 
             if body.ends_with('\n') {
@@ -76,31 +70,31 @@ impl Curl {
         Ok(())
     }
 
-    fn option_string(&self, option: CurlOption) -> String {
+    fn option_string(option: CurlOption, long: bool) -> String {
         let result = match option {
             CurlOption::Location => {
-                if self.long {
+                if long {
                     "--location"
                 } else {
                     "-L"
                 }
             }
             CurlOption::Request => {
-                if self.long {
+                if long {
                     "--request"
                 } else {
                     "-X"
                 }
             }
             CurlOption::Header => {
-                if self.long {
+                if long {
                     "--header"
                 } else {
                     "-H"
                 }
             }
             CurlOption::Data => {
-                if self.long {
+                if long {
                     "--data"
                 } else {
                     "-d"
@@ -172,15 +166,13 @@ impl From<&Request<Body>> for Http {
 
 impl Http {
     pub fn write<W: Write>(w: &mut W, endpoint: ResolvedEndpoint) -> Result {
-        let url: Uri = endpoint
-            .url
-            .try_into()
-            .map_err(|_| SnippetError::SerializeUri)?;
-        let path = url.path_and_query().unwrap();
+        let url: Uri = endpoint.url.try_into().map_err(|_| Error::SerializeUri)?;
+        let path = url.path_and_query().ok_or(Error::GetUriPath)?;
 
         writeln!(w, "{} {} HTTP/1.1", endpoint.method, path.as_str())
             .map_err(Error::WriteSnippet)?;
-        writeln!(w, "Host: {}", url.host().unwrap()).map_err(Error::WriteSnippet)?;
+        writeln!(w, "Host: {}", url.host().ok_or(Error::NoHostFound)?)
+            .map_err(Error::WriteSnippet)?;
         write!(w, "{}", endpoint.headers).map_err(Error::WriteSnippet)?;
 
         if let Some(body) = endpoint.body {

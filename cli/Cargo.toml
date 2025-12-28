@@ -11,7 +11,8 @@ keywords = ["cli", "api", "http-client", "curl"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-quartz-core = {workspace = true}
+quartz-core = { workspace = true }
+quartz-snippet = { workspace = true }
 thiserror = { workspace = true }
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }

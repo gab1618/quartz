@@ -5,7 +5,8 @@ use crate::{
     ctx::Ctx,
     error::{Error, Result},
 };
-use quartz_core::{endpoint::endpoint::EndpointPatch, pairmap::PairMap, snippet};
+use quartz_core::{endpoint::endpoint::EndpointPatch, pairmap::PairMap};
+use quartz_snippet::{Curl, Http};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -37,8 +38,8 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> Result {
 
     let mut stdout = stdout();
     match args.command {
-        Cmd::Curl(curl) => curl.write(&mut stdout, resolved)?,
-        Cmd::Http => snippet::Http::write(&mut stdout, resolved)?,
+        Cmd::Curl { long, multiline } => Curl::write(&mut stdout, resolved, long, multiline)?,
+        Cmd::Http => Http::write(&mut stdout, resolved)?,
     };
 
     Ok(())

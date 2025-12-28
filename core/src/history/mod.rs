@@ -1,5 +1,5 @@
+use crate::Result;
 use crate::history::error::HistoryError;
-use crate::{Result, snippet};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -90,15 +90,6 @@ impl EntryBuilder {
         T: Into<String>,
     {
         self.handle = Some(value.into());
-        self
-    }
-
-    pub fn message<T>(&mut self, value: T) -> &mut Self
-    where
-        T: Into<snippet::Http>,
-    {
-        let m: snippet::Http = value.into();
-        self.messages.push(m.to_string());
         self
     }
 

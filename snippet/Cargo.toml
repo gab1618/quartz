@@ -1,0 +1,9 @@
+[package]
+name = "quartz-snippet"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+quartz-core = { workspace = true }
+thiserror = { workspace = true }
+hyper = { workspace = true }
