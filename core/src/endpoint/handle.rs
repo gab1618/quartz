@@ -13,7 +13,6 @@ use crate::{
     },
     env::env::Env,
     error::Result,
-    state::field::StateField,
 };
 
 #[derive(Clone)]
@@ -60,20 +59,6 @@ impl<'a> EndpointHandle<'a> {
     }
     pub fn root(quartz: &'a Quartz) -> Self {
         Self::new(quartz, EndpointHandlePath(vec![]))
-    }
-
-    pub fn from_state(quartz: &'a Quartz) -> Option<Self> {
-        let state = quartz.state();
-
-        if let Ok(handle) = state.get(StateField::Endpoint) {
-            if handle.is_empty() {
-                return None;
-            }
-
-            return Some(EndpointHandle::new(quartz, handle.into()));
-        }
-
-        None
     }
 
     pub fn head(&self) -> String {
