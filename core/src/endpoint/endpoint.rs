@@ -1,4 +1,3 @@
-use colored::Colorize;
 use hyper::Uri;
 use std::path::Path;
 use std::{
@@ -259,10 +258,6 @@ impl Endpoint {
         result.map_err(|_| EndpointError::SerializeUri.into())
     }
 
-    pub fn colored_method(&self) -> colored::ColoredString {
-        colored_method(&self.method)
-    }
-
     /// Return a query string based off of defined queries.
     ///
     /// ## Example
@@ -299,16 +294,3 @@ impl Default for Endpoint {
     }
 }
 
-pub fn colored_method(value: &str) -> colored::ColoredString {
-    match value {
-        "GET" => value.blue(),
-        "POST" => value.green(),
-        "PUT" => value.yellow(),
-        "PATCH" => value.yellow(),
-        "DELETE" => value.red(),
-        "OPTIONS" => value.cyan(),
-        "HEAD" => value.cyan(),
-        "---" => value.dimmed(),
-        _ => value.white(),
-    }
-}
