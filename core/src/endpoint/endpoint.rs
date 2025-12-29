@@ -70,37 +70,18 @@ impl AsRef<Endpoint> for Endpoint {
     }
 }
 
-#[derive(Debug, clap::Args)]
-#[group(multiple = false)]
+#[derive(Debug)]
 pub struct ContentTypeGroup {
-    /// Use JSON data in request body with the appropriate content-type header
-    #[arg(long, value_name = "DATA")]
     pub json: Option<Option<String>>,
-
-    /// Use raw data in request body
-    #[arg(long = "data", short = 'd', value_name = "DATA")]
     pub raw: Option<String>,
 }
 
-#[derive(Default, Debug, clap::Args)]
+#[derive(Default, Debug)]
 pub struct EndpointPatch {
-    /// Patch request URL
-    #[arg(long)]
     pub url: Option<String>,
-
-    /// Patch HTTP request method
-    #[arg(short = 'X', long = "request")]
     pub method: Option<String>,
-
-    /// Add or patch a parameter to the URL query. This argument can be passed multiple times
-    #[arg(short, long, value_name = "PARAM")]
     pub query: Vec<String>,
-
-    /// Add or patch a header. This argument can be passed multiple times
-    #[arg(short = 'H', long = "header")]
     pub headers: Vec<String>,
-
-    #[command(flatten)]
     pub data: Option<ContentTypeGroup>,
 }
 

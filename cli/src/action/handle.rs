@@ -1,11 +1,12 @@
-use quartz_core::endpoint::endpoint::EndpointPatch;
+use crate::cli::EndpointPatchArg;
+
 
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {
     pub handle: String,
 
     #[command(flatten)]
-    pub patch: EndpointPatch,
+    pub patch: EndpointPatchArg,
 
     /// Immediatly switches to this handle after creating it
     #[arg(name = "use", long)]
@@ -17,7 +18,7 @@ pub struct SwitchArgs {
     pub handle: Option<String>,
 
     #[command(flatten)]
-    pub patch: EndpointPatch,
+    pub patch: EndpointPatchArg,
 
     /// Make handle empty. Using it with other editing options will write a new endpoint in
     /// place of the old one

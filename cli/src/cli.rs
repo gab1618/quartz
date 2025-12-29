@@ -1,5 +1,6 @@
 use crate::action;
 use clap::{Parser, Subcommand};
+use quartz_core::endpoint::endpoint::{ContentTypeGroup, EndpointPatch};
 
 #[derive(Debug, Parser)]
 #[command(name = "quartz")]
@@ -251,4 +252,56 @@ pub enum VarCmd {
     /// Display the list of variables
     #[command(name = "ls", alias = "list")]
     Ls,
+}
+
+#[derive(Debug, clap::Args)]
+#[group(multiple = false)]
+pub struct ContentTypeGroupArg {
+    /// Use JSON data in request body with the appropriate content-type header
+    #[arg(long, value_name = "DATA")]
+    pub json: Option<Option<String>>,
+
+    /// Use raw data in request body
+    #[arg(long = "data", short = 'd', value_name = "DATA")]
+    pub raw: Option<String>,
+}
+impl Into<ContentTypeGroup> for ContentTypeGroupArg {
+    fn into(self) -> ContentTypeGroup {
+        ContentTypeGroup {
+            json: self.json,
+            raw: self.raw,
+        }
+    }
+}
+#[derive(Default, Debug, clap::Args)]
+pub struct EndpointPatchArg {
+    /// Patch request URL
+    #[arg(long)]
+    pub url: Option<String>,
+
+    /// Patch HTTP request method
+    #[arg(short = 'X', long = "request")]
+    pub method: Option<String>,
+
+    /// Add or patch a parameter to the URL query. This argument can be passed multiple times
+    #[arg(short, long, value_name = "PARAM")]
+    pub query: Vec<String>,
+
+    /// Add or patch a header. This argument can be passed multiple times
+    #[arg(short = 'H', long = "header")]
+    pub headers: Vec<String>,
+
+    #[command(flatten)]
+    pub data: Option<ContentTypeGroupArg>,
+}
+impl Into<EndpointPatch> for EndpointPatchArg {
+    fn into(self) -> EndpointPatch {
+        EndpointPatch {
+            url: self.url,
+            method: self.method,
+            query: self.query,
+            headers: self.headers,
+            data: self.data.map(Into::into),
+        }
+    }
 }

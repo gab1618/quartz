@@ -1,11 +1,11 @@
 use std::io::stdout;
 
 use crate::{
-    cli::SnippetCmd as Cmd,
+    cli::{EndpointPatchArg, SnippetCmd as Cmd},
     ctx::Ctx,
     error::{Error, Result},
 };
-use quartz_core::{endpoint::endpoint::EndpointPatch, pairmap::PairMap};
+use quartz_core::pairmap::PairMap;
 use quartz_snippet::{Curl, Http};
 
 #[derive(clap::Args, Debug)]
@@ -15,13 +15,13 @@ pub struct Args {
     variables: Vec<String>,
 
     #[command(flatten)]
-    patch: EndpointPatch,
+    patch: EndpointPatchArg,
 
     #[command(subcommand)]
     command: crate::cli::SnippetCmd,
 }
 
-pub fn cmd(ctx: Ctx, mut args: Args) -> Result {
+pub fn cmd(ctx: Ctx, args: Args) -> Result {
     let endpoint = ctx.quartz.endpoint();
     let env = ctx.quartz.env();
     let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
@@ -33,7 +33,7 @@ pub fn cmd(ctx: Ctx, mut args: Args) -> Result {
         curr_env_value.variables.set(&var)?;
     }
 
-    endpoint.update(&mut args.patch)?;
+    endpoint.update(&mut args.patch.into())?;
     let resolved = endpoint.as_resolved(&handle, &curr_env_value)?;
 
     let mut stdout = stdout();

@@ -35,7 +35,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
                 endpoint.switch(args.handle)?;
             }
 
-            new_handle.apply_endpoint_patch(args.patch)?;
+            new_handle.apply_endpoint_patch(args.patch.into())?;
         }
         Cmd::Use(args) => {
             let endpoint = ctx.quartz.endpoint();
@@ -44,7 +44,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
                 None => endpoint.current(),
             };
             if let Some(handle) = curr_handle {
-                handle.apply_endpoint_patch(args.patch)?;
+                handle.apply_endpoint_patch(args.patch.into())?;
 
                 if args.empty {
                     handle.make_empty();
