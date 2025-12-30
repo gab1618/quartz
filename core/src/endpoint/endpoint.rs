@@ -112,10 +112,6 @@ impl Endpoint {
         }
     }
 
-    pub fn name_to_dir(name: &str) -> String {
-        name.trim().replace(['/', '\\'], "-")
-    }
-
     pub fn from_dir(dir: &Path) -> crate::Result<Self> {
         let bytes =
             std::fs::read(dir.join("endpoint.toml")).map_err(EndpointError::ReadHandleSpec)?;

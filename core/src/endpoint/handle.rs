@@ -66,13 +66,11 @@ impl<'a> EndpointHandle<'a> {
     }
 
     pub fn dir(&self) -> PathBuf {
-        let mut result = self.quartz.path().join("endpoints");
-
-        for parent in self.path.iter() {
-            let name = Endpoint::name_to_dir(parent);
-
-            result = result.join(name);
-        }
+        let result = self
+            .quartz
+            .path()
+            .join("endpoints")
+            .join(self.path.join("/"));
 
         result
     }
