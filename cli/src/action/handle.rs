@@ -16,14 +16,6 @@ pub struct CreateArgs {
 #[derive(clap::Args, Debug)]
 pub struct SwitchArgs {
     pub handle: Option<String>,
-
-    #[command(flatten)]
-    pub patch: EndpointPatchArg,
-
-    /// Make handle empty. Using it with other editing options will write a new endpoint in
-    /// place of the old one
-    #[arg(long)]
-    pub empty: bool,
 }
 
 #[derive(clap::Args, Debug)]

@@ -1,7 +1,7 @@
 use std::io::stdout;
 
 use crate::{
-    cli::{EndpointPatchArg, SnippetCmd as Cmd},
+    cli::SnippetCmd as Cmd,
     ctx::Ctx,
     error::{Error, Result},
 };
@@ -13,9 +13,6 @@ pub struct Args {
     /// Use a new or overwritten variable
     #[arg(long = "var", short = 'v', value_name = "KEY=VALUE")]
     variables: Vec<String>,
-
-    #[command(flatten)]
-    patch: EndpointPatchArg,
 
     #[command(subcommand)]
     command: crate::cli::SnippetCmd,
@@ -33,7 +30,6 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
         curr_env_value.variables.set(&var)?;
     }
 
-    endpoint.update(&mut args.patch.into())?;
     let resolved = endpoint.as_resolved(&handle, &curr_env_value)?;
 
     let mut stdout = stdout();
