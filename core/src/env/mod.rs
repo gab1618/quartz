@@ -80,17 +80,8 @@ impl<'a> EnvManager<'a> {
         let src_ref = EnvRef::new(self.quartz, src);
         let src = src_ref.read()?;
         let dest_ref = EnvRef::new(self.quartz, dest);
-        let mut dest = dest_ref.read()?;
 
-        for (key, value) in src.variables.iter() {
-            dest.variables.insert(key.to_string(), value.to_string());
-        }
-
-        for (key, value) in src.headers.iter() {
-            dest.headers.insert(key.to_string(), value.to_string());
-        }
-
-        dest_ref.save(&dest)?;
+        dest_ref.save(&src)?;
 
         Ok(dest_ref)
     }
