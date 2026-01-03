@@ -115,13 +115,10 @@ impl Quartz {
         let endpoint = self.endpoint();
         let handle = endpoint.current().ok_or(EndpointError::NoHandleInUse)?;
         let env = self.env();
-        let curr_env = env.current()?;
-        let env_value = curr_env.read()?;
-        let mut endpoint = handle.endpoint()?;
-        let resolved_endpoint = endpoint.as_resolved(&handle, &env_value)?;
-
         let env = env.current()?;
         let env_value = env.read()?;
+        let mut endpoint = handle.endpoint()?;
+        let resolved_endpoint = endpoint.as_resolved(&handle, &env_value)?;
 
         if !endpoint.headers.contains_key("user-agent") {
             endpoint
