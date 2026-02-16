@@ -1,6 +1,7 @@
 use crate::{
-    config::error::ConfigError, endpoint::error::EndpointError, env::error::EnvError,
-    history::error::HistoryError, request::error::RequestError, state::error::StateError,
+    config::error::ConfigError, cookie::error::CookieError, endpoint::error::EndpointError,
+    env::error::EnvError, history::error::HistoryError, request::error::RequestError,
+    state::error::StateError,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -25,10 +26,8 @@ pub enum Error {
     StateError(#[from] StateError),
     #[error(transparent)]
     ConfigErr(#[from] ConfigError),
-    #[error("Could not read cookies: {0}")]
-    ReadCookies(#[source] std::io::Error),
-    #[error("Could not save cookie: {0}")]
-    SaveCookie(#[source] std::io::Error),
+    #[error(transparent)]
+    CookieErr(#[from] CookieError),
 }
 
 pub type Result<T = ()> = std::result::Result<T, Error>;

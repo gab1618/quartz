@@ -1,4 +1,4 @@
-use crate::{Error};
+use crate::cookie::error::CookieError;
 use chrono::prelude::*;
 use hyper::http::uri::Scheme;
 use std::{
@@ -10,6 +10,8 @@ use std::{
     str::FromStr,
 };
 
+pub mod error;
+
 pub enum Field {
     Domain,
     Subdomains,
@@ -19,9 +21,6 @@ pub enum Field {
     Name,
     Value,
 }
-
-#[derive(Debug, Clone)]
-pub struct CookieError;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Domain(String);
@@ -217,9 +216,9 @@ impl CookieBuilder {
     /// This function will return an error if builder has any invalid cookie component, such as
     /// missing `domain`, `name`, or `value`.
     pub fn build(self) -> Result<Cookie, CookieError> {
-        let domain = Domain::new(self.domain.ok_or(CookieError)?);
-        let name = self.name.ok_or(CookieError)?;
-        let value = self.value.ok_or(CookieError)?;
+        let domain = Domain::new(self.domain.ok_or(CookieError::NoDomainCookie)?);
+        let name = self.name.ok_or(CookieError::NoNameCookie)?;
+        let value = self.value.ok_or(CookieError::NoValueCookie)?;
 
         Ok(Cookie {
             domain,
@@ -324,7 +323,7 @@ impl FromStr for Cookie {
         let line: Vec<&str> = s.splitn(7, '\t').collect();
 
         if line.len() != 7 {
-            return Err(CookieError);
+            return Err(CookieError::InvalidFormat);
         }
 
         cookie
@@ -505,7 +504,7 @@ impl CookieJar {
     /// This function will return an error if the file does not exist.
     pub fn read(path: &Path) -> crate::Result<Self> {
         let mut cookies = Self::default();
-        let file = std::fs::read_to_string(path).map_err(Error::ReadCookies)?;
+        let file = std::fs::read_to_string(path).map_err(CookieError::ReadCookies)?;
         let lines = file.lines();
 
         for line in lines {
@@ -531,7 +530,8 @@ impl CookieJar {
 
     /// Write cookie jar contents to `path` in Netspace HTTP Cookie file format.
     pub fn write_at(&self, path: &Path) -> crate::Result {
-        std::fs::write(path, self.to_string()).map_err(Error::SaveCookie)
+        std::fs::write(path, self.to_string()).map_err(CookieError::SaveCookie)?;
+        Ok(())
     }
 }
 
