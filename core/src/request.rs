@@ -9,7 +9,7 @@ use hyper::{
 
 use crate::{
     Quartz,
-    endpoint::resolved_endpoint::ResolvedEndpoint,
+    endpoint::{error::EndpointError, resolved_endpoint::ResolvedEndpoint},
     env::EnvManager,
     history::{History, error::HistoryError},
 };
@@ -146,15 +146,17 @@ impl<'a> Request<'a> {
     }
 }
 
-impl<'a> From<&'a Quartz> for Request<'a> {
-    fn from(value: &'a Quartz) -> Self {
+impl<'a> TryFrom<&'a Quartz> for Request<'a> {
+    type Error = crate::Error;
+
+    fn try_from(value: &'a Quartz) -> Result<Self, Self::Error> {
         let env = value.env();
-        let curr_env = env.current().unwrap();
-        let env = curr_env.read().unwrap();
+        let curr_env = env.current()?;
+        let env = curr_env.read()?;
         let endpoint = value.endpoint();
-        let handle = endpoint.current().unwrap();
-        let mut endpoint = handle.endpoint().unwrap();
-        let resolved = endpoint.as_resolved(&handle, &env).unwrap();
+        let handle = endpoint.current().ok_or(EndpointError::NoHandleInUse)?;
+        let mut endpoint = handle.endpoint()?;
+        let resolved = endpoint.as_resolved(&handle, &env)?;
 
         if !endpoint.headers.contains_key("user-agent") {
             endpoint
@@ -162,12 +164,12 @@ impl<'a> From<&'a Quartz> for Request<'a> {
                 .insert("user-agent".to_string(), USER_AGENT.to_owned());
         }
 
-        Self {
+        Ok(Self {
             path: value.path.clone(),
             endpoint: resolved,
             env: value.env(),
             body: handle.body(),
             handle_name: handle.handle(),
-        }
+        })
     }
 }
