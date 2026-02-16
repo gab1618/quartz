@@ -1,6 +1,6 @@
 use crate::{
     config::error::ConfigError, endpoint::error::EndpointError, env::error::EnvError,
-    history::error::HistoryError,
+    history::error::HistoryError, request::error::RequestError,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -11,6 +11,8 @@ pub enum Error {
     HistoryError(#[from] HistoryError),
     #[error(transparent)]
     EnvError(#[from] EnvError),
+    #[error(transparent)]
+    RequestError(#[from] RequestError),
     #[error("Could not initialize quartz: {0}")]
     Init(#[source] std::io::Error),
     #[error("Quartz already initialized")]

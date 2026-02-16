@@ -9,7 +9,10 @@ use crate::{
     Quartz,
     cookie::CookieJar,
     endpoint::{error::EndpointError, resolved_endpoint::ResolvedEndpoint},
+    request::error::RequestError,
 };
+
+pub mod error;
 
 pub struct Request {
     endpoint: ResolvedEndpoint,
@@ -23,8 +26,7 @@ impl Request {
         let mut res: hyper::Response<Body>;
 
         loop {
-            let req: hyper::Request<_> = (&self.endpoint)
-                .try_into()?;
+            let req: hyper::Request<_> = (&self.endpoint).try_into()?;
 
             let client = {
                 let https = hyper_tls::HttpsConnector::new();
@@ -37,10 +39,11 @@ impl Request {
                 .map_err(|_| crate::Error::RequestFailure)?;
 
             if let Some(cookie_header) = res.headers().get("Set-Cookie") {
-                let parsed_uri = Uri::from_str(&self.endpoint.url).unwrap();
+                let parsed_uri = Uri::from_str(&self.endpoint.url)
+                    .map_err(|_| RequestError::ParseEndpointURI)?;
 
                 self.cookie_jar.set(
-                    parsed_uri.host().unwrap(),
+                    parsed_uri.host().ok_or(RequestError::NoHostInURI)?,
                     cookie_header
                         .to_str()
                         .map_err(|_| crate::Error::ParseCookie)?,
@@ -57,11 +60,22 @@ impl Request {
                     .map_err(|_| crate::Error::ParseLocationHeader)?;
 
                 if location.starts_with('/') {
-                    let parsed_uri = Uri::from_str(&self.endpoint.url).unwrap();
+                    let parsed_uri = Uri::from_str(&self.endpoint.url)
+                        .map_err(|_| RequestError::ParseEndpointURI)?;
                     // This is awful
                     self.endpoint.url = Uri::builder()
-                        .authority(parsed_uri.authority().unwrap().as_str())
-                        .scheme(parsed_uri.scheme().unwrap().as_str())
+                        .authority(
+                            parsed_uri
+                                .authority()
+                                .ok_or(RequestError::NoAuthorityInURI)?
+                                .as_str(),
+                        )
+                        .scheme(
+                            parsed_uri
+                                .scheme()
+                                .ok_or(RequestError::NoSchemeInURI)?
+                                .as_str(),
+                        )
                         .path_and_query(location)
                         .build()
                         .map_err(|_| crate::Error::ParseLocationHeader)?
