@@ -12,7 +12,9 @@ pub mod state;
 #[cfg(test)]
 mod tests;
 
+use chrono::Utc;
 pub use error::{Error, Result};
+use hyper::body::Bytes;
 
 use std::io::Write;
 use std::path::PathBuf;
@@ -20,8 +22,11 @@ use std::str::FromStr;
 
 use crate::config::ConfigManager;
 use crate::endpoint::EndpointManager;
+use crate::endpoint::error::EndpointError;
 use crate::env::EnvManager;
 use crate::history::History;
+use crate::history::error::HistoryError;
+use crate::request::Request;
 use crate::state::StateManager;
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
@@ -81,6 +86,34 @@ impl Quartz {
             path: quartz_dir,
             config,
         })
+    }
+    pub async fn send_request(
+        &self,
+        mut req: Request,
+        no_follow: bool,
+        aditional_cookie_jar: Option<PathBuf>,
+    ) -> crate::Result<Bytes> {
+        let endpoint_manager = self.endpoint();
+        let curr_handle = endpoint_manager
+            .current()
+            .ok_or(EndpointError::NoHandleInUse)?;
+        let curr_body = curr_handle.body();
+        let response = req.send(no_follow, aditional_cookie_jar).await?;
+
+        let mut entry = crate::history::Entry::builder();
+        if let Some(ref body) = curr_body {
+            entry.message_raw(body.to_owned());
+        }
+        entry
+            .handle(curr_handle.handle())
+            .timestamp(Utc::now().timestamp_micros());
+        entry.message_raw(
+            String::from_utf8(response.to_vec()).map_err(|_| HistoryError::Serialize)?,
+        );
+
+        let h = self.history();
+        h.write(entry.build()?)?;
+        Ok(response)
     }
     pub fn state(&self) -> StateManager<'_> {
         StateManager::new(&self.path)
