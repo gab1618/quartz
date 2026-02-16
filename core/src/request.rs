@@ -9,22 +9,22 @@ use hyper::{
 
 use crate::{
     Quartz,
+    cookie::CookieJar,
     endpoint::{error::EndpointError, resolved_endpoint::ResolvedEndpoint},
-    env::EnvManager,
     history::{History, error::HistoryError},
 };
 
-pub struct Request<'a> {
+pub struct Request {
     path: PathBuf,
     endpoint: ResolvedEndpoint,
     body: Option<String>,
-    env: EnvManager<'a>,
     handle_name: String,
+    cookie_jar: CookieJar,
 }
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
 
-impl<'a> Request<'a> {
+impl Request {
     pub fn history(&self) -> History<'_> {
         History::new(&self.path)
     }
@@ -33,24 +33,6 @@ impl<'a> Request<'a> {
         no_follow: bool,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> crate::Result<Bytes> {
-        let env = &self.env;
-        let env = env.current()?;
-        let env_value = env.read()?;
-
-        let mut cookie_jar = env.cookie_jar();
-
-        let cookie_value = cookie_jar
-            .iter()
-            .map(|c| format!("{}={}", c.name(), c.value()))
-            .collect::<Vec<String>>()
-            .join("; ");
-
-        if !cookie_value.is_empty() {
-            self.endpoint
-                .headers
-                .insert(String::from("Cookie"), cookie_value);
-        }
-
         let mut entry = crate::history::Entry::builder();
         entry
             .handle(self.handle_name.clone())
@@ -64,7 +46,7 @@ impl<'a> Request<'a> {
                 // TODO: Find a way around this clone
                 .clone()
                 .try_into()?;
-            for (key, val) in env_value.headers.iter() {
+            for (key, val) in self.endpoint.headers.iter() {
                 if !self.endpoint.headers.contains_key(key) {
                     req.headers_mut().insert(
                         HeaderName::from_str(key).map_err(|_| crate::Error::ParseHeader)?,
@@ -90,7 +72,7 @@ impl<'a> Request<'a> {
             if let Some(cookie_header) = res.headers().get("Set-Cookie") {
                 let parsed_uri = Uri::from_str(&self.endpoint.url).unwrap();
 
-                cookie_jar.set(
+                self.cookie_jar.set(
                     parsed_uri.host().unwrap(),
                     cookie_header
                         .to_str()
@@ -124,9 +106,9 @@ impl<'a> Request<'a> {
         }
 
         match aditional_cookie_jar {
-            Some(path) => cookie_jar.write_at(&path)?,
+            Some(path) => self.cookie_jar.write_at(&path)?,
 
-            None => cookie_jar.write()?,
+            None => self.cookie_jar.write()?,
         };
 
         let mut bytes = Bytes::new();
@@ -146,10 +128,10 @@ impl<'a> Request<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a Quartz> for Request<'a> {
+impl TryFrom<&Quartz> for Request {
     type Error = crate::Error;
 
-    fn try_from(value: &'a Quartz) -> Result<Self, Self::Error> {
+    fn try_from(value: &Quartz) -> Result<Self, Self::Error> {
         let env = value.env();
         let curr_env = env.current()?;
         let env = curr_env.read()?;
@@ -164,12 +146,26 @@ impl<'a> TryFrom<&'a Quartz> for Request<'a> {
                 .insert("user-agent".to_string(), USER_AGENT.to_owned());
         }
 
+        let cookie_jar = curr_env.cookie_jar();
+
+        let cookie_value = cookie_jar
+            .iter()
+            .map(|c| format!("{}={}", c.name(), c.value()))
+            .collect::<Vec<String>>()
+            .join("; ");
+
+        if !cookie_value.is_empty() {
+            endpoint
+                .headers
+                .insert(String::from("Cookie"), cookie_value);
+        }
+
         Ok(Self {
             path: value.path.clone(),
             endpoint: resolved,
-            env: value.env(),
             body: handle.body(),
             handle_name: handle.handle(),
+            cookie_jar,
         })
     }
 }
