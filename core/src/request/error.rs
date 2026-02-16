@@ -8,4 +8,12 @@ pub enum RequestError {
     NoAuthorityInURI,
     #[error("URI has no scheme")]
     NoSchemeInURI,
+    #[error("Could not build URI")]
+    BuildURI,
+    #[error("Could not parse location header")]
+    ParseLocationHeader,
+    #[error("Could not parse cookie")]
+    ParseCookie,
+    #[error("Error making the request")]
+    RequestFailure,
 }

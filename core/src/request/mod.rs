@@ -36,7 +36,7 @@ impl Request {
             res = client
                 .request(req)
                 .await
-                .map_err(|_| crate::Error::RequestFailure)?;
+                .map_err(|_| RequestError::RequestFailure)?;
 
             if let Some(cookie_header) = res.headers().get("Set-Cookie") {
                 let parsed_uri = Uri::from_str(&self.endpoint.url)
@@ -46,7 +46,7 @@ impl Request {
                     parsed_uri.host().ok_or(RequestError::NoHostInURI)?,
                     cookie_header
                         .to_str()
-                        .map_err(|_| crate::Error::ParseCookie)?,
+                        .map_err(|_| RequestError::ParseCookie)?,
                 );
             }
 
@@ -57,7 +57,7 @@ impl Request {
             if let Some(location) = res.headers().get("Location") {
                 let location = location
                     .to_str()
-                    .map_err(|_| crate::Error::ParseLocationHeader)?;
+                    .map_err(|_| RequestError::ParseLocationHeader)?;
 
                 if location.starts_with('/') {
                     let parsed_uri = Uri::from_str(&self.endpoint.url)
@@ -78,7 +78,7 @@ impl Request {
                         )
                         .path_and_query(location)
                         .build()
-                        .map_err(|_| crate::Error::ParseLocationHeader)?
+                        .map_err(|_| RequestError::BuildURI)?
                         .to_string();
                 } else if Uri::from_str(location).is_ok() {
                     self.endpoint.url = location.to_string();
