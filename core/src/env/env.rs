@@ -98,9 +98,7 @@ impl Env {
     }
     pub fn var_rm(&mut self, keys: Vec<String>) -> Result {
         for key in keys {
-            self.variables
-                .remove(&key)
-                .ok_or(Error::RemoveHeader)?;
+            self.variables.remove(&key).ok_or(Error::RemoveHeader)?;
         }
 
         Ok(())
