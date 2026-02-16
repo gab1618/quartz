@@ -1,10 +1,11 @@
 use std::{io::Write as _, path::PathBuf};
 
 use crate::{
-    error::{Error, Result},
-    state::field::StateField,
+    error::Result,
+    state::{error::StateError, field::StateField},
 };
 
+pub mod error;
 pub mod field;
 
 pub struct StateManager<'a> {
@@ -22,7 +23,7 @@ impl<'a> StateManager<'a> {
     }
     pub fn get(&self, field: StateField) -> Result<String> {
         let file_path = self.state_file_path(field);
-        let file_content = std::fs::read_to_string(file_path).map_err(Error::GetState)?;
+        let file_content = std::fs::read_to_string(file_path).map_err(StateError::GetState)?;
 
         Ok(file_content)
     }
@@ -34,8 +35,10 @@ impl<'a> StateManager<'a> {
             .create(true)
             .write(true)
             .open(file_path)
-            .map_err(Error::SetState)?;
+            .map_err(StateError::SetState)?;
 
-        file.write_all(value.as_bytes()).map_err(Error::SetState)
+        file.write_all(value.as_bytes())
+            .map_err(StateError::SetState)?;
+        Ok(())
     }
 }
