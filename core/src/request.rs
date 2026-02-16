@@ -23,10 +23,7 @@ impl Request {
         let mut res: hyper::Response<Body>;
 
         loop {
-            let req: hyper::Request<_> = self
-                .endpoint
-                // TODO: Find a way around this clone
-                .clone()
+            let req: hyper::Request<_> = (&self.endpoint)
                 .try_into()?;
 
             let client = {

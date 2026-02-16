@@ -10,7 +10,7 @@ pub struct ResolvedEndpoint {
     pub body: Option<String>,
 }
 
-impl TryInto<Request<Body>> for ResolvedEndpoint {
+impl TryInto<Request<Body>> for &ResolvedEndpoint {
     type Error = Error;
 
     fn try_into(self) -> Result<Request<Body>, Self::Error> {
@@ -24,7 +24,11 @@ impl TryInto<Request<Body>> for ResolvedEndpoint {
             builder = builder.header(key, value);
         }
 
-        let req_body = self.body.map(|b| b.into()).unwrap_or_else(|| Body::empty());
+        let req_body = self
+            .body
+            .clone()
+            .map(|b| b.into())
+            .unwrap_or_else(|| Body::empty());
         builder
             .body(req_body)
             .map_err(|_| EndpointError::SetRequestBody.into())
