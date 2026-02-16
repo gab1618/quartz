@@ -6,11 +6,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    error::{Error, Result},
-    headers::Headers,
-    pairmap::PairMap,
-};
+use crate::{env::error::EnvError, error::Result, headers::Headers, pairmap::PairMap};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Variables(pub HashMap<String, String>);
@@ -98,7 +94,7 @@ impl Env {
     }
     pub fn var_rm(&mut self, keys: Vec<String>) -> Result {
         for key in keys {
-            self.variables.remove(&key).ok_or(Error::RemoveHeader)?;
+            self.variables.remove(&key).ok_or(EnvError::RemoveHeader)?;
         }
 
         Ok(())

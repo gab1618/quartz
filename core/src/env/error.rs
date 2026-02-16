@@ -18,4 +18,6 @@ pub enum EnvError {
     UpdateVariablesFile(#[source] std::io::Error),
     #[error("Could not update headers file: {0}")]
     UpdateHeadersFile(#[source] std::io::Error),
+    #[error("Could not remove header")]
+    RemoveHeader,
 }

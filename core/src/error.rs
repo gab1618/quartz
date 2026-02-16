@@ -19,12 +19,6 @@ pub enum Error {
     AlreadyInitialized,
     #[error("Could not setup quartz")]
     Setup,
-    #[error("Could not parse header")]
-    ParseHeader,
-    #[error("Header not found")]
-    HeaderNotFound,
-    #[error("Could not remove header")]
-    RemoveHeader,
     #[error(transparent)]
     ConfigErr(#[from] ConfigError),
     #[error("Could not read cookies: {0}")]
