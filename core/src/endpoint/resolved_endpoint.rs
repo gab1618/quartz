@@ -24,15 +24,9 @@ impl TryInto<Request<Body>> for ResolvedEndpoint {
             builder = builder.header(key, value);
         }
 
-        if let Some(body) = self.body {
-            builder
-                .body(body.into())
-                .map_err(|_| EndpointError::SetRequestBody.into())
-        } else {
-            builder
-                .body(Body::empty())
-                .map_err(|_| EndpointError::SetRequestBody.into())
-        }
+        let req_body = self.body.map(|b| b.into()).unwrap_or_else(|| Body::empty());
+        builder
+            .body(req_body)
+            .map_err(|_| EndpointError::SetRequestBody.into())
     }
 }
-
