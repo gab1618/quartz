@@ -37,12 +37,6 @@ impl<'a> Request<'a> {
         let env = env.current()?;
         let env_value = env.read()?;
 
-        if !self.endpoint.headers.contains_key("user-agent") {
-            self.endpoint
-                .headers
-                .insert("user-agent".to_string(), USER_AGENT.to_owned());
-        }
-
         let mut cookie_jar = env.cookie_jar();
 
         let cookie_value = cookie_jar
@@ -161,6 +155,12 @@ impl<'a> From<&'a Quartz> for Request<'a> {
         let handle = endpoint.current().unwrap();
         let mut endpoint = handle.endpoint().unwrap();
         let resolved = endpoint.as_resolved(&handle, &env).unwrap();
+
+        if !endpoint.headers.contains_key("user-agent") {
+            endpoint
+                .headers
+                .insert("user-agent".to_string(), USER_AGENT.to_owned());
+        }
 
         Self {
             path: value.path.clone(),
