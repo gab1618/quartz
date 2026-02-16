@@ -5,6 +5,14 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("Could not initialize quartz: {0}")]
+    Init(#[source] std::io::Error),
+    #[error("Quartz already initialized")]
+    AlreadyInitialized,
+    #[error("Could not setup quartz")]
+    Setup,
+    #[error("Could not set value in the keymap")]
+    KeymapSet,
     #[error(transparent)]
     EndpointError(#[from] EndpointError),
     #[error(transparent)]
@@ -15,18 +23,10 @@ pub enum Error {
     RequestError(#[from] RequestError),
     #[error(transparent)]
     StateError(#[from] StateError),
-    #[error("Could not initialize quartz: {0}")]
-    Init(#[source] std::io::Error),
-    #[error("Quartz already initialized")]
-    AlreadyInitialized,
-    #[error("Could not setup quartz")]
-    Setup,
     #[error(transparent)]
     ConfigErr(#[from] ConfigError),
     #[error("Could not read cookies: {0}")]
     ReadCookies(#[source] std::io::Error),
-    #[error("Could not set value in the keymap")]
-    KeymapSet,
     #[error("Could not save cookie: {0}")]
     SaveCookie(#[source] std::io::Error),
 }
