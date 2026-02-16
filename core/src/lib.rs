@@ -6,6 +6,7 @@ pub mod error;
 pub mod headers;
 pub mod history;
 pub mod pairmap;
+pub mod request;
 pub mod state;
 
 #[cfg(test)]
@@ -17,17 +18,10 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use chrono::Utc;
-use hyper::body::{Bytes, HttpBody};
-use hyper::header::{HeaderName, HeaderValue};
-use hyper::{Body, Client, Request, Uri};
-
 use crate::config::ConfigManager;
 use crate::endpoint::EndpointManager;
-use crate::endpoint::error::EndpointError;
 use crate::env::EnvManager;
 use crate::history::History;
-use crate::history::error::HistoryError;
 use crate::state::StateManager;
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
@@ -105,129 +99,5 @@ impl Quartz {
     }
     pub fn config(&self) -> &ConfigManager {
         &self.config
-    }
-
-    pub async fn send(
-        &self,
-        no_follow: bool,
-        aditional_cookie_jar: Option<PathBuf>,
-    ) -> Result<Bytes> {
-        let endpoint = self.endpoint();
-        let handle = endpoint.current().ok_or(EndpointError::NoHandleInUse)?;
-        let env = self.env();
-        let env = env.current()?;
-        let env_value = env.read()?;
-        let mut endpoint = handle.endpoint()?;
-        let resolved_endpoint = endpoint.as_resolved(&handle, &env_value)?;
-
-        if !endpoint.headers.contains_key("user-agent") {
-            endpoint
-                .headers
-                .insert("user-agent".to_string(), USER_AGENT.to_owned());
-        }
-
-        let mut cookie_jar = env.cookie_jar();
-
-        let cookie_value = cookie_jar
-            .iter()
-            .map(|c| format!("{}={}", c.name(), c.value()))
-            .collect::<Vec<String>>()
-            .join("; ");
-
-        if !cookie_value.is_empty() {
-            endpoint
-                .headers
-                .insert(String::from("Cookie"), cookie_value);
-        }
-
-        let mut entry = history::Entry::builder();
-        entry
-            .handle(handle.handle())
-            .timestamp(Utc::now().timestamp_micros());
-
-        let body = handle.body().clone();
-
-        let mut res: hyper::Response<Body>;
-
-        loop {
-            let mut req: Request<_> = resolved_endpoint
-                // TODO: Find a way around this clone
-                .clone()
-                .try_into()?;
-            for (key, val) in env_value.headers.iter() {
-                if !endpoint.headers.contains_key(key) {
-                    req.headers_mut().insert(
-                        HeaderName::from_str(key).map_err(|_| Error::ParseHeader)?,
-                        HeaderValue::from_str(val).map_err(|_| Error::ParseHeader)?,
-                    );
-                }
-            }
-
-            if let Some(ref body) = body {
-                entry.message_raw(body.to_owned());
-            }
-
-            let client = {
-                let https = hyper_tls::HttpsConnector::new();
-                Client::builder().build(https)
-            };
-
-            res = client
-                .request(req)
-                .await
-                .map_err(|_| Error::RequestFailure)?;
-
-            if let Some(cookie_header) = res.headers().get("Set-Cookie") {
-                let url = endpoint.full_url()?;
-
-                cookie_jar.set(
-                    url.host().unwrap(),
-                    cookie_header.to_str().map_err(|_| Error::ParseCookie)?,
-                );
-            }
-
-            if no_follow || !res.status().is_redirection() {
-                break;
-            }
-
-            if let Some(location) = res.headers().get("Location") {
-                let location = location.to_str().map_err(|_| Error::ParseLocationHeader)?;
-
-                if location.starts_with('/') {
-                    let url = endpoint.full_url()?;
-                    // This is awful
-                    endpoint.url = Uri::builder()
-                        .authority(url.authority().unwrap().as_str())
-                        .scheme(url.scheme().unwrap().as_str())
-                        .path_and_query(location)
-                        .build()
-                        .map_err(|_| Error::ParseLocationHeader)?
-                        .to_string();
-                } else if Uri::from_str(location).is_ok() {
-                    endpoint.url = location.to_string();
-                }
-            };
-        }
-
-        match aditional_cookie_jar {
-            Some(path) => cookie_jar.write_at(&path)?,
-
-            None => cookie_jar.write()?,
-        };
-
-        let mut bytes = Bytes::new();
-
-        while let Some(chunk) = res.data().await {
-            if let Ok(chunk) = chunk {
-                bytes = [bytes, chunk].concat().into();
-            }
-        }
-
-        entry.message_raw(String::from_utf8(bytes.to_vec()).map_err(|_| HistoryError::Serialize)?);
-
-        let h = self.history();
-        h.write(entry.build()?)?;
-
-        Ok(bytes)
     }
 }
