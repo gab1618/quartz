@@ -3,7 +3,6 @@ use std::str::FromStr as _;
 use hyper::{
     Body, Client, Uri,
     body::{Bytes, HttpBody as _},
-    header::{HeaderName, HeaderValue},
 };
 
 use crate::{
@@ -24,19 +23,11 @@ impl Request {
         let mut res: hyper::Response<Body>;
 
         loop {
-            let mut req: hyper::Request<_> = self
+            let req: hyper::Request<_> = self
                 .endpoint
                 // TODO: Find a way around this clone
                 .clone()
                 .try_into()?;
-            for (key, val) in self.endpoint.headers.iter() {
-                if !self.endpoint.headers.contains_key(key) {
-                    req.headers_mut().insert(
-                        HeaderName::from_str(key).map_err(|_| crate::Error::ParseHeader)?,
-                        HeaderValue::from_str(val).map_err(|_| crate::Error::ParseHeader)?,
-                    );
-                }
-            }
 
             let client = {
                 let https = hyper_tls::HttpsConnector::new();
