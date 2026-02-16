@@ -74,13 +74,8 @@ impl Env {
         self.headers.remove(header);
         Ok(())
     }
-    pub fn header_get(&self, key: &str) -> Result<String> {
-        let value = self
-            .headers
-            .get(key)
-            .ok_or(Error::HeaderNotFound)?
-            .to_owned();
-        Ok(value)
+    pub fn header_get(&self, key: &str) -> Option<&String> {
+        self.headers.get(key)
     }
     pub fn var_set(&mut self, key: String, value: String) -> Result {
         self.variables.0.insert(key, value);

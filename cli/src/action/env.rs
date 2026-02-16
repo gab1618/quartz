@@ -70,8 +70,9 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
                     }
                 }
                 HeaderCmd::Get { key } => {
-                    let header = curr_env_value.header_get(&key)?;
-                    println!("{header}");
+                    if let Some(header) = curr_env_value.header_get(&key) {
+                        println!("{header}");
+                    }
                 }
             }
         }

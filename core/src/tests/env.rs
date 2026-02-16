@@ -64,18 +64,18 @@ fn add_header_to_env() {
         .unwrap();
 
     let found_header = curr_env_value.header_get("Header1").unwrap();
-    assert_eq!(found_header, "value1".to_owned());
+    assert_eq!(found_header, "value1");
 
     env.create("dev".into()).unwrap();
     let curr_env = env.switch("dev".into()).unwrap();
     let curr_env_value = curr_env.read().unwrap();
-    curr_env_value.header_get("Header1").unwrap_err();
+    assert!(curr_env_value.header_get("Header1").is_none());
 
     let curr_env = env.switch("default".into()).unwrap();
     let mut curr_env_value = curr_env.read().unwrap();
 
     curr_env_value.header_rm("Header1").unwrap();
-    curr_env_value.header_get("Header1").unwrap_err();
+    assert!(curr_env_value.header_get("Header1").is_none());
 }
 
 #[test]
@@ -92,7 +92,7 @@ fn copy_env() {
         .unwrap();
     curr_env.save(&curr_env_value).unwrap();
     let retrieved_header = curr_env_value.header_get("Header1").unwrap();
-    assert_eq!(&retrieved_header, "value1");
+    assert_eq!(retrieved_header, "value1");
 
     let new_env = env.copy("dev".into(), "dev-copy".into()).unwrap();
     let new_env_value = new_env.read().unwrap();
