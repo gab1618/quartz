@@ -87,6 +87,9 @@ impl Quartz {
             config,
         })
     }
+    /// The request object by itself is just some memory-only stateless value, therefore this
+    /// method is meant to deal with all the stateful logic of it, such as recording history and
+    /// saving the cookies into a file.
     pub async fn send_request(
         &self,
         mut req: Request,
