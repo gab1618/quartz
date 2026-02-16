@@ -16,7 +16,7 @@ pub struct Args {
 }
 
 pub async fn cmd(ctx: Ctx, args: Args) -> Result {
-    let request = Request::from(&ctx.quartz);
+    let mut request = Request::from(&ctx.quartz);
     let bytes = request.send(args.no_follow, args.cookie_jar).await?;
 
     stdout().write_all(&bytes).await.unwrap();

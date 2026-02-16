@@ -9,15 +9,17 @@ use hyper::{
 
 use crate::{
     Quartz,
-    endpoint::{EndpointManager, error::EndpointError},
+    endpoint::resolved_endpoint::ResolvedEndpoint,
     env::EnvManager,
     history::{History, error::HistoryError},
 };
 
 pub struct Request<'a> {
     path: PathBuf,
-    endpoint: EndpointManager<'a>,
+    endpoint: ResolvedEndpoint,
+    body: Option<String>,
     env: EnvManager<'a>,
+    handle_name: String,
 }
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
@@ -27,20 +29,16 @@ impl<'a> Request<'a> {
         History::new(&self.path)
     }
     pub async fn send(
-        &self,
+        &mut self,
         no_follow: bool,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> crate::Result<Bytes> {
-        let endpoint = &self.endpoint;
-        let handle = endpoint.current().ok_or(EndpointError::NoHandleInUse)?;
         let env = &self.env;
         let env = env.current()?;
         let env_value = env.read()?;
-        let mut endpoint = handle.endpoint()?;
-        let resolved_endpoint = endpoint.as_resolved(&handle, &env_value)?;
 
-        if !endpoint.headers.contains_key("user-agent") {
-            endpoint
+        if !self.endpoint.headers.contains_key("user-agent") {
+            self.endpoint
                 .headers
                 .insert("user-agent".to_string(), USER_AGENT.to_owned());
         }
@@ -54,27 +52,26 @@ impl<'a> Request<'a> {
             .join("; ");
 
         if !cookie_value.is_empty() {
-            endpoint
+            self.endpoint
                 .headers
                 .insert(String::from("Cookie"), cookie_value);
         }
 
         let mut entry = crate::history::Entry::builder();
         entry
-            .handle(handle.handle())
+            .handle(self.handle_name.clone())
             .timestamp(Utc::now().timestamp_micros());
-
-        let body = handle.body().clone();
 
         let mut res: hyper::Response<Body>;
 
         loop {
-            let mut req: hyper::Request<_> = resolved_endpoint
+            let mut req: hyper::Request<_> = self
+                .endpoint
                 // TODO: Find a way around this clone
                 .clone()
                 .try_into()?;
             for (key, val) in env_value.headers.iter() {
-                if !endpoint.headers.contains_key(key) {
+                if !self.endpoint.headers.contains_key(key) {
                     req.headers_mut().insert(
                         HeaderName::from_str(key).map_err(|_| crate::Error::ParseHeader)?,
                         HeaderValue::from_str(val).map_err(|_| crate::Error::ParseHeader)?,
@@ -82,7 +79,7 @@ impl<'a> Request<'a> {
                 }
             }
 
-            if let Some(ref body) = body {
+            if let Some(ref body) = self.body {
                 entry.message_raw(body.to_owned());
             }
 
@@ -97,10 +94,10 @@ impl<'a> Request<'a> {
                 .map_err(|_| crate::Error::RequestFailure)?;
 
             if let Some(cookie_header) = res.headers().get("Set-Cookie") {
-                let url = endpoint.full_url()?;
+                let parsed_uri = Uri::from_str(&self.endpoint.url).unwrap();
 
                 cookie_jar.set(
-                    url.host().unwrap(),
+                    parsed_uri.host().unwrap(),
                     cookie_header
                         .to_str()
                         .map_err(|_| crate::Error::ParseCookie)?,
@@ -117,17 +114,17 @@ impl<'a> Request<'a> {
                     .map_err(|_| crate::Error::ParseLocationHeader)?;
 
                 if location.starts_with('/') {
-                    let url = endpoint.full_url()?;
+                    let parsed_uri = Uri::from_str(&self.endpoint.url).unwrap();
                     // This is awful
-                    endpoint.url = Uri::builder()
-                        .authority(url.authority().unwrap().as_str())
-                        .scheme(url.scheme().unwrap().as_str())
+                    self.endpoint.url = Uri::builder()
+                        .authority(parsed_uri.authority().unwrap().as_str())
+                        .scheme(parsed_uri.scheme().unwrap().as_str())
                         .path_and_query(location)
                         .build()
                         .map_err(|_| crate::Error::ParseLocationHeader)?
                         .to_string();
                 } else if Uri::from_str(location).is_ok() {
-                    endpoint.url = location.to_string();
+                    self.endpoint.url = location.to_string();
                 }
             };
         }
@@ -157,10 +154,20 @@ impl<'a> Request<'a> {
 
 impl<'a> From<&'a Quartz> for Request<'a> {
     fn from(value: &'a Quartz) -> Self {
+        let env = value.env();
+        let curr_env = env.current().unwrap();
+        let env = curr_env.read().unwrap();
+        let endpoint = value.endpoint();
+        let handle = endpoint.current().unwrap();
+        let mut endpoint = handle.endpoint().unwrap();
+        let resolved = endpoint.as_resolved(&handle, &env).unwrap();
+
         Self {
             path: value.path.clone(),
-            endpoint: value.endpoint(),
+            endpoint: resolved,
             env: value.env(),
+            body: handle.body(),
+            handle_name: handle.handle(),
         }
     }
 }
