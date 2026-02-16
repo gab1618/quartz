@@ -1,4 +1,3 @@
-
 #[derive(Debug, thiserror::Error)]
 pub enum HistoryError {
     #[error("Could not read history entries")]
