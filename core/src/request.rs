@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr as _};
+use std::str::FromStr as _;
 
 use hyper::{
     Body, Client, Uri,
@@ -20,11 +20,7 @@ pub struct Request {
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
 
 impl Request {
-    pub async fn send(
-        &mut self,
-        no_follow: bool,
-        aditional_cookie_jar: Option<PathBuf>,
-    ) -> crate::Result<Bytes> {
+    pub async fn send(&mut self, no_follow: bool) -> crate::Result<Bytes> {
         let mut res: hyper::Response<Body>;
 
         loop {
@@ -88,12 +84,6 @@ impl Request {
             };
         }
 
-        match aditional_cookie_jar {
-            Some(path) => self.cookie_jar.write_at(&path)?,
-
-            None => self.cookie_jar.write()?,
-        };
-
         let mut bytes = Bytes::new();
 
         while let Some(chunk) = res.data().await {
@@ -103,6 +93,9 @@ impl Request {
         }
 
         Ok(bytes)
+    }
+    pub fn cookie_jar(&self) -> &CookieJar {
+        &self.cookie_jar
     }
 }
 

@@ -98,7 +98,7 @@ impl Quartz {
             .current()
             .ok_or(EndpointError::NoHandleInUse)?;
         let curr_body = curr_handle.body();
-        let response = req.send(no_follow, aditional_cookie_jar).await?;
+        let response = req.send(no_follow).await?;
 
         let mut entry = crate::history::Entry::builder();
         if let Some(ref body) = curr_body {
@@ -113,6 +113,12 @@ impl Quartz {
 
         let h = self.history();
         h.write(entry.build()?)?;
+
+        match aditional_cookie_jar {
+            Some(path) => req.cookie_jar().write_at(&path)?,
+
+            None => req.cookie_jar().write()?,
+        };
         Ok(response)
     }
     pub fn state(&self) -> StateManager<'_> {
