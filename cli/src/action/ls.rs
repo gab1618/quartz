@@ -27,19 +27,17 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
 fn output_tree(base: EndpointHandle, current_handle: Option<String>, padding: usize) -> Result {
     let handle_str = base.handle();
     let is_root = handle_str.is_empty();
-    let is_in_use = current_handle
-        .as_ref()
-        .map(|inner| inner.eq(&handle_str))
-        .unwrap_or(false);
     // Dont apply padding to direct children of the root
     let aditional_padding = if is_root { 0 } else { 2 };
 
-    let handle_str = base.handle();
-    let padding_str = " ".repeat(padding);
-
-    let handle_color = if is_in_use { Color::Blue } else { Color::White };
-
     if !is_root {
+        let is_in_use = current_handle
+            .as_ref()
+            .map(|inner| inner.eq(&handle_str))
+            .unwrap_or(false);
+        let handle_str = base.handle();
+        let padding_str = " ".repeat(padding);
+        let handle_color = if is_in_use { Color::Blue } else { Color::White };
         println!("{}{}", padding_str, handle_str.color(handle_color));
     }
     for child in base.children()? {
