@@ -27,7 +27,7 @@ fn output_tree(base: EndpointHandle, current_handle: Option<String>, padding: us
     let is_root = base.handle().is_empty();
     let handle_str = base.handle();
     let is_in_use = current_handle
-        .clone()
+        .as_ref()
         .map(|inner| inner.eq(&handle_str))
         .unwrap_or(false);
     // Dont apply padding to direct children of the root
