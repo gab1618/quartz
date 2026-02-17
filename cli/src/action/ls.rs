@@ -1,7 +1,7 @@
 use colored::{Color, Colorize};
 use quartz_core::{endpoint::handle::EndpointHandle, error::Result, state::field::StateField};
 
-use crate::ctx::Ctx;
+use crate::{color::method_color, ctx::Ctx};
 
 #[derive(clap::Args, Debug)]
 pub struct Args {
@@ -38,7 +38,22 @@ fn output_tree(base: EndpointHandle, current_handle: Option<String>, padding: us
         let handle_str = base.handle();
         let padding_str = " ".repeat(padding);
         let handle_color = if is_in_use { Color::Blue } else { Color::White };
-        println!("{}{}", padding_str, handle_str.color(handle_color));
+
+        let endpoint = base.endpoint().ok();
+        let method = endpoint.map(|endpoint| endpoint.method);
+        let method_str = method
+            .map(|method| {
+                let color = method_color(&method);
+                format!("{} ", method.color(color))
+            })
+            .unwrap_or_default();
+
+        println!(
+            "{}{}{}",
+            padding_str,
+            method_str,
+            handle_str.color(handle_color)
+        );
     }
     for child in base.children()? {
         output_tree(child, current_handle.clone(), padding + aditional_padding)?;

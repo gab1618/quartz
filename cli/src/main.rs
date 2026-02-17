@@ -1,5 +1,6 @@
 mod action;
 mod cli;
+mod color;
 mod ctx;
 mod error;
 mod validator;
