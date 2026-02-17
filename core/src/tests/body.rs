@@ -1,4 +1,4 @@
-use crate::{endpoint::endpoint::Endpoint, tests::utils::TestQuartz};
+use crate::{endpoint::value::Endpoint, tests::utils::TestQuartz};
 
 #[test]
 fn change_body() {

@@ -5,7 +5,7 @@ use crate::{
     state::field::StateField,
 };
 
-pub mod endpoint;
+pub mod value;
 pub mod error;
 pub mod handle;
 pub mod resolved_endpoint;

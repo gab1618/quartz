@@ -1,6 +1,6 @@
 use crate::action;
 use clap::{Parser, Subcommand};
-use quartz_core::endpoint::endpoint::{ContentTypeGroup, EndpointPatch};
+use quartz_core::endpoint::value::{ContentTypeGroup, EndpointPatch};
 
 #[derive(Debug, Parser)]
 #[command(name = "quartz")]

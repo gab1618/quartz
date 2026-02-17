@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::endpoint::error::EndpointError;
 use crate::endpoint::handle::EndpointHandle;
 use crate::endpoint::resolved_endpoint::ResolvedEndpoint;
-use crate::env::env::Env;
+use crate::env::value::Env;
 use crate::{error::Error, headers::Headers, pairmap::PairMap};
 
 #[derive(Default, Debug, Serialize, Deserialize, Clone)]

@@ -1,11 +1,11 @@
 use crate::{
     Quartz,
-    env::{env::Env, env_ref::EnvRef, error::EnvError},
+    env::{value::Env, env_ref::EnvRef, error::EnvError},
     error::Result,
     state::field::StateField,
 };
 
-pub mod env;
+pub mod value;
 pub mod env_ref;
 pub mod error;
 

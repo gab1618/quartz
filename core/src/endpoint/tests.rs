@@ -1,4 +1,4 @@
-use super::{endpoint::Endpoint, handle::EndpointHandle};
+use super::{value::Endpoint, handle::EndpointHandle};
 use crate::tests::utils::TestQuartz;
 
 #[test]
