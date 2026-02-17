@@ -24,6 +24,8 @@ pub enum Error {
     NoHistoryEntry,
     #[error("Could not write to stdin")]
     WriteStdin,
+    #[error("Could not spawn pager: {0}")]
+    SpawnPager(#[source] std::io::Error),
 }
 
 pub type Result<T = ()> = std::result::Result<T, Error>;

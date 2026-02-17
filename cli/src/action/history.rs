@@ -36,14 +36,12 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
     let mut child = std::process::Command::new(&pager)
         .stdin(Stdio::piped())
         .spawn()
-        .unwrap_or_else(|err| {
-            panic!("failed to open pager: {}\n\n{}", pager, err);
-        });
+        .map_err(Error::SpawnPager)?;
 
     child
         .stdin
         .as_mut()
-        .unwrap()
+        .ok_or(Error::WriteStdin)?
         .write_all(output.as_bytes())
         .map_err(|_| Error::WriteStdin)?;
     child.wait().map_err(|_| Error::WriteStdin)?;

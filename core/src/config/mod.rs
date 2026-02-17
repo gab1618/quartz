@@ -18,8 +18,7 @@ impl ConfigManager {
         Self { mount_path }
     }
     pub fn parse(&self) -> Config {
-        let parsed = Config::parse(&self.mount_path);
-        parsed
+        Config::parse(&self.mount_path)
     }
     pub fn save(&self, conf: Config) -> Result {
         let save_filepath = Config::filepath(&self.mount_path);
@@ -61,7 +60,7 @@ impl ConfigManager {
         &self.mount_path
     }
     pub fn file_path(&self) -> PathBuf {
-        Config::filepath(&self.path())
+        Config::filepath(self.path())
     }
 }
 
@@ -90,8 +89,8 @@ impl Config {
         Config::default()
     }
 
-    pub fn write(mut self, file_path: PathBuf) -> Result {
-        let content = toml::to_string(&mut self).map_err(ConfigError::SerializeConfig)?;
+    pub fn write(self, file_path: PathBuf) -> Result {
+        let content = toml::to_string(&self).map_err(ConfigError::SerializeConfig)?;
 
         if !file_path.exists() {
             let parent_path = file_path.parent().expect("Unreachable");
@@ -162,16 +161,13 @@ pub struct UiConfig {
 impl UiConfig {
     pub fn colors(&self) -> bool {
         if std::env::var("NO_COLOR").is_ok() {
-            false
-        } else if let Ok(clicolor) = std::env::var("CLICOLOR_FORCE") {
-            clicolor == "0"
-        } else if let Ok(clicolor) = std::env::var("CLICOLOR") {
-            clicolor == "0"
-        } else if let Some(colors) = self.colors {
-            colors
-        } else {
-            true
+            return false;
         }
+        if let Ok(color_param) = std::env::var("CLICOLOR_FORCE").or(std::env::var("CLICOLOR")) {
+            return color_param == "0";
+        }
+
+        self.colors.unwrap_or(true)
     }
 
     pub fn set_colors(&mut self, colors: bool) {

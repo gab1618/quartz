@@ -28,7 +28,7 @@ impl TryInto<Request<Body>> for &ResolvedEndpoint {
             .body
             .clone()
             .map(|b| b.into())
-            .unwrap_or_else(|| Body::empty());
+            .unwrap_or_else(Body::empty);
         builder
             .body(req_body)
             .map_err(|_| EndpointError::SetRequestBody.into())

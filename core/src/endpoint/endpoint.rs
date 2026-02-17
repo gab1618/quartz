@@ -144,11 +144,11 @@ impl Endpoint {
             self.query.set(input)?;
         }
 
-        if let Some(data) = &src.data {
-            if let Some(_maybe_json) = &data.json {
-                self.headers
-                    .insert("Content-type".into(), "application/json".into());
-            }
+        if let Some(data) = &src.data
+            && let Some(_maybe_json) = &data.json
+        {
+            self.headers
+                .insert("Content-type".into(), "application/json".into());
         }
 
         Ok(())
@@ -181,7 +181,7 @@ impl Endpoint {
         }
 
         for (key, value) in env.vars().iter() {
-            let key_match = Self::key_match_str(&key);
+            let key_match = Self::key_match_str(key);
             full_url = full_url.replace(&key_match, value);
         }
         Ok(full_url)
@@ -193,7 +193,7 @@ impl Endpoint {
         env: &Env,
     ) -> crate::Result<ResolvedEndpoint> {
         for (key, value) in env.variables.iter() {
-            let key_match = Self::key_match_str(&key);
+            let key_match = Self::key_match_str(key);
             *self.query = self
                 .query
                 .iter()
@@ -212,7 +212,7 @@ impl Endpoint {
             body: Default::default(),
         };
         for (key, value) in env.vars().iter() {
-            let key_match = Self::key_match_str(&key);
+            let key_match = Self::key_match_str(key);
 
             resolved.method = self.method.replace(&key_match, value);
 

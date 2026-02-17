@@ -75,6 +75,7 @@ impl<'a> History<'a> {
         std::fs::OpenOptions::new()
             .create(true)
             .write(true)
+            .truncate(true)
             .open(self.dir().join(entry.timestamp.to_string()))
             .map_err(HistoryError::Save)?
             .write_all(content.as_bytes())

@@ -79,13 +79,10 @@ impl Env {
         Ok(())
     }
     pub fn var_get(&self, name: &str) -> Option<String> {
-        let v = self
-            .variables
+        self.variables
             .get(name)
             .map(|inner| inner.to_owned())
-            .to_owned();
-
-        v
+            .to_owned()
     }
     pub fn vars(&self) -> Variables {
         self.variables.clone()

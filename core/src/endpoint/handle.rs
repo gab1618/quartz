@@ -66,13 +66,10 @@ impl<'a> EndpointHandle<'a> {
     }
 
     pub fn dir(&self) -> PathBuf {
-        let result = self
-            .quartz
+        self.quartz
             .path()
             .join("endpoints")
-            .join(self.path.join("/"));
-
-        result
+            .join(self.path.join("/"))
     }
     pub fn endpoint_file_path(&self) -> PathBuf {
         self.dir().join("endpoint.toml")
@@ -151,7 +148,6 @@ impl<'a> EndpointHandle<'a> {
         Ok(list)
     }
 
-    #[must_use]
     pub fn endpoint(&self) -> Result<Endpoint> {
         Endpoint::from_dir(&self.dir())
     }
@@ -177,9 +173,7 @@ impl<'a> EndpointHandle<'a> {
         self.dir().join("body")
     }
     pub fn body(&self) -> Option<String> {
-        let body_content = std::fs::read_to_string(self.body_file_path()).ok();
-
-        body_content
+        std::fs::read_to_string(self.body_file_path()).ok()
     }
 
     fn key_match_str(key: &str) -> String {
@@ -187,14 +181,13 @@ impl<'a> EndpointHandle<'a> {
     }
     pub fn resolved_body(&self, env: &Env) -> Option<String> {
         let raw_body = self.body();
-        let resolved = raw_body.map(|mut inner| {
+        raw_body.map(|mut inner| {
             for (key, value) in env.vars().iter() {
-                let key_match = Self::key_match_str(&key);
+                let key_match = Self::key_match_str(key);
                 inner = inner.replace(&key_match, value);
             }
             inner
-        });
-        resolved
+        })
     }
     pub fn set_body(&self, body: String) -> Result {
         self.ensure_dir()?;
@@ -210,7 +203,7 @@ impl<'a> EndpointHandle<'a> {
         Ok(())
     }
     pub fn apply_endpoint_patch(&self, mut patch: EndpointPatch) -> Result {
-        let mut endpoint = self.endpoint().ok().unwrap_or(Endpoint::new());
+        let mut endpoint = self.endpoint().ok().unwrap_or_default();
         endpoint.update(&mut patch)?;
         self.write_endpoint(&endpoint)?;
 

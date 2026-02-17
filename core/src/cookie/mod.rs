@@ -4,6 +4,7 @@ use hyper::http::uri::Scheme;
 use std::{
     collections::HashSet,
     convert::Infallible,
+    fmt::Display,
     hash::Hash,
     ops::{Deref, DerefMut},
     path::{Path, PathBuf},
@@ -107,7 +108,6 @@ impl Domain {
     /// assert_eq!(Domain::new("www.example.com").matches("www2.example.com"), false);
     /// assert_eq!(Domain::new("www.example.com").matches("www.example.com.au"), false);
     /// ```
-    #[must_use]
     pub fn matches<T>(&self, other: T) -> bool
     where
         T: Into<Domain>,
@@ -258,7 +258,7 @@ impl Hash for Cookie {
     }
 }
 
-impl ToString for Cookie {
+impl Display for Cookie {
     /// Converts a given [`Cookie`] into a Netspace HTTP Cookie file line.
     ///
     ///# Examples
@@ -279,12 +279,13 @@ impl ToString for Cookie {
     /// assert_eq!(cookie.to_string(),
     /// "httpbin.org\tTRUE\t/somepath\tFALSE\t0\tmysecret\tsupersecretkey");
     /// ```
-    fn to_string(&self) -> String {
-        format!(
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{}\t{}\t{}\t{}\t{}\t{}\t{}",
             *self.domain,
             self.subdomains.to_string().to_uppercase(),
-            self.path.to_string(),
+            self.path,
             self.secure.to_string().to_uppercase(),
             self.expires_at,
             self.name,
@@ -420,16 +421,15 @@ impl DerefMut for CookieJar {
     }
 }
 
-impl ToString for CookieJar {
-    fn to_string(&self) -> String {
+impl Display for CookieJar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut jar = String::new();
 
         for cookie in self.iter() {
             jar.push_str(&cookie.to_string());
             jar.push('\n');
         }
-
-        jar
+        write!(f, "{jar}")
     }
 }
 
@@ -512,10 +512,10 @@ impl CookieJar {
                 continue;
             }
 
-            if let Ok(cookie) = Cookie::from_str(line) {
-                if !cookie.expired() {
-                    cookies.insert(cookie);
-                }
+            if let Ok(cookie) = Cookie::from_str(line)
+                && !cookie.expired()
+            {
+                cookies.insert(cookie);
             }
         }
 
@@ -606,7 +606,7 @@ impl From<&str> for PathAttr {
     }
 }
 
-impl ToString for PathAttr {
+impl Display for PathAttr {
     /// Converts this into a Path attribute-value string.
     ///
     /// # Examples
@@ -615,12 +615,12 @@ impl ToString for PathAttr {
     /// use quartz_core::cookie::PathAttr;
     ///
     /// ```
-    fn to_string(&self) -> String {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = String::from("/");
 
         s.push_str(&self.join("/"));
 
-        s
+        write!(f, "{s}")
     }
 }
 
@@ -643,7 +643,6 @@ impl PathAttr {
     /// assert_eq!(PathAttr::from("/somepath").matches("/"), false);
     /// assert_eq!(PathAttr::from("/some/nested/path").matches("/"), false);
     /// ```
-    #[must_use]
     pub fn matches<T>(&self, other: T) -> bool
     where
         T: Into<PathAttr>,

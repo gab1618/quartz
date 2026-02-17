@@ -22,16 +22,13 @@ impl<'a> EndpointManager<'a> {
         Self { quartz }
     }
     pub fn new_handle(&self, name: &str) -> EndpointHandle<'_> {
-        let created = EndpointHandle::new(self.quartz, name.into());
-        created
+        EndpointHandle::new(self.quartz, name.into())
     }
 
     pub fn current(&self) -> Option<EndpointHandle<'_>> {
         let curr_endpoint_name = self.quartz.state().get(StateField::Endpoint).ok();
 
-        let parsed = curr_endpoint_name
-            .map(|handle_name| EndpointHandle::new(self.quartz, handle_name.into()));
-        parsed
+        curr_endpoint_name.map(|handle_name| EndpointHandle::new(self.quartz, handle_name.into()))
     }
 
     pub fn switch(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
@@ -67,7 +64,7 @@ impl<'a> EndpointManager<'a> {
         }
         let dest_handle = EndpointHandle::new(self.quartz, dest.into());
         dest_handle.ensure_dir()?;
-        if let Some(endpoint) = src_handle.endpoint().ok() {
+        if let Ok(endpoint) = src_handle.endpoint() {
             dest_handle.write_endpoint(endpoint)?;
         }
 
