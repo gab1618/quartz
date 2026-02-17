@@ -17,11 +17,10 @@ pub fn print(ctx: Ctx, args: PrintArgs) -> Result {
     let jar = curr_env.cookie_jar();
 
     let iter = jar.iter().filter(|c| {
-        if let Some(domain) = &args.domain {
-            c.domain().matches(domain.as_str())
-        } else {
-            true
-        }
+        args.domain
+            .as_ref()
+            .map(|domain| c.domain().matches(domain.as_str()))
+            .unwrap_or(true)
     });
 
     if let Some(key) = args.key {
