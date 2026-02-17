@@ -88,9 +88,7 @@ impl Env {
         v
     }
     pub fn vars(&self) -> Variables {
-        let vars = self.variables.clone();
-
-        vars
+        self.variables.clone()
     }
     pub fn var_rm(&mut self, keys: Vec<String>) -> Result {
         for key in keys {

@@ -265,11 +265,11 @@ pub struct ContentTypeGroupArg {
     #[arg(long = "data", short = 'd', value_name = "DATA")]
     pub raw: Option<String>,
 }
-impl Into<ContentTypeGroup> for ContentTypeGroupArg {
-    fn into(self) -> ContentTypeGroup {
-        ContentTypeGroup {
-            json: self.json,
-            raw: self.raw,
+impl From<ContentTypeGroupArg> for ContentTypeGroup {
+    fn from(value: ContentTypeGroupArg) -> Self {
+        Self {
+            json: value.json,
+            raw: value.raw,
         }
     }
 }
@@ -294,14 +294,14 @@ pub struct EndpointPatchArg {
     #[command(flatten)]
     pub data: Option<ContentTypeGroupArg>,
 }
-impl Into<EndpointPatch> for EndpointPatchArg {
-    fn into(self) -> EndpointPatch {
-        EndpointPatch {
-            url: self.url,
-            method: self.method,
-            query: self.query,
-            headers: self.headers,
-            data: self.data.map(Into::into),
+impl From<EndpointPatchArg> for EndpointPatch {
+    fn from(value: EndpointPatchArg) -> Self {
+        Self {
+            url: value.url,
+            method: value.method,
+            query: value.query,
+            headers: value.headers,
+            data: value.data.map(Into::into),
         }
     }
 }

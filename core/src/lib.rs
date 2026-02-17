@@ -71,15 +71,13 @@ impl Quartz {
                 .map_err(|_| Error::Setup)?;
         }
 
-        if path.join(".git").exists() {
-            if let Ok(mut gitignore) = std::fs::OpenOptions::new()
+        if path.join(".git").exists()
+            && let Ok(mut gitignore) = std::fs::OpenOptions::new()
                 .create(true)
                 .append(true)
                 .open(path.join(".gitignore"))
-            {
-                let _ =
-                    gitignore.write("\n# Quartz\n.quartz/user\n.quartz/env/**/cookies".as_bytes());
-            }
+        {
+            let _ = gitignore.write("\n# Quartz\n.quartz/user\n.quartz/env/**/cookies".as_bytes());
         }
 
         Ok(Self {

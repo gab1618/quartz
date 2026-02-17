@@ -64,7 +64,7 @@ impl Curl {
             write!(w, "{body}").map_err(Error::WriteSnippet)?;
             writeln!(w, "'").map_err(Error::WriteSnippet)?;
         } else {
-            writeln!(w, "").map_err(Error::WriteSnippet)?;
+            writeln!(w).map_err(Error::WriteSnippet)?;
         }
 
         Ok(())
@@ -176,7 +176,7 @@ impl Http {
         write!(w, "{}", endpoint.headers).map_err(Error::WriteSnippet)?;
 
         if let Some(body) = endpoint.body {
-            writeln!(w, "").map_err(Error::WriteSnippet)?;
+            writeln!(w).map_err(Error::WriteSnippet)?;
             write!(w, "{body}").map_err(Error::WriteSnippet)?;
         }
 

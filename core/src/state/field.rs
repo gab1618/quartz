@@ -9,9 +9,9 @@ pub struct State {
     pub previous_handle: Option<String>,
 }
 
-impl Into<&'static str> for StateField {
-    fn into(self) -> &'static str {
-        match self {
+impl From<StateField> for &'static str {
+    fn from(value: StateField) -> Self {
+        match value {
             StateField::Endpoint => "endpoint",
             StateField::PreviousEndpoint => "prev-endpoint",
             StateField::Env => "env",
