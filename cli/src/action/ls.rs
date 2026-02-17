@@ -25,8 +25,8 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
 }
 
 fn output_tree(base: EndpointHandle, current_handle: Option<String>, padding: usize) -> Result {
-    let is_root = base.handle().is_empty();
     let handle_str = base.handle();
+    let is_root = handle_str.is_empty();
     let is_in_use = current_handle
         .as_ref()
         .map(|inner| inner.eq(&handle_str))
