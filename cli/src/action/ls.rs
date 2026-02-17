@@ -38,7 +38,9 @@ fn output_tree(base: EndpointHandle, current_handle: Option<String>, padding: us
 
     let handle_marker = if is_in_use { "*" } else { "" };
 
-    println!("{}{}{}", padding_str, handle_marker, handle_str);
+    if !is_root {
+        println!("{}{}{}", padding_str, handle_marker, handle_str);
+    }
     for child in base.children()? {
         output_tree(child, current_handle.clone(), padding + aditional_padding)?;
     }
