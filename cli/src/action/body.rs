@@ -50,6 +50,6 @@ pub fn stdin(ctx: Ctx) {
 
     let endpoint = ctx.quartz.endpoint();
     if let Some(curr_handle) = endpoint.current() {
-        curr_handle.set_body(input).unwrap();
+        curr_handle.set_body(&input).unwrap();
     }
 }

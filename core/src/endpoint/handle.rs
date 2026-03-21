@@ -189,7 +189,7 @@ impl<'a> EndpointHandle<'a> {
             inner
         })
     }
-    pub fn set_body(&self, body: String) -> Result {
+    pub fn set_body(&self, body: &str) -> Result {
         self.ensure_dir()?;
         let mut f = OpenOptions::new()
             .write(true)

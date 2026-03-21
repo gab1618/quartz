@@ -8,6 +8,6 @@ fn change_body() {
     handle.write_endpoint(Endpoint::new()).unwrap();
     endpoint.switch("testing".to_owned()).unwrap();
 
-    handle.set_body("{}".to_owned()).unwrap();
+    handle.set_body("{}").unwrap();
     assert_eq!(handle.body().unwrap(), "{}".to_owned());
 }
