@@ -208,15 +208,15 @@ impl Endpoint {
         let mut resolved = ResolvedEndpoint {
             url: self.resolved_url(handle, env)?,
             method: self.method.clone(),
-            headers: Default::default(),
-            body: Default::default(),
+            headers: self.headers.clone(),
+            body: handle.body(),
         };
         for (key, value) in env.vars().iter() {
             let key_match = Self::key_match_str(key);
 
-            resolved.method = self.method.replace(&key_match, value);
+            resolved.method = resolved.method.replace(&key_match, value);
 
-            *resolved.headers = self
+            *resolved.headers = resolved
                 .headers
                 .iter()
                 .map(|(h_key, h_value)| {
@@ -226,6 +226,8 @@ impl Endpoint {
                     (h_key.clone(), h_value.clone())
                 })
                 .collect();
+
+            resolved.body = resolved.body.map(|body| body.replace(&key_match, value));
         }
 
         Ok(resolved)
