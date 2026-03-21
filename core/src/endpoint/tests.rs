@@ -1,4 +1,4 @@
-use super::{value::Endpoint, handle::EndpointHandle};
+use super::{handle::EndpointHandle, value::Endpoint};
 use crate::tests::utils::TestQuartz;
 
 #[test]
@@ -264,4 +264,39 @@ fn test_resolve_body() {
         first_handle.resolved_body(&default_env_value),
         Some("1".into())
     );
+}
+
+#[test]
+fn test_resolve_endpoint() {
+    let quartz = TestQuartz::empty();
+    let env = quartz.env();
+    let default_env = env.current().unwrap();
+    let mut default_env_value = default_env.read().unwrap();
+
+    default_env_value
+        .var_set(
+            "url".into(),
+            "https://jsonplaceholder.typicode.com/todos/1".into(),
+        )
+        .unwrap();
+
+    default_env_value
+        .var_set("method".into(), "POST".into())
+        .unwrap();
+
+    let endpoint = quartz.endpoint();
+
+    let first_handle = endpoint.new_handle("first");
+    first_handle.set_body("{}").unwrap();
+
+    let mut endpoint = Endpoint::new();
+    endpoint.method = "{{method}}".to_string();
+    endpoint.url = "{{url}}".to_string();
+    first_handle.write_endpoint(&endpoint).unwrap();
+    let resolved = endpoint
+        .as_resolved(&first_handle, &default_env_value)
+        .unwrap();
+
+    assert_eq!(resolved.method, "POST");
+    assert_eq!(resolved.url, "https://jsonplaceholder.typicode.com/todos/1");
 }
