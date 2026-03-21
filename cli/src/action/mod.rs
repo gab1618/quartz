@@ -30,7 +30,7 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
         Cmd::Create(args) => {
             let endpoint = ctx.quartz.endpoint();
             let new_handle = endpoint.new_handle(&args.handle);
-            new_handle.write_endpoint(Endpoint::new())?;
+            new_handle.write_endpoint(&Endpoint::new())?;
             if args.switch {
                 endpoint.switch(args.handle)?;
             }

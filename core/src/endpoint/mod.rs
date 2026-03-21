@@ -65,7 +65,7 @@ impl<'a> EndpointManager<'a> {
         let dest_handle = EndpointHandle::new(self.quartz, dest.into());
         dest_handle.ensure_dir()?;
         if let Ok(endpoint) = src_handle.endpoint() {
-            dest_handle.write_endpoint(endpoint)?;
+            dest_handle.write_endpoint(&endpoint)?;
         }
 
         if recursive {

@@ -56,11 +56,11 @@ fn test_cp_endpoint_spec() {
     let example_url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
     let mut new_endpoint = Endpoint::new();
     new_endpoint.url = example_url.clone();
-    created_handle.write_endpoint(new_endpoint).unwrap();
+    created_handle.write_endpoint(&new_endpoint).unwrap();
 
     let mut created_endpoint = created_handle.endpoint().unwrap();
     created_endpoint.url = example_url.clone();
-    created_handle.write_endpoint(created_endpoint).unwrap();
+    created_handle.write_endpoint(&created_endpoint).unwrap();
     endpoint.copy(true, "testing", "testing-copy").unwrap();
 
     let found_handle = endpoint.new_handle("testing-copy/ex2/sub");
@@ -133,11 +133,11 @@ fn test_mv_handle_overwrite() {
     let first_handle = endpoint.new_handle("testing");
     let mut first_endpoint = Endpoint::new();
     first_endpoint.url = "https://jsonplaceholder.typicode.com/todos/1".to_owned();
-    first_handle.write_endpoint(first_endpoint).unwrap();
+    first_handle.write_endpoint(&first_endpoint).unwrap();
     let second_handle = endpoint.new_handle("new");
     let mut second_endpoint = Endpoint::new();
     second_endpoint.url = "https://jsonplaceholder.typicode.com/todos/2".to_owned();
-    second_handle.write_endpoint(second_endpoint).unwrap();
+    second_handle.write_endpoint(&second_endpoint).unwrap();
 
     endpoint.mv("testing", "new").unwrap();
 
@@ -164,7 +164,7 @@ fn test_resolve_endpoint_url() {
 
     let mut first_endpoint = Endpoint::new();
     first_endpoint.url = "https://jsonplaceholder.typicode.com".into();
-    first_handle.write_endpoint(first_endpoint).unwrap();
+    first_handle.write_endpoint(&first_endpoint).unwrap();
 
     let sub_handle = endpoint.new_handle("jsonplaceholder/todos");
     let mut sub_endpoint = Endpoint::new();
@@ -187,12 +187,12 @@ fn test_multilevel_inheritance() {
     let first_handle = endpoint.new_handle("jsonplaceholder");
     let mut first_endpoint = Endpoint::new();
     first_endpoint.url = "https://jsonplaceholder.typicode.com".into();
-    first_handle.write_endpoint(first_endpoint).unwrap();
+    first_handle.write_endpoint(&first_endpoint).unwrap();
 
     let second_handle = endpoint.new_handle("jsonplaceholder/todos");
     let mut second_endpoint = Endpoint::new();
     second_endpoint.url = "**/todos".into();
-    second_handle.write_endpoint(second_endpoint).unwrap();
+    second_handle.write_endpoint(&second_endpoint).unwrap();
 
     let third_handle = endpoint.new_handle("jsonplaceholder/todos/first");
     let mut third_endpoint = Endpoint::new();

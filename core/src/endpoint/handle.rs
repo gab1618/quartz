@@ -96,7 +96,7 @@ impl<'a> EndpointHandle<'a> {
         Ok(())
     }
 
-    pub fn write_endpoint<E: AsRef<Endpoint>>(&self, endpoint: E) -> Result {
+    pub fn write_endpoint<E: AsRef<Endpoint>>(&self, endpoint: &E) -> Result {
         let endpoint = endpoint.as_ref();
         let toml_content = endpoint.to_toml()?;
         self.ensure_dir()?;
