@@ -207,7 +207,7 @@ impl Endpoint {
         }
         let mut resolved = ResolvedEndpoint {
             url: self.resolved_url(handle, env)?,
-            method: Default::default(),
+            method: self.method.clone(),
             headers: Default::default(),
             body: Default::default(),
         };
