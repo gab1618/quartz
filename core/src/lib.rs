@@ -16,7 +16,6 @@ use chrono::Utc;
 pub use error::{Error, Result};
 use hyper::body::Bytes;
 
-use std::io::Write;
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -65,15 +64,6 @@ impl Quartz {
         for dir in ensure_dirs {
             std::fs::create_dir(quartz_dir.join(PathBuf::from_str(dir).map_err(|_| Error::Setup)?))
                 .map_err(|_| Error::Setup)?;
-        }
-
-        if path.join(".git").exists()
-            && let Ok(mut gitignore) = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(path.join(".gitignore"))
-        {
-            let _ = gitignore.write("\n# Quartz\n.quartz/user\n.quartz/env/**/cookies".as_bytes());
         }
 
         Ok(Self {
