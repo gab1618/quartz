@@ -6,7 +6,9 @@ fn test_simple_cp_handle() {
     let quartz = TestQuartz::empty();
     let handle = quartz.new_handle("testing");
     handle.ensure_dir().unwrap();
-    quartz.copy_endpoint(false, "testing", "testing-copy").unwrap();
+    quartz
+        .copy_endpoint(false, "testing", "testing-copy")
+        .unwrap();
 
     let found_handle = quartz.new_handle("testing-copy");
     assert!(found_handle.exists());
@@ -19,7 +21,9 @@ fn test_recursive_cp_handle() {
     quartz.new_handle("testing/ex").ensure_dir().unwrap();
     quartz.new_handle("testing/ex2").ensure_dir().unwrap();
     quartz.new_handle("testing/ex2/sub").ensure_dir().unwrap();
-    quartz.copy_endpoint(true, "testing", "testing-copy").unwrap();
+    quartz
+        .copy_endpoint(true, "testing", "testing-copy")
+        .unwrap();
 
     assert!(quartz.new_handle("testing-copy").exists());
     assert!(quartz.new_handle("testing-copy/ex").exists());
@@ -34,7 +38,9 @@ fn test_non_recursive_cp_handle() {
     quartz.new_handle("testing/ex").ensure_dir().unwrap();
     quartz.new_handle("testing/ex2").ensure_dir().unwrap();
     quartz.new_handle("testing/ex2/sub").ensure_dir().unwrap();
-    quartz.copy_endpoint(false, "testing", "testing-copy").unwrap();
+    quartz
+        .copy_endpoint(false, "testing", "testing-copy")
+        .unwrap();
 
     assert!(quartz.new_handle("testing-copy").exists());
     assert!(!quartz.new_handle("testing-copy/ex").exists());
@@ -57,7 +63,9 @@ fn test_cp_endpoint_spec() {
     let mut created_endpoint = created_handle.endpoint().unwrap();
     created_endpoint.url = example_url.clone();
     created_handle.write_endpoint(&created_endpoint).unwrap();
-    quartz.copy_endpoint(true, "testing", "testing-copy").unwrap();
+    quartz
+        .copy_endpoint(true, "testing", "testing-copy")
+        .unwrap();
 
     let found_handle = quartz.new_handle("testing-copy/ex2/sub");
     assert!(found_handle.exists());
@@ -146,8 +154,7 @@ fn test_mv_handle_overwrite() {
 #[test]
 fn test_resolve_endpoint_url() {
     let quartz = TestQuartz::empty();
-    let env = quartz.env();
-    let default_env = env.current().unwrap();
+    let default_env = quartz.current_env().unwrap();
     let default_env_value = default_env.read().unwrap();
 
     let first_handle = quartz.new_handle("jsonplaceholder");
@@ -170,8 +177,7 @@ fn test_resolve_endpoint_url() {
 #[test]
 fn test_multilevel_inheritance() {
     let quartz = TestQuartz::empty();
-    let env = quartz.env();
-    let default_env = env.current().unwrap();
+    let default_env = quartz.current_env().unwrap();
     let default_env_value = default_env.read().unwrap();
     let first_handle = quartz.new_handle("jsonplaceholder");
     let mut first_endpoint = Endpoint::new();
@@ -197,8 +203,7 @@ fn test_multilevel_inheritance() {
 #[test]
 fn test_resolve_endpoint_vars() {
     let quartz = TestQuartz::empty();
-    let env = quartz.env();
-    let default_env = env.current().unwrap();
+    let default_env = quartz.current_env().unwrap();
     let mut default_env_value = default_env.read().unwrap();
 
     let first_handle = quartz.new_handle("jsonplaceholder");
@@ -231,8 +236,7 @@ fn test_handle_parent() {
 #[test]
 fn test_resolve_body() {
     let quartz = TestQuartz::empty();
-    let env = quartz.env();
-    let default_env = env.current().unwrap();
+    let default_env = quartz.current_env().unwrap();
     let mut default_env_value = default_env.read().unwrap();
 
     let first_handle = quartz.new_handle("first");
@@ -255,8 +259,7 @@ fn test_resolve_body() {
 #[test]
 fn test_resolve_endpoint() {
     let quartz = TestQuartz::empty();
-    let env = quartz.env();
-    let default_env = env.current().unwrap();
+    let default_env = quartz.current_env().unwrap();
     let mut default_env_value = default_env.read().unwrap();
 
     default_env_value

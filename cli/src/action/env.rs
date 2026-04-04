@@ -28,31 +28,25 @@ pub struct RmArgs {
 pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
     match command {
         Cmd::Create(args) => {
-            let env = ctx.quartz.env();
-            env.create(args.name)?;
+            ctx.quartz.create_env(args.name)?;
         }
         Cmd::Cp(args) => {
-            let env = ctx.quartz.env();
-            env.copy(args.src, args.dest)?;
+            ctx.quartz.copy_env(args.src, args.dest)?;
         }
         Cmd::Use(args) => {
-            let env = ctx.quartz.env();
-            env.switch(args.env)?;
+            ctx.quartz.switch_env(args.env)?;
         }
         Cmd::Ls => {
-            let env = ctx.quartz.env();
-            let envs = env.envs()?;
+            let envs = ctx.quartz.envs()?;
             for env in envs {
                 println!("{}", env?);
             }
         }
         Cmd::Rm(args) => {
-            let env = ctx.quartz.env();
-            env.remove(args.env)?;
+            ctx.quartz.remove_env(args.env)?;
         }
         Cmd::Header { command } => {
-            let env = ctx.quartz.env();
-            let curr_env = env.current()?;
+            let curr_env = ctx.quartz.current_env()?;
             let mut curr_env_value = curr_env.read()?;
             match command {
                 HeaderCmd::Set { name, value } => {

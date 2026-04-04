@@ -8,8 +8,8 @@ use std::{
 use crate::{
     Quartz,
     endpoint::{
-        value::{Endpoint, EndpointPatch},
         error::EndpointError,
+        value::{Endpoint, EndpointPatch},
     },
     env::value::Env,
     error::Result,

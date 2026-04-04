@@ -1,6 +1,5 @@
 use crate::cli::EndpointPatchArg;
 
-
 #[derive(clap::Args, Debug)]
 pub struct CreateArgs {
     pub handle: String,

@@ -54,8 +54,13 @@ impl Curl {
 
         if let Some(body) = endpoint.body {
             let mut body = body.to_owned();
-            write!(w, "{}{} '", separator, Self::option_string(CurlOption::Data, long))
-                .map_err(Error::WriteSnippet)?;
+            write!(
+                w,
+                "{}{} '",
+                separator,
+                Self::option_string(CurlOption::Data, long)
+            )
+            .map_err(Error::WriteSnippet)?;
 
             if body.ends_with('\n') {
                 body.truncate(body.len() - 1);

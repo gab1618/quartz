@@ -12,8 +12,7 @@ pub struct PrintArgs {
 }
 
 pub fn print(ctx: Ctx, args: PrintArgs) -> Result {
-    let env = ctx.quartz.env();
-    let curr_env = env.current()?;
+    let curr_env = ctx.quartz.current_env()?;
     let jar = curr_env.cookie_jar();
 
     let iter = jar.iter().filter(|c| {

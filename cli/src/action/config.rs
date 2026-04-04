@@ -1,5 +1,5 @@
-use crate::{cli::ConfigCmd as Cmd, ctx::Ctx};
 use crate::error::Result;
+use crate::{cli::ConfigCmd as Cmd, ctx::Ctx};
 
 #[derive(clap::Args, Debug)]
 pub struct GetArgs {

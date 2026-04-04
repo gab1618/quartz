@@ -4,8 +4,8 @@ use crate::{
     Quartz, Result,
     cookie::CookieJar,
     env::{
-        value::{Env, Variables},
         error::EnvError,
+        value::{Env, Variables},
     },
     headers::Headers,
 };

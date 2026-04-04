@@ -69,7 +69,7 @@ impl Ctx {
         Ok(())
     }
 
-        pub fn body_edit(&self, format: Option<String>) -> Result {
+    pub fn body_edit(&self, format: Option<String>) -> Result {
         let curr_handle = self.quartz.current_endpoint().ok_or(Error::NoHandleInUse)?;
         let mut file_path = curr_handle.body_file_path();
 

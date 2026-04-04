@@ -105,10 +105,11 @@ impl TryFrom<&Quartz> for Request {
     type Error = crate::Error;
 
     fn try_from(value: &Quartz) -> Result<Self, Self::Error> {
-        let env = value.env();
-        let curr_env = env.current()?;
+        let curr_env = value.current_env()?;
         let env = curr_env.read()?;
-        let handle = value.current_endpoint().ok_or(EndpointError::NoHandleInUse)?;
+        let handle = value
+            .current_endpoint()
+            .ok_or(EndpointError::NoHandleInUse)?;
         let mut endpoint = handle.endpoint()?;
         let resolved = endpoint.as_resolved(&handle, &env)?;
 

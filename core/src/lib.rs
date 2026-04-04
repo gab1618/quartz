@@ -22,7 +22,6 @@ use std::str::FromStr;
 
 use crate::config::ConfigManager;
 use crate::endpoint::error::EndpointError;
-use crate::env::EnvManager;
 use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::request::Request;
@@ -118,9 +117,6 @@ impl Quartz {
             None => req.cookie_jar().write()?,
         };
         Ok(response)
-    }
-    pub fn env(&self) -> EnvManager<'_> {
-        EnvManager::new(self)
     }
     pub fn history(&self) -> History<'_> {
         History::new(&self.path)

@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fmt::Display, ops::{Deref, DerefMut}};
+use std::{
+    collections::HashMap,
+    fmt::Display,
+    ops::{Deref, DerefMut},
+};
 
 use serde::{Deserialize, Serialize};
 

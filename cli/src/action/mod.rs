@@ -52,7 +52,8 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
             }
         }
         Cmd::Cp(args) => {
-            ctx.quartz.copy_endpoint(args.recursive, &args.src, &args.dest)?;
+            ctx.quartz
+                .copy_endpoint(args.recursive, &args.src, &args.dest)?;
         }
         Cmd::Mv(args) => {
             ctx.quartz.move_endpoint(&args.src, &args.dest)?;
