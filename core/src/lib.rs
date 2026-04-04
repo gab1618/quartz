@@ -42,6 +42,10 @@ impl Quartz {
             config,
         })
     }
+    pub fn with_config_path(mut self, path: PathBuf) -> Self {
+        self.config = ConfigManager::new(path);
+        self
+    }
     pub fn init(path: PathBuf) -> Result<Self> {
         let config_path = dirs::config_dir().ok_or(Error::GetConfigDir)?;
         let quartz_dir = path.join(".quartz");
