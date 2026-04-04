@@ -47,9 +47,7 @@ impl Quartz {
         self
     }
     pub fn init(path: PathBuf) -> Result<Self> {
-        let config_path = dirs::config_dir().ok_or(Error::GetConfigDir)?;
         let quartz_dir = path.join(".quartz");
-        let config = ConfigManager::new(config_path);
 
         // TODO: properly propagate these errors for better diagnostics context
         if quartz_dir.exists() {
@@ -72,10 +70,7 @@ impl Quartz {
                 .map_err(|_| Error::Setup)?;
         }
 
-        Ok(Self {
-            path: quartz_dir,
-            config,
-        })
+        Self::new(path)
     }
     /// The request object by itself is just some memory-only stateless value, therefore this
     /// method is meant to deal with all the stateful logic of it, such as recording history and
