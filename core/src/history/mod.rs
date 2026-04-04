@@ -25,8 +25,8 @@ pub struct EntryBuilder {
 }
 
 impl Quartz {
-    pub fn entries(&self) -> Result<Vec<Entry>> {
-        let paths = std::fs::read_dir(self.dir()).map_err(|_| HistoryError::ReadEntries)?;
+    pub fn history_entries(&self) -> Result<Vec<Entry>> {
+        let paths = std::fs::read_dir(self.history_dir()).map_err(|_| HistoryError::ReadEntries)?;
         let mut timestamps = paths
             .map(|path| {
                 let timestamp = path
@@ -45,30 +45,32 @@ impl Quartz {
         timestamps.reverse();
         let entries = timestamps
             .iter()
-            .filter_map(|timestamp| Entry::read(&self.dir().join(timestamp.to_string())).ok())
+            .filter_map(|timestamp| {
+                Entry::read(&self.history_dir().join(timestamp.to_string())).ok()
+            })
             .collect();
 
         Ok(entries)
     }
 
-    pub fn dir(&self) -> PathBuf {
+    pub fn history_dir(&self) -> PathBuf {
         self.path.join("user").join("history")
     }
 
-    pub fn last_entry(&self) -> Result<Option<Entry>> {
-        let last_entry = self.entries()?.into_iter().next();
+    pub fn last_history_entry(&self) -> Result<Option<Entry>> {
+        let last_entry = self.history_entries()?.into_iter().next();
 
         Ok(last_entry)
     }
 
-    pub fn write(&self, entry: Entry) -> Result {
+    pub fn write_history_entry(&self, entry: Entry) -> Result {
         let content = toml::to_string(&entry).map_err(|_| HistoryError::Serialize)?;
 
         std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(true)
-            .open(self.dir().join(entry.timestamp.to_string()))
+            .open(self.history_dir().join(entry.timestamp.to_string()))
             .map_err(HistoryError::Save)?
             .write_all(content.as_bytes())
             .map_err(HistoryError::Save)?;

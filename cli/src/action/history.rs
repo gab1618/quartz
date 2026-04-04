@@ -16,7 +16,7 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
     let max_count = args.max_count.unwrap_or(usize::MAX);
 
     let mut output = String::new();
-    for entry in ctx.quartz.entries()? {
+    for entry in ctx.quartz.history_entries()? {
         if count >= max_count {
             break;
         }

@@ -107,7 +107,7 @@ impl Quartz {
             String::from_utf8(response.to_vec()).map_err(|_| HistoryError::Serialize)?,
         );
 
-        self.write(entry.build()?)?;
+        self.write_history_entry(entry.build()?)?;
 
         match aditional_cookie_jar {
             Some(path) => req.cookie_jar().write_at(&path)?,
