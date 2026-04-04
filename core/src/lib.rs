@@ -33,7 +33,7 @@ pub struct Quartz {
 
 impl Quartz {
     pub fn new(path: PathBuf) -> Result<Self> {
-        let config_path = dirs::config_dir().unwrap();
+        let config_path = dirs::config_dir().ok_or(Error::GetConfigDir)?;
         let quartz_path = path.join(".quartz");
         let config = ConfigManager::new(config_path);
 
