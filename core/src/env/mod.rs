@@ -1,13 +1,13 @@
 use crate::{
     Quartz,
-    env::{value::Env, env_ref::EnvRef, error::EnvError},
+    env::{env_ref::EnvRef, error::EnvError, value::Env},
     error::Result,
     state::field::StateField,
 };
 
-pub mod value;
 pub mod env_ref;
 pub mod error;
+pub mod value;
 
 pub struct EnvManager<'a> {
     quartz: &'a Quartz,
@@ -20,8 +20,7 @@ impl<'a> EnvManager<'a> {
     pub fn current(&self) -> Result<EnvRef<'_>> {
         let curr_env_name = self
             .quartz
-            .state()
-            .get(StateField::Env)
+            .state_get(StateField::Env)
             .unwrap_or("default".into());
 
         let parsed_env = EnvRef::new(self.quartz, curr_env_name);
@@ -56,8 +55,7 @@ impl<'a> EnvManager<'a> {
             return Err(EnvError::NotFound.into());
         }
         self.quartz
-            .state()
-            .set(StateField::Env, &requested_env.name)?;
+            .state_set(StateField::Env, &requested_env.name)?;
 
         Ok(requested_env)
     }

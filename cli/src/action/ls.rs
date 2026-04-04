@@ -18,7 +18,7 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
         .handle
         .map(|handle| EndpointHandle::new(&ctx.quartz, handle.into()));
     let base_handle = parsed_arg_handle.unwrap_or(EndpointHandle::root(&ctx.quartz));
-    let current_handle = ctx.quartz.state().get(StateField::Endpoint).ok();
+    let current_handle = ctx.quartz.state_get(StateField::Endpoint).ok();
     output_tree(base_handle, current_handle, 0)?;
 
     Ok(())

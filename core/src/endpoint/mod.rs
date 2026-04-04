@@ -5,10 +5,10 @@ use crate::{
     state::field::StateField,
 };
 
-pub mod value;
 pub mod error;
 pub mod handle;
 pub mod resolved_endpoint;
+pub mod value;
 
 #[cfg(test)]
 mod tests;
@@ -19,14 +19,14 @@ impl Quartz {
     }
 
     pub fn current_endpoint(&self) -> Option<EndpointHandle<'_>> {
-        let curr_endpoint_name = self.state().get(StateField::Endpoint).ok();
+        let curr_endpoint_name = self.state_get(StateField::Endpoint).ok();
 
         curr_endpoint_name.map(|handle_name| EndpointHandle::new(self, handle_name.into()))
     }
 
     pub fn switch_endpoint(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
         if handle == "-" {
-            let previous_handle = self.state().get(StateField::PreviousEndpoint)?;
+            let previous_handle = self.state_get(StateField::PreviousEndpoint)?;
             handle = previous_handle;
         }
 
@@ -36,15 +36,11 @@ impl Quartz {
             return Err(EndpointError::HandleNotFound(handle.head()).into());
         }
 
-        let previous = self.state().get(StateField::Endpoint);
-        self
-            .state()
-            .set(StateField::Endpoint, &handle.path.join("/"))?;
+        let previous = self.state_get(StateField::Endpoint);
+        self.state_set(StateField::Endpoint, &handle.path.join("/"))?;
 
         if let Ok(prev) = previous {
-            self
-                .state()
-                .set(StateField::PreviousEndpoint, &prev)?;
+            self.state_set(StateField::PreviousEndpoint, &prev)?;
         }
 
         Ok(handle)

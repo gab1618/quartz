@@ -26,7 +26,6 @@ use crate::env::EnvManager;
 use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::request::Request;
-use crate::state::StateManager;
 
 pub const USER_AGENT: &str = concat!("quartz/", env!("CARGO_PKG_VERSION"));
 
@@ -119,9 +118,6 @@ impl Quartz {
             None => req.cookie_jar().write()?,
         };
         Ok(response)
-    }
-    pub fn state(&self) -> StateManager<'_> {
-        StateManager::new(&self.path)
     }
     pub fn env(&self) -> EnvManager<'_> {
         EnvManager::new(self)
