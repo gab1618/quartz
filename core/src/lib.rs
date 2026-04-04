@@ -22,7 +22,6 @@ use std::str::FromStr;
 
 use crate::config::ConfigManager;
 use crate::endpoint::error::EndpointError;
-use crate::history::History;
 use crate::history::error::HistoryError;
 use crate::request::Request;
 
@@ -108,8 +107,7 @@ impl Quartz {
             String::from_utf8(response.to_vec()).map_err(|_| HistoryError::Serialize)?,
         );
 
-        let h = self.history();
-        h.write(entry.build()?)?;
+        self.write(entry.build()?)?;
 
         match aditional_cookie_jar {
             Some(path) => req.cookie_jar().write_at(&path)?,
@@ -117,9 +115,6 @@ impl Quartz {
             None => req.cookie_jar().write()?,
         };
         Ok(response)
-    }
-    pub fn history(&self) -> History<'_> {
-        History::new(&self.path)
     }
     pub fn path(&self) -> &PathBuf {
         &self.path

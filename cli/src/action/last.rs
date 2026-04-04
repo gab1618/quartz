@@ -6,8 +6,7 @@ use crate::{
 use quartz_core::history::{self};
 
 pub fn cmd(ctx: Ctx, maybe_command: Option<Cmd>) -> Result {
-    let h = ctx.quartz.history();
-    let entry = h.last_entry()?.ok_or(Error::NoHistoryEntry)?;
+    let entry = ctx.quartz.last_entry()?.ok_or(Error::NoHistoryEntry)?;
 
     if maybe_command.is_none() {
         println!("{entry}");

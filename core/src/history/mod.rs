@@ -1,5 +1,5 @@
-use crate::Result;
 use crate::history::error::HistoryError;
+use crate::{Quartz, Result};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -24,15 +24,7 @@ pub struct EntryBuilder {
     messages: Vec<String>,
 }
 
-pub struct History<'a> {
-    path: &'a PathBuf,
-}
-
-impl<'a> History<'a> {
-    pub fn new(path: &'a PathBuf) -> Self {
-        Self { path }
-    }
-
+impl Quartz {
     pub fn entries(&self) -> Result<Vec<Entry>> {
         let paths = std::fs::read_dir(self.dir()).map_err(|_| HistoryError::ReadEntries)?;
         let mut timestamps = paths
