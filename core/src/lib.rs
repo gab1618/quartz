@@ -94,7 +94,7 @@ impl Quartz {
         aditional_cookie_jar: Option<PathBuf>,
     ) -> crate::Result<Bytes> {
         let curr_handle = self
-            .current()
+            .current_endpoint()
             .ok_or(EndpointError::NoHandleInUse)?;
         let curr_body = curr_handle.body();
         let response = req.send(no_follow).await?;

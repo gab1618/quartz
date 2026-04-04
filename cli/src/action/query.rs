@@ -35,7 +35,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
 }
 
 pub fn get(ctx: Ctx, key: String) -> Result {
-    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current_endpoint().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
 
     let value = endpoint
@@ -48,7 +48,7 @@ pub fn get(ctx: Ctx, key: String) -> Result {
 }
 
 pub fn set(ctx: Ctx, queries: Vec<String>) -> Result {
-    let handle = ctx.quartz.current().unwrap();
+    let handle = ctx.quartz.current_endpoint().unwrap();
     let mut endpoint = handle.endpoint().unwrap();
 
     for input in queries {
@@ -61,7 +61,7 @@ pub fn set(ctx: Ctx, queries: Vec<String>) -> Result {
 }
 
 pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
-    let handle = ctx.quartz.current().unwrap();
+    let handle = ctx.quartz.current_endpoint().unwrap();
     let mut endpoint = handle.endpoint()?;
 
     for k in keys {
@@ -78,7 +78,7 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
 }
 
 pub fn ls(ctx: Ctx) -> Result {
-    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current_endpoint().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
     print!("{}", endpoint.query);
 
@@ -86,7 +86,7 @@ pub fn ls(ctx: Ctx) -> Result {
 }
 
 pub fn print(ctx: Ctx) -> Result {
-    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current_endpoint().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
     println!("{}", endpoint.query_string());
 

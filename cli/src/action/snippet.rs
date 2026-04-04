@@ -20,7 +20,7 @@ pub struct Args {
 
 pub fn cmd(ctx: Ctx, args: Args) -> Result {
     let env = ctx.quartz.env();
-    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current_endpoint().ok_or(Error::NoHandleInUse)?;
     let mut endpoint = handle.endpoint()?;
     let curr_env = env.current()?;
     let mut curr_env_value = curr_env.read()?;

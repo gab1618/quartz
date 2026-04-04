@@ -24,7 +24,7 @@ pub fn cmd(ctx: Ctx, args: Args) -> Result {
 }
 
 pub fn print(ctx: Ctx) -> Result {
-    let curr_handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
+    let curr_handle = ctx.quartz.current_endpoint().ok_or(Error::NoHandleInUse)?;
 
     if let Some(body) = curr_handle.body() {
         print!("{body}");
@@ -47,7 +47,7 @@ pub fn stdin(ctx: Ctx) {
         }
     }
 
-    if let Some(curr_handle) = ctx.quartz.current() {
+    if let Some(curr_handle) = ctx.quartz.current_endpoint() {
         curr_handle.set_body(&input).unwrap();
     }
 }

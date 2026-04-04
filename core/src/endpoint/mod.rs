@@ -18,13 +18,13 @@ impl Quartz {
         EndpointHandle::new(self, name.into())
     }
 
-    pub fn current(&self) -> Option<EndpointHandle<'_>> {
+    pub fn current_endpoint(&self) -> Option<EndpointHandle<'_>> {
         let curr_endpoint_name = self.state().get(StateField::Endpoint).ok();
 
         curr_endpoint_name.map(|handle_name| EndpointHandle::new(self, handle_name.into()))
     }
 
-    pub fn switch(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
+    pub fn switch_endpoint(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
         if handle == "-" {
             let previous_handle = self.state().get(StateField::PreviousEndpoint)?;
             handle = previous_handle;
@@ -50,7 +50,7 @@ impl Quartz {
         Ok(handle)
     }
 
-    pub fn copy(&self, recursive: bool, src: &str, dest: &str) -> Result {
+    pub fn copy_endpoint(&self, recursive: bool, src: &str, dest: &str) -> Result {
         let src_handle = EndpointHandle::new(self, src.into());
         if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
@@ -70,21 +70,21 @@ impl Quartz {
                 let dest_handle_prefix = dest_handle.path[0].clone();
                 let _ = std::mem::replace(&mut new_handle.path[0], dest_handle_prefix);
 
-                self.copy(true, &child_name, &new_handle.handle())?;
+                self.copy_endpoint(true, &child_name, &new_handle.handle())?;
             }
         }
 
         Ok(())
     }
 
-    pub fn mv(&self, src: &str, dest: &str) -> Result {
+    pub fn move_endpoint(&self, src: &str, dest: &str) -> Result {
         let src_handle = EndpointHandle::new(self, src.into());
         if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
 
         // TODO: this might be one of the lazyest solutions so far
-        self.copy(true, src, dest)?;
+        self.copy_endpoint(true, src, dest)?;
         src_handle.delete(true)?;
 
         Ok(())

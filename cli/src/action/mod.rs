@@ -31,14 +31,14 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
             let new_handle = ctx.quartz.new_handle(&args.handle);
             new_handle.write_endpoint(&Endpoint::new())?;
             if args.switch {
-                ctx.quartz.switch(args.handle)?;
+                ctx.quartz.switch_endpoint(args.handle)?;
             }
 
             new_handle.apply_endpoint_patch(args.patch.into())?;
         }
         Cmd::Use(args) => {
             if let Some(handle) = args.handle {
-                ctx.quartz.switch(handle)?;
+                ctx.quartz.switch_endpoint(handle)?;
             }
         }
         Cmd::Ls(args) => {
@@ -46,16 +46,16 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
         }
         Cmd::Show { command } => action::show::cmd(ctx, command)?,
         Cmd::Edit => {
-            if let Some(curr_handle) = ctx.quartz.current() {
+            if let Some(curr_handle) = ctx.quartz.current_endpoint() {
                 let endpoint_file_path = curr_handle.endpoint_file_path();
                 ctx.edit(&endpoint_file_path, validator::toml_as::<Endpoint>)?;
             }
         }
         Cmd::Cp(args) => {
-            ctx.quartz.copy(args.recursive, &args.src, &args.dest)?;
+            ctx.quartz.copy_endpoint(args.recursive, &args.src, &args.dest)?;
         }
         Cmd::Mv(args) => {
-            ctx.quartz.mv(&args.src, &args.dest)?;
+            ctx.quartz.move_endpoint(&args.src, &args.dest)?;
         }
         Cmd::Rm(args) => {
             for handle in args.handles {

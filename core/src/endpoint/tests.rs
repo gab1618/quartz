@@ -6,7 +6,7 @@ fn test_simple_cp_handle() {
     let quartz = TestQuartz::empty();
     let handle = quartz.new_handle("testing");
     handle.ensure_dir().unwrap();
-    quartz.copy(false, "testing", "testing-copy").unwrap();
+    quartz.copy_endpoint(false, "testing", "testing-copy").unwrap();
 
     let found_handle = quartz.new_handle("testing-copy");
     assert!(found_handle.exists());
@@ -19,7 +19,7 @@ fn test_recursive_cp_handle() {
     quartz.new_handle("testing/ex").ensure_dir().unwrap();
     quartz.new_handle("testing/ex2").ensure_dir().unwrap();
     quartz.new_handle("testing/ex2/sub").ensure_dir().unwrap();
-    quartz.copy(true, "testing", "testing-copy").unwrap();
+    quartz.copy_endpoint(true, "testing", "testing-copy").unwrap();
 
     assert!(quartz.new_handle("testing-copy").exists());
     assert!(quartz.new_handle("testing-copy/ex").exists());
@@ -34,7 +34,7 @@ fn test_non_recursive_cp_handle() {
     quartz.new_handle("testing/ex").ensure_dir().unwrap();
     quartz.new_handle("testing/ex2").ensure_dir().unwrap();
     quartz.new_handle("testing/ex2/sub").ensure_dir().unwrap();
-    quartz.copy(false, "testing", "testing-copy").unwrap();
+    quartz.copy_endpoint(false, "testing", "testing-copy").unwrap();
 
     assert!(quartz.new_handle("testing-copy").exists());
     assert!(!quartz.new_handle("testing-copy/ex").exists());
@@ -57,7 +57,7 @@ fn test_cp_endpoint_spec() {
     let mut created_endpoint = created_handle.endpoint().unwrap();
     created_endpoint.url = example_url.clone();
     created_handle.write_endpoint(&created_endpoint).unwrap();
-    quartz.copy(true, "testing", "testing-copy").unwrap();
+    quartz.copy_endpoint(true, "testing", "testing-copy").unwrap();
 
     let found_handle = quartz.new_handle("testing-copy/ex2/sub");
     assert!(found_handle.exists());
@@ -112,7 +112,7 @@ fn test_mv_handle() {
     let quartz = TestQuartz::empty();
     quartz.new_handle("testing").ensure_dir().unwrap();
 
-    quartz.mv("testing", "new").unwrap();
+    quartz.move_endpoint("testing", "new").unwrap();
 
     assert!(quartz.new_handle("new").exists());
     assert!(!quartz.new_handle("testing").exists());
@@ -130,7 +130,7 @@ fn test_mv_handle_overwrite() {
     second_endpoint.url = "https://jsonplaceholder.typicode.com/todos/2".to_owned();
     second_handle.write_endpoint(&second_endpoint).unwrap();
 
-    quartz.mv("testing", "new").unwrap();
+    quartz.move_endpoint("testing", "new").unwrap();
 
     let overwritten_handle = EndpointHandle::new(&quartz, "new".into());
     assert!(overwritten_handle.exists());
