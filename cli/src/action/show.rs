@@ -39,8 +39,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
 }
 
 pub fn url(ctx: Ctx) -> Result {
-    let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
     println!("{}", endpoint.url);
 
@@ -48,8 +47,7 @@ pub fn url(ctx: Ctx) -> Result {
 }
 
 pub fn method(ctx: Ctx) -> Result {
-    let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
     println!("{}", endpoint.method);
 
@@ -57,16 +55,14 @@ pub fn method(ctx: Ctx) -> Result {
 }
 
 pub fn handle(ctx: Ctx) -> Result {
-    let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
     println!("{}", handle.head());
 
     Ok(())
 }
 
 pub fn endpoint(ctx: Ctx) -> Result {
-    let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
 
     println!("{}", endpoint.to_toml()?);

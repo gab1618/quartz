@@ -14,8 +14,7 @@ pub fn cmd(ctx: Ctx, command: Cmd) -> Result {
 }
 
 pub fn get(ctx: Ctx, key: String) -> Result {
-    let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
     if let Some(header) = endpoint.headers.get(&key) {
         println!("{}", header);
@@ -27,8 +26,7 @@ pub fn get(ctx: Ctx, key: String) -> Result {
 }
 
 pub fn set(ctx: Ctx, name: String, value: String) -> Result {
-    let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
     let mut endpoint = handle.endpoint()?;
     endpoint.headers.0.insert(name, value);
     handle.write_endpoint(&endpoint)?;
@@ -36,8 +34,7 @@ pub fn set(ctx: Ctx, name: String, value: String) -> Result {
 }
 
 pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
-    let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
     let mut endpoint = handle.endpoint()?;
 
     for k in keys {
@@ -54,8 +51,7 @@ pub fn rm(ctx: Ctx, keys: Vec<String>) -> Result {
 }
 
 pub fn ls(ctx: Ctx) -> Result {
-    let endpoint = ctx.quartz.endpoint();
-    let handle = endpoint.current().ok_or(Error::NoHandleInUse)?;
+    let handle = ctx.quartz.current().ok_or(Error::NoHandleInUse)?;
     let endpoint = handle.endpoint()?;
 
     print!("{}", endpoint.headers);

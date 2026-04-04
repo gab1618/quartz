@@ -108,8 +108,7 @@ impl TryFrom<&Quartz> for Request {
         let env = value.env();
         let curr_env = env.current()?;
         let env = curr_env.read()?;
-        let endpoint = value.endpoint();
-        let handle = endpoint.current().ok_or(EndpointError::NoHandleInUse)?;
+        let handle = value.current().ok_or(EndpointError::NoHandleInUse)?;
         let mut endpoint = handle.endpoint()?;
         let resolved = endpoint.as_resolved(&handle, &env)?;
 

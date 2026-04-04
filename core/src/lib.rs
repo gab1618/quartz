@@ -21,7 +21,6 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use crate::config::ConfigManager;
-use crate::endpoint::EndpointManager;
 use crate::endpoint::error::EndpointError;
 use crate::env::EnvManager;
 use crate::history::History;
@@ -94,8 +93,7 @@ impl Quartz {
         no_follow: bool,
         aditional_cookie_jar: Option<PathBuf>,
     ) -> crate::Result<Bytes> {
-        let endpoint_manager = self.endpoint();
-        let curr_handle = endpoint_manager
+        let curr_handle = self
             .current()
             .ok_or(EndpointError::NoHandleInUse)?;
         let curr_body = curr_handle.body();
@@ -124,9 +122,6 @@ impl Quartz {
     }
     pub fn state(&self) -> StateManager<'_> {
         StateManager::new(&self.path)
-    }
-    pub fn endpoint(&self) -> EndpointManager<'_> {
-        EndpointManager::new(self)
     }
     pub fn env(&self) -> EnvManager<'_> {
         EnvManager::new(self)

@@ -28,19 +28,17 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
 
         Cmd::Send(args) => action::send::cmd(ctx, args).await?,
         Cmd::Create(args) => {
-            let endpoint = ctx.quartz.endpoint();
-            let new_handle = endpoint.new_handle(&args.handle);
+            let new_handle = ctx.quartz.new_handle(&args.handle);
             new_handle.write_endpoint(&Endpoint::new())?;
             if args.switch {
-                endpoint.switch(args.handle)?;
+                ctx.quartz.switch(args.handle)?;
             }
 
             new_handle.apply_endpoint_patch(args.patch.into())?;
         }
         Cmd::Use(args) => {
-            let endpoint = ctx.quartz.endpoint();
             if let Some(handle) = args.handle {
-                endpoint.switch(handle)?;
+                ctx.quartz.switch(handle)?;
             }
         }
         Cmd::Ls(args) => {
@@ -48,24 +46,20 @@ pub async fn cmd(ctx: Ctx, command: Cmd) -> Result {
         }
         Cmd::Show { command } => action::show::cmd(ctx, command)?,
         Cmd::Edit => {
-            let endpoint = ctx.quartz.endpoint();
-            if let Some(curr_handle) = endpoint.current() {
+            if let Some(curr_handle) = ctx.quartz.current() {
                 let endpoint_file_path = curr_handle.endpoint_file_path();
                 ctx.edit(&endpoint_file_path, validator::toml_as::<Endpoint>)?;
             }
         }
         Cmd::Cp(args) => {
-            let endpoint = ctx.quartz.endpoint();
-            endpoint.copy(args.recursive, &args.src, &args.dest)?;
+            ctx.quartz.copy(args.recursive, &args.src, &args.dest)?;
         }
         Cmd::Mv(args) => {
-            let endpoint = ctx.quartz.endpoint();
-            endpoint.mv(&args.src, &args.dest)?;
+            ctx.quartz.mv(&args.src, &args.dest)?;
         }
         Cmd::Rm(args) => {
-            let endpoint = ctx.quartz.endpoint();
             for handle in args.handles {
-                let handle = endpoint.new_handle(&handle);
+                let handle = ctx.quartz.new_handle(&handle);
                 handle.delete(args.recursive)?;
             }
         }

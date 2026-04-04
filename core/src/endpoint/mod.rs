@@ -13,43 +13,36 @@ pub mod resolved_endpoint;
 #[cfg(test)]
 mod tests;
 
-pub struct EndpointManager<'a> {
-    quartz: &'a Quartz,
-}
-
-impl<'a> EndpointManager<'a> {
-    pub fn new(quartz: &'a Quartz) -> Self {
-        Self { quartz }
-    }
+impl Quartz {
     pub fn new_handle(&self, name: &str) -> EndpointHandle<'_> {
-        EndpointHandle::new(self.quartz, name.into())
+        EndpointHandle::new(self, name.into())
     }
 
     pub fn current(&self) -> Option<EndpointHandle<'_>> {
-        let curr_endpoint_name = self.quartz.state().get(StateField::Endpoint).ok();
+        let curr_endpoint_name = self.state().get(StateField::Endpoint).ok();
 
-        curr_endpoint_name.map(|handle_name| EndpointHandle::new(self.quartz, handle_name.into()))
+        curr_endpoint_name.map(|handle_name| EndpointHandle::new(self, handle_name.into()))
     }
 
     pub fn switch(&self, mut handle: String) -> Result<EndpointHandle<'_>> {
         if handle == "-" {
-            let previous_handle = self.quartz.state().get(StateField::PreviousEndpoint)?;
+            let previous_handle = self.state().get(StateField::PreviousEndpoint)?;
             handle = previous_handle;
         }
 
-        let handle = EndpointHandle::new(self.quartz, handle.into());
+        let handle = EndpointHandle::new(self, handle.into());
 
         if !handle.exists() {
             return Err(EndpointError::HandleNotFound(handle.head()).into());
         }
 
-        let previous = self.quartz.state().get(StateField::Endpoint);
-        self.quartz
+        let previous = self.state().get(StateField::Endpoint);
+        self
             .state()
             .set(StateField::Endpoint, &handle.path.join("/"))?;
 
         if let Ok(prev) = previous {
-            self.quartz
+            self
                 .state()
                 .set(StateField::PreviousEndpoint, &prev)?;
         }
@@ -58,11 +51,11 @@ impl<'a> EndpointManager<'a> {
     }
 
     pub fn copy(&self, recursive: bool, src: &str, dest: &str) -> Result {
-        let src_handle = EndpointHandle::new(self.quartz, src.into());
+        let src_handle = EndpointHandle::new(self, src.into());
         if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
-        let dest_handle = EndpointHandle::new(self.quartz, dest.into());
+        let dest_handle = EndpointHandle::new(self, dest.into());
         dest_handle.ensure_dir()?;
         if let Ok(endpoint) = src_handle.endpoint() {
             dest_handle.write_endpoint(&endpoint)?;
@@ -71,7 +64,7 @@ impl<'a> EndpointManager<'a> {
         if recursive {
             for child in src_handle.children()? {
                 let child_name = child.handle();
-                let mut new_handle = EndpointHandle::new(self.quartz, child.path);
+                let mut new_handle = EndpointHandle::new(self, child.path);
 
                 // Replace original prefix with the dest one
                 let dest_handle_prefix = dest_handle.path[0].clone();
@@ -85,7 +78,7 @@ impl<'a> EndpointManager<'a> {
     }
 
     pub fn mv(&self, src: &str, dest: &str) -> Result {
-        let src_handle = EndpointHandle::new(self.quartz, src.into());
+        let src_handle = EndpointHandle::new(self, src.into());
         if !src_handle.exists() {
             return Err(EndpointError::HandleNotFound(src.to_owned()).into());
         }
