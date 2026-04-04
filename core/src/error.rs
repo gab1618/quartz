@@ -12,6 +12,8 @@ pub enum Error {
     AlreadyInitialized,
     #[error("Could not setup quartz")]
     Setup,
+    #[error("Could not get config dir")]
+    GetConfigDir,
     #[error("Could not set value in the keymap")]
     KeymapSet,
     #[error(transparent)]

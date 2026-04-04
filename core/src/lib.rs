@@ -32,16 +32,18 @@ pub struct Quartz {
 }
 
 impl Quartz {
-    pub fn new(path: PathBuf, config_path: PathBuf) -> Self {
+    pub fn new(path: PathBuf) -> Result<Self> {
+        let config_path = dirs::config_dir().unwrap();
         let quartz_path = path.join(".quartz");
         let config = ConfigManager::new(config_path);
 
-        Self {
+        Ok(Self {
             path: quartz_path,
             config,
-        }
+        })
     }
-    pub fn init(path: PathBuf, config_path: PathBuf) -> Result<Self> {
+    pub fn init(path: PathBuf) -> Result<Self> {
+        let config_path = dirs::config_dir().ok_or(Error::GetConfigDir)?;
         let quartz_dir = path.join(".quartz");
         let config = ConfigManager::new(config_path);
 

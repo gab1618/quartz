@@ -4,8 +4,6 @@ pub enum Error {
     Quartz(#[from] quartz_core::error::Error),
     #[error(transparent)]
     Snippet(#[from] quartz_snippet::error::Error),
-    #[error("Could not get home dir")]
-    GetHomeDir,
     #[error("Could not get current dir: {0}")]
     GetCurrentDir(#[source] std::io::Error),
     #[error("No handle currently in use")]

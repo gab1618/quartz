@@ -25,10 +25,9 @@ async fn entrypoint() -> Result {
         return Ok(());
     }
 
-    let home_dir = std::env::home_dir().ok_or(Error::GetHomeDir)?;
     let curr_dir = current_dir().map_err(Error::GetCurrentDir)?;
 
-    let quartz = Quartz::new(curr_dir, home_dir);
+    let quartz = Quartz::new(curr_dir)?;
 
     // When true, ensures pagers and/or grep keeps the output colored
     colored::control::set_override(quartz.config().parse().ui.colors());

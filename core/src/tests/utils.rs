@@ -18,8 +18,7 @@ impl TestQuartz {
         let config_dir = tempdir().unwrap();
 
         let dir_buf_path = dir.path().to_path_buf();
-        let config_dir_path = config_dir.path().to_path_buf();
-        let qz = Quartz::init(dir_buf_path, config_dir_path).unwrap();
+        let qz = Quartz::init(dir_buf_path).unwrap();
 
         Self {
             inner: qz,
