@@ -1,0 +1,307 @@
+use crate::action;
+use clap::{Parser, Subcommand};
+use quartz_core::endpoint::value::{ContentTypeGroup, EndpointPatch};
+
+#[derive(Debug, Parser)]
+#[command(name = "quartz")]
+#[command(author = "Eduardo R. <contato@edurodrigues.dev>")]
+#[command(about = "Text-based API Client", long_about = None, version)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Cmd,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Cmd {
+    /// Initialize quartz
+    Init(action::init::Args),
+    /// Send request using the current handle's endpoint and outputs the response
+    Send(action::send::Args),
+    /// Create a new handle
+    Create(action::handle::CreateArgs),
+    /// Switch handle or edit its endpoint
+    Use(action::handle::SwitchArgs),
+
+    /// Lists available handles
+    #[command(name = "ls", alias = "list")]
+    Ls(action::ls::Args),
+
+    /// Copy an endpoint from one handle to another
+    #[command(name = "cp", alias = "copy")]
+    Cp(action::handle::CpArgs),
+
+    /// Move handles
+    #[command(name = "mv", alias = "move")]
+    Mv(action::handle::MvArgs),
+
+    /// Delete handles
+    #[command(name = "rm", alias = "remove")]
+    Rm(action::handle::RmArgs),
+
+    /// Print out endpoint informations
+    Show {
+        #[command(subcommand)]
+        command: ShowCmd,
+    },
+
+    /// Open an editor to modify endpoint in use
+    Edit,
+
+    /// Manage current endpoint's query params
+    Query {
+        #[command(subcommand)]
+        command: QueryCmd,
+    },
+    /// Manage current endpoint's headers. Without subcomand, it prints the headers list.
+    #[command(alias = "headers")]
+    Header {
+        #[command(subcommand)]
+        command: HeaderCmd,
+    },
+    /// Manage current handle's endpoint request body
+    Body(action::body::Args),
+    /// Print information about last request or response
+    Last {
+        #[command(subcommand)]
+        command: Option<LastCmd>,
+    },
+    /// Print request history
+    History(action::history::Args),
+    /// Manage project's environments
+    #[command(name = "env", alias = "environment")]
+    Env {
+        #[command(subcommand)]
+        command: EnvCmd,
+    },
+    /// Manage current environment's variables
+    #[command(name = "var", alias = "variable")]
+    Var {
+        #[command(subcommand)]
+        command: VarCmd,
+    },
+    /// Manage configuration for quartz
+    Config {
+        #[command(subcommand)]
+        command: ConfigCmd,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum LastCmd {
+    /// Print most recent handle used
+    Handle,
+
+    /// Print last request information
+    #[command(name = "req", alias = "request")]
+    Req,
+    /// Print last response information
+    #[command(name = "res", alias = "response")]
+    Res {
+        #[command(subcommand)]
+        command: Option<LastResCmd>,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum LastResCmd {
+    Head,
+    Body,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum QueryCmd {
+    /// Print query param value
+    Get(action::query::GetArgs),
+
+    /// Set query param value
+    Set(action::query::SetArgs),
+
+    /// Remove query param
+    #[command(name = "rm", alias = "remove")]
+    Rm(action::query::RmArgs),
+
+    /// List all query params
+    #[command(name = "ls", alias = "list")]
+    Ls,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum HeaderCmd {
+    /// Print a header value
+    Get { key: String },
+
+    /// Add new or existent header.
+    Set { name: String, value: String },
+
+    /// Remove a header
+    #[command(name = "rm", alias = "remove")]
+    Rm { key: Vec<String> },
+
+    /// Print headers
+    #[command(name = "ls", alias = "list")]
+    Ls,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ShowCmd {
+    Url,
+    Method,
+    /// Display endpoint's headers
+    Headers {
+        key: Option<String>,
+    },
+    /// Display endpoint's query params
+    Query {
+        key: Option<String>,
+    },
+    /// Display endpoint's request body
+    Body,
+    /// Display current handle
+    Handle,
+    /// Display current environment
+    #[command(name = "env", alias = "environment")]
+    Env,
+
+    /// Display environment cookies
+    Cookies(action::cookie::PrintArgs),
+    /// Generate code snippet for endpoint
+    Snippet(action::snippet::Args),
+    /// Display endpoint configuration file
+    Endpoint,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SnippetCmd {
+    Curl {
+        #[arg(long)]
+        long: bool,
+
+        #[arg(long)]
+        multiline: bool,
+    },
+    Http,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigCmd {
+    /// Open an editor to modify ~/.quartz.toml
+    Edit,
+
+    /// Print configuration value
+    Get(action::config::GetArgs),
+
+    /// Set a configuration
+    Set(action::config::SetArgs),
+
+    /// Print ~/.quartz.toml
+    #[command(name = "ls", alias = "list")]
+    Ls,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum BodyCmd {
+    /// Print request body to stdout
+    Show,
+
+    /// Expect a new request body via standard input
+    Stdin,
+
+    /// Open an editor to modify the endpoint's request body
+    Edit,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum EnvCmd {
+    /// Create a new environment
+    Create(action::env::CreateArgs),
+
+    /// Switch to another environment
+    Use(action::env::SwitchArgs),
+
+    /// Print all available environments
+    #[command(name = "ls", alias = "list")]
+    Ls,
+
+    /// Copy variables from a environment to a new or existing one
+    #[command(name = "cp", alias = "copy")]
+    Cp(action::env::CpArgs),
+
+    /// Delete a environment
+    #[command(name = "rm", alias = "remove")]
+    Rm(action::env::RmArgs),
+    Header {
+        #[command(subcommand)]
+        command: HeaderCmd,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum VarCmd {
+    /// Open an editor to modify variables
+    Edit,
+
+    /// Display variable value
+    Get(action::var::GetArgs),
+
+    /// Add a new or existent variable value
+    Set(action::var::SetArgs),
+
+    /// Remove variables
+    Rm(action::var::RmArgs),
+
+    /// Display the list of variables
+    #[command(name = "ls", alias = "list")]
+    Ls,
+}
+
+#[derive(Debug, clap::Args)]
+#[group(multiple = false)]
+pub struct ContentTypeGroupArg {
+    /// Use JSON data in request body with the appropriate content-type header
+    #[arg(long, value_name = "DATA")]
+    pub json: Option<Option<String>>,
+
+    /// Use raw data in request body
+    #[arg(long = "data", short = 'd', value_name = "DATA")]
+    pub raw: Option<String>,
+}
+impl From<ContentTypeGroupArg> for ContentTypeGroup {
+    fn from(value: ContentTypeGroupArg) -> Self {
+        Self {
+            json: value.json,
+            raw: value.raw,
+        }
+    }
+}
+#[derive(Default, Debug, clap::Args)]
+pub struct EndpointPatchArg {
+    /// Patch request URL
+    #[arg(long)]
+    pub url: Option<String>,
+
+    /// Patch HTTP request method
+    #[arg(short = 'X', long = "request")]
+    pub method: Option<String>,
+
+    /// Add or patch a parameter to the URL query. This argument can be passed multiple times
+    #[arg(short, long, value_name = "PARAM")]
+    pub query: Vec<String>,
+
+    /// Add or patch a header. This argument can be passed multiple times
+    #[arg(short = 'H', long = "header")]
+    pub headers: Vec<String>,
+
+    #[command(flatten)]
+    pub data: Option<ContentTypeGroupArg>,
+}
+impl From<EndpointPatchArg> for EndpointPatch {
+    fn from(value: EndpointPatchArg) -> Self {
+        Self {
+            url: value.url,
+            method: value.method,
+            query: value.query,
+            headers: value.headers,
+            data: value.data.map(Into::into),
+        }
+    }
+}
